@@ -83,9 +83,8 @@ async function downloadPDF(assets) {
 
   const custodiansCount = new Set(assets.map((a) => a.custodian).filter(Boolean)).size;
 
-  // Create temporary container for HTML rendering matching the user's white template screenshot
   const container = document.createElement("div");
-  container.style.cssText = "position:absolute;left:-9999px;top:0;width:800px;background:#FFF;color:#111827;font-family:Outfit,system-ui,sans-serif;padding:40px 32px;box-sizing:border-box;";
+  container.style.cssText = "position:absolute;left:0;top:99999px;width:800px;background:#FFF;color:#111827;font-family:Outfit,system-ui,sans-serif;padding:40px 32px;box-sizing:border-box;visibility:visible;display:block;";
 
   container.innerHTML = `
     <div style="background: #FFFFFF; font-family: Outfit, system-ui, -apple-system, sans-serif;">

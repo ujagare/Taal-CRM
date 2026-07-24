@@ -114,7 +114,7 @@ async function downloadAttendancePDF(records, batchFilter, dateRangeLabel) {
   const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
 
   const container = document.createElement("div");
-  container.style.cssText = "position:absolute;left:-9999px;top:0;width:800px;background:#FFF;color:#111827;font-family:Outfit,system-ui,sans-serif;padding:40px 32px;box-sizing:border-box;";
+  container.style.cssText = "position:absolute;left:0;top:99999px;width:800px;background:#FFF;color:#111827;font-family:Outfit,system-ui,sans-serif;padding:40px 32px;box-sizing:border-box;visibility:visible;display:block;";
 
   const presentCount = records.filter(r => r.status === "Present").length;
   const totalHoursStr = fmtMinutesToHours(records.reduce((acc, r) => acc + (r.total_minutes || 0), 0));
