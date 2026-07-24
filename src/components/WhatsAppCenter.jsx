@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
-import { checkWhatsAppStatus, sendBulkWhatsApp, personalizeMessage } from "../utils/whatsapp";
+import { checkWhatsAppStatus, sendBulkWhatsApp, personalizeMessage, sendWhatsApp } from "../utils/whatsapp";
 
 /* ─── Default message templates ─── */
 const TEMPLATES = {
@@ -29,44 +29,69 @@ const colorMap = {
 
 /* ─── Server Status Banner ─── */
 function StatusBanner({ status }) {
-  if (status === null) return (
-    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/40 text-xs font-medium">
-      <span className="w-2 h-2 rounded-full bg-white/30 animate-pulse" />
-      Checking WhatsApp server...
-    </div>
-  );
   if (status === true) return (
-    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-      🤖 WhatsApp Server: Connected — Ready to send messages!
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+      <span>Connected ✅</span>
     </div>
   );
   return (
-    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium">
-      <span className="w-2 h-2 rounded-full bg-amber-400" />
-      ⚠️ WhatsApp Server: Offline — Open a new terminal and run: <code className="bg-black/30 px-1.5 py-0.5 rounded text-amber-300 ml-1">npm run whatsapp</code>
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-semibold">
+      <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+      <span>Server Offline ⚠️</span>
     </div>
   );
 }
 
 /* ─── Recipient Card ─── */
-function RecipientCard({ member }) {
+function RecipientCard({ member, customMsg }) {
+  const [sent, setSent] = useState(false);
+  const [sendingOne, setSendingOne] = useState(false);
+
+  const handleSendSingle = async () => {
+    if (!member.whatsapp) return;
+    setSendingOne(true);
+    const msgText = personalizeMessage(customMsg, member);
+    const ok = await sendWhatsApp(member.whatsapp, msgText);
+    setSendingOne(false);
+    if (ok) {
+      setSent(true);
+      setTimeout(() => setSent(false), 4000);
+    } else {
+      // Direct Web link fallback
+      const url = `https://wa.me/91${member.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(msgText)}`;
+      window.open(url, "_blank");
+    }
+  };
+
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/4 border border-white/8 hover:bg-white/6 transition-all">
-      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white font-bold text-xs shrink-0">
-        {(member.full_name || "?")[0].toUpperCase()}
+    <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/8 transition-all">
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow">
+          {(member.full_name || "?")[0].toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold text-white truncate">{member.full_name}</p>
+          <p className="text-[10px] text-white/50">{member.whatsapp || "No Phone"}</p>
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white truncate">{member.full_name}</p>
-        <p className="text-[10px] text-white/40">{member.whatsapp || "No number"}</p>
+      <div className="flex items-center gap-2 shrink-0">
+        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+          member.exam_status === "passed"  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" :
+          member.exam_status === "failed"  ? "bg-red-500/20 text-red-400 border border-red-500/30" :
+          "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+        }`}>
+          {(member.exam_status || "pending").toUpperCase()}
+        </span>
+        <button
+          type="button"
+          onClick={handleSendSingle}
+          disabled={sendingOne}
+          className="px-2.5 py-1.5 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white text-[11px] font-semibold transition-all flex items-center gap-1 active:scale-95 shadow"
+        >
+          {sent ? "✅ Sent!" : sendingOne ? "..." : "💬 Send"}
+        </button>
       </div>
-      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-        member.exam_status === "passed"  ? "bg-emerald-500/20 text-emerald-400" :
-        member.exam_status === "failed"  ? "bg-red-500/20 text-red-400" :
-        "bg-amber-500/20 text-amber-400"
-      }`}>
-        {(member.exam_status || "pending").toUpperCase()}
-      </span>
     </div>
   );
 }
@@ -82,19 +107,19 @@ function AutoTriggersTab() {
   ];
   return (
     <div className="space-y-3">
-      <div className="p-4 rounded-xl bg-blue-500/8 border border-blue-500/15">
+      <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
         <p className="text-xs text-blue-300 font-medium">ℹ️ Auto-triggers tab automatically fire karte hain jab CRM me specific event hota hai. WhatsApp server connected hona chahiye.</p>
       </div>
       {triggers.map((t, i) => (
-        <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-white/4 border border-white/8">
+        <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-white/5 border border-white/10">
           <span className="text-xl shrink-0">{t.icon}</span>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-white">{t.event}</p>
-            <p className="text-[11px] text-white/50 mt-0.5">→ {t.action}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-white">{t.event}</p>
+            <p className="text-[11px] text-white/60 mt-0.5">→ {t.action}</p>
             <p className="text-[10px] text-white/30 mt-1">📍 {t.where}</p>
           </div>
-          <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-medium shrink-0">
-            ✅ Active
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium shrink-0">
+            Active
           </span>
         </div>
       ))}
@@ -117,7 +142,6 @@ export default function WhatsAppCenter() {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState(null); // { success, count }
   const [progress, setProgress] = useState(0); // 0-100
-  const [showPreview, setShowPreview] = useState(false);
   const progressTimer = useRef(null);
 
   // Admin phone for auto-trigger alerts
@@ -129,7 +153,7 @@ export default function WhatsAppCenter() {
     checkWhatsAppStatus().then(s => setWaStatus(s.connected));
     const interval = setInterval(() => {
       checkWhatsAppStatus().then(s => setWaStatus(s.connected));
-    }, 15000);
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -151,13 +175,13 @@ export default function WhatsAppCenter() {
     if (selectedGroup === "passed")  return members.filter(m => m.whatsapp && m.exam_status === "passed");
     if (selectedGroup === "failed")  return members.filter(m => m.whatsapp && m.exam_status === "failed");
     if (selectedGroup === "pending") return members.filter(m => m.whatsapp && (!m.exam_status || m.exam_status === "pending"));
-    return members.filter(m => m.whatsapp); // custom = all with number
+    return members.filter(m => m.whatsapp);
   })();
 
   // Preview message with first recipient
   const previewMsg = recipients.length > 0 ? personalizeMessage(message, recipients[0]) : message;
 
-  // When group changes, load the default template
+  // When group changes, load default template
   const handleGroupChange = (groupId) => {
     setSelectedGroup(groupId);
     setMessage(TEMPLATES[groupId] || TEMPLATES.all);
@@ -194,7 +218,6 @@ export default function WhatsAppCenter() {
     setSendResult(null);
     setProgress(0);
 
-    // Estimate time: 1.5s per message
     const totalMs = recipients.length * 1500;
     const step = 100 / (totalMs / 200);
     progressTimer.current = setInterval(() => {
@@ -220,33 +243,33 @@ export default function WhatsAppCenter() {
   };
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto">
-      {/* ─── Page Header ─── */}
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-2xl shadow-lg shadow-emerald-950/40">
-          📱
+    <div className="space-y-4 max-w-4xl mx-auto pb-24">
+      {/* ─── Page Header (Responsive) ─── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white/5 p-4 rounded-2xl border border-white/10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-xl shadow-lg shadow-emerald-950/40 shrink-0">
+            📱
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white leading-tight">WhatsApp Center</h1>
+            <p className="text-xs text-white/50">Bulk Broadcast & Auto Notifications</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-white">WhatsApp Center</h1>
-          <p className="text-sm text-white/50 mt-0.5">Bulk broadcast, auto-triggers aur notification system</p>
-        </div>
-        <div className="ml-auto">
-          <StatusBanner status={waStatus} />
-        </div>
+        <StatusBanner status={waStatus} />
       </div>
 
-      {/* ─── Tabs ─── */}
-      <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/8 w-fit">
+      {/* ─── Tabs Navigation ─── */}
+      <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/10 w-full sm:w-fit overflow-x-auto">
         {[
-          { id: "broadcast", label: "📢 Bulk Broadcast" },
-          { id: "triggers",  label: "⚡ Auto-Triggers" },
+          { id: "broadcast", label: "📢 Bulk Send" },
+          { id: "triggers",  label: "⚡ Auto Triggers" },
           { id: "settings",  label: "⚙️ Settings" },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === tab.id
-                ? "bg-white/12 text-white shadow-sm"
-                : "text-white/40 hover:text-white/70"
+                ? "bg-emerald-600 text-white shadow-md"
+                : "text-white/50 hover:text-white"
             }`}>
             {tab.label}
           </button>
@@ -255,159 +278,163 @@ export default function WhatsAppCenter() {
 
       {/* ─── BROADCAST TAB ─── */}
       {activeTab === "broadcast" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="space-y-4">
+          
+          {/* Main Actions Container */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-          {/* Left: Composer */}
-          <div className="space-y-4">
-            {/* Step 1: Choose Group */}
-            <div className="p-5 rounded-2xl bg-white/4 border border-white/10 space-y-3">
-              <p className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Step 1 · Recipient Group Chuno</p>
-              <div className="grid grid-cols-1 gap-2">
-                {GROUP_OPTIONS.map(g => {
-                  const c = colorMap[g.color];
-                  const isActive = selectedGroup === g.id;
-                  const count = (() => {
-                    if (g.id === "all")     return members.filter(m => m.whatsapp).length;
-                    if (g.id === "passed")  return members.filter(m => m.whatsapp && m.exam_status === "passed").length;
-                    if (g.id === "failed")  return members.filter(m => m.whatsapp && m.exam_status === "failed").length;
-                    if (g.id === "pending") return members.filter(m => m.whatsapp && (!m.exam_status || m.exam_status === "pending")).length;
-                    return members.filter(m => m.whatsapp).length;
-                  })();
-                  return (
-                    <button key={g.id} onClick={() => handleGroupChange(g.id)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
-                        isActive ? `${c.activeBg} ${c.border} ${c.text}` : "bg-white/3 border-white/8 text-white/60 hover:bg-white/6"
-                      }`}>
-                      <span className="font-semibold text-sm flex-1">{g.label}</span>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${isActive ? `${c.bg} ${c.text}` : "bg-white/10 text-white/40"}`}>
-                        {loadingMembers ? "…" : count} recipients
-                      </span>
+            {/* LEFT COLUMN: Group & Message Editor (Col 7) */}
+            <div className="lg:col-span-7 space-y-4">
+              
+              {/* Step 1: Choose Group */}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">1. Target Group</p>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
+                    {recipients.length} candidates
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {GROUP_OPTIONS.map(g => {
+                    const c = colorMap[g.color];
+                    const isActive = selectedGroup === g.id;
+                    const count = (() => {
+                      if (g.id === "all")     return members.filter(m => m.whatsapp).length;
+                      if (g.id === "passed")  return members.filter(m => m.whatsapp && m.exam_status === "passed").length;
+                      if (g.id === "failed")  return members.filter(m => m.whatsapp && m.exam_status === "failed").length;
+                      if (g.id === "pending") return members.filter(m => m.whatsapp && (!m.exam_status || m.exam_status === "pending")).length;
+                      return members.filter(m => m.whatsapp).length;
+                    })();
+                    return (
+                      <button key={g.id} onClick={() => handleGroupChange(g.id)}
+                        className={`flex flex-col items-start p-2.5 rounded-xl border transition-all ${
+                          isActive ? `${c.activeBg} ${c.border} ${c.text} ring-1 ring-emerald-500/40` : "bg-white/3 border-white/8 text-white/60 hover:bg-white/6"
+                        }`}>
+                        <span className="font-bold text-xs truncate w-full">{g.label}</span>
+                        <span className="text-[10px] text-white/40 mt-1 font-mono">{count} members</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Step 2: Message Composer */}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">2. Message Editor</p>
+                  <span className="text-[10px] text-white/40">Click tags to add</span>
+                </div>
+                
+                {/* Placeholders */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { tag: "{name}", label: "+ Name" },
+                    { tag: "{status}", label: "+ Status" },
+                    { tag: "{score}", label: "+ Score" },
+                    { tag: "{instrument}", label: "+ Instrument" },
+                  ].map(({ tag, label }) => (
+                    <button key={tag} onClick={() => insertPlaceholder(tag)}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/25 active:scale-95 transition-all">
+                      {label}
                     </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Step 2: Compose Message */}
-            <div className="p-5 rounded-2xl bg-white/4 border border-white/10 space-y-3">
-              <p className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Step 2 · Apna Message Likho</p>
-              <p className="text-[10px] text-white/30">Placeholders: message me auto-replace hote hain har recipient ke liye</p>
-              <div className="flex flex-wrap gap-1.5">
-                {["{name}", "{status}", "{score}", "{instrument}"].map(ph => (
-                  <button key={ph} onClick={() => insertPlaceholder(ph)}
-                    className="px-2.5 py-1 rounded-lg bg-blue-500/15 border border-blue-500/20 text-blue-400 text-[11px] font-mono font-semibold hover:bg-blue-500/25 transition-all">
-                    {ph}
-                  </button>
-                ))}
-              </div>
-              <textarea
-                ref={textareaRef}
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                rows={10}
-                className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 transition-all resize-none leading-relaxed"
-                style={{ backgroundColor: '#111114', color: '#ffffff' }}
-                placeholder="Apna message yahan likho..."
-              />
-              <p className="text-[10px] text-white/25 text-right">{message.length} characters</p>
-            </div>
-          </div>
-
-          {/* Right: Preview + Send */}
-          <div className="space-y-4">
-            {/* Preview */}
-            <div className="p-5 rounded-2xl bg-white/4 border border-white/10 space-y-3">
-              <p className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Step 3 · Preview (First Recipient)</p>
-              {recipients.length > 0 ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-[11px] text-white/40">
-                    <span>Preview for:</span>
-                    <span className="text-white/70 font-medium">{recipients[0].full_name}</span>
-                    <span className="text-white/30">({recipients[0].whatsapp})</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#0a1930] border border-blue-500/15">
-                    <pre className="text-sm text-white/85 whitespace-pre-wrap font-sans leading-relaxed">{previewMsg}</pre>
-                  </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="p-4 rounded-xl bg-white/4 text-center">
-                  <p className="text-sm text-white/30">Is group me koi member nahi hai ya WhatsApp number nahi hai</p>
-                </div>
-              )}
-            </div>
 
-            {/* Recipients List */}
-            <div className="p-5 rounded-2xl bg-white/4 border border-white/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">
-                  Recipients ({recipients.length})
-                </p>
-                <button onClick={() => setShowPreview(!showPreview)}
-                  className="text-[10px] text-white/40 hover:text-white/70 transition-all">
-                  {showPreview ? "Hide" : "Show all"}
+                <textarea
+                  ref={textareaRef}
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  rows={8}
+                  className="w-full px-3.5 py-3 rounded-xl border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500 transition-all leading-relaxed"
+                  style={{ backgroundColor: '#121216', color: '#ffffff' }}
+                  placeholder="Apna message yahan type karein..."
+                />
+                
+                {/* Immediate Prominent Send Button for Mobile/Desktop */}
+                <button
+                  type="button"
+                  onClick={handleSendBulk}
+                  disabled={sending || recipients.length === 0 || !message.trim()}
+                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 text-white font-bold text-sm hover:from-emerald-400 hover:to-teal-500 transition-all shadow-lg shadow-emerald-950/50 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="text-lg">🚀</span>
+                  <span>{sending ? `Sending (${Math.round(progress)}%)...` : `Send WhatsApp to All (${recipients.length})`}</span>
                 </button>
               </div>
-              <div className={`space-y-1.5 overflow-y-auto ${showPreview ? "max-h-64" : "max-h-32"} transition-all`}>
-                {loadingMembers ? (
-                  <p className="text-sm text-white/30 text-center py-4">Loading members...</p>
-                ) : recipients.length === 0 ? (
-                  <p className="text-sm text-white/30 text-center py-4">Koi recipients nahi mili is group me</p>
+
+            </div>
+
+            {/* RIGHT COLUMN: Preview & Individual Recipient Actions (Col 5) */}
+            <div className="lg:col-span-5 space-y-4">
+              
+              {/* Message Preview Box */}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">3. Live Message Preview</p>
+                {recipients.length > 0 ? (
+                  <div className="p-3.5 rounded-xl bg-[#091526] border border-blue-500/20 space-y-2">
+                    <p className="text-[10px] text-blue-300 font-semibold uppercase tracking-wider">
+                      Preview for: {recipients[0].full_name}
+                    </p>
+                    <pre className="text-xs text-white/90 whitespace-pre-wrap font-sans leading-relaxed">{previewMsg}</pre>
+                  </div>
                 ) : (
-                  recipients.map(m => <RecipientCard key={m.id} member={m} />)
+                  <p className="text-xs text-white/40 text-center py-4">Is group me koi WhatsApp candidates nahi hain</p>
                 )}
               </div>
-            </div>
 
-            {/* Send Button */}
-            <div className="p-5 rounded-2xl bg-white/4 border border-white/10 space-y-4">
-              {/* Progress bar */}
-              {sending && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[11px] text-white/50">
-                    <span>Sending messages...</span>
-                    <span>{Math.round(progress)}%</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-white/30 text-center">
-                    Ek-ek karke message bhej raha hoon, please wait...
+              {/* Recipient List with 1-Click Send per candidate */}
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                    Candidates List ({recipients.length})
                   </p>
                 </div>
-              )}
-
-              {/* Result */}
-              {sendResult && !sending && (
-                <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold ${
-                  sendResult.success
-                    ? "bg-emerald-500/15 border border-emerald-500/25 text-emerald-400"
-                    : "bg-amber-500/15 border border-amber-500/25 text-amber-400"
-                }`}>
-                  {sendResult.success
-                    ? `✅ ${sendResult.count} recipients ko messages bhejne ke liye queue hua! Terminal me progress dekho.`
-                    : `⚠️ Server offline hai. WhatsApp server start karo: npm run whatsapp`}
+                
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {loadingMembers ? (
+                    <p className="text-xs text-white/40 text-center py-4">Loading list...</p>
+                  ) : recipients.length === 0 ? (
+                    <p className="text-xs text-white/40 text-center py-4">Koi candidate nahi mila</p>
+                  ) : (
+                    recipients.map(m => <RecipientCard key={m.id} member={m} customMsg={message} />)
+                  )}
                 </div>
-              )}
+              </div>
 
-              <button
-                onClick={handleSendBulk}
-                disabled={sending || recipients.length === 0 || !message.trim() || waStatus === false}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-sm hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-950/40 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {sending
-                  ? `🤖 Sending to ${recipients.length}...`
-                  : waStatus === false
-                  ? `⚠️ Server Offline — Start karo pehle`
-                  : `🚀 Send to All ${recipients.length} Recipients`}
-              </button>
-              {waStatus !== false && recipients.length === 0 && (
-                <p className="text-[10px] text-white/30 text-center">Is group me WhatsApp number wale members nahi hain</p>
-              )}
             </div>
+
           </div>
+
+          {/* Progress / Status Alert */}
+          {sending && (
+            <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 space-y-2 shadow-xl">
+              <div className="flex justify-between text-xs font-bold text-emerald-300">
+                <span>Sending WhatsApp Messages...</span>
+                <span>{Math.round(progress)}%</span>
+              </div>
+              <div className="w-full h-3 rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-300 transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-white/60 text-center">Background me messages deliver ho rahe hain, kripya window na band karein.</p>
+            </div>
+          )}
+
+          {sendResult && !sending && (
+            <div className={`p-4 rounded-2xl border text-xs font-semibold ${
+              sendResult.success
+                ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                : "bg-amber-500/20 border-amber-500/40 text-amber-300"
+            }`}>
+              {sendResult.success
+                ? `✅ ${sendResult.count} candidates ko WhatsApp messages successfully bheje gaye!`
+                : `⚠️ WhatsApp server se message nahi bheja ja saka. Terminal check karein.`}
+            </div>
+          )}
+
         </div>
       )}
 
@@ -417,47 +444,35 @@ export default function WhatsAppCenter() {
       {/* ─── SETTINGS TAB ─── */}
       {activeTab === "settings" && (
         <div className="space-y-4 max-w-lg">
-          <div className="p-5 rounded-2xl bg-white/4 border border-white/10 space-y-4">
-            <p className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Admin Phone Number</p>
-            <p className="text-xs text-white/40">
-              Dori low stock aur Daily Report auto-alerts is number par jayenge.
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+            <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Admin WhatsApp Number</p>
+            <p className="text-xs text-white/50">
+              Dori low stock aur Daily Reports auto-alerts is number par receive honge.
             </p>
             <div className="flex gap-2">
               <input
                 type="tel"
                 value={adminPhone}
                 onChange={e => setAdminPhone(e.target.value)}
-                placeholder="Admin ka WhatsApp number (10 digits)"
-                className="flex-1 px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 transition-all"
-                style={{ backgroundColor: '#111114' }}
+                placeholder="Admin WhatsApp Number (10 digits)"
+                className="flex-1 px-3.5 py-2.5 rounded-xl border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500"
+                style={{ backgroundColor: '#121216' }}
               />
               <button
                 onClick={saveAdminPhone}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 transition-all"
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-all shrink-0"
               >
-                {adminPhoneSaved ? "✅ Saved!" : "Save"}
+                {adminPhoneSaved ? "Saved! ✅" : "Save"}
               </button>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white/4 border border-white/10 space-y-3">
-            <p className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">WhatsApp Server Start Kaise Karo</p>
-            <div className="space-y-2">
-              {[
-                { step: "1", desc: "VS Code me nayi terminal kholo (Ctrl + Shift + `)" },
-                { step: "2", desc: "Run karo:", code: "npm run whatsapp" },
-                { step: "3", desc: "Terminal me QR Code aayega" },
-                { step: "4", desc: "Mobile WhatsApp → Linked Devices → QR Scan karo" },
-                { step: "5", desc: "Connected! Ab CRM auto messages bhejega 🎉" },
-              ].map(s => (
-                <div key={s.step} className="flex items-start gap-3 p-3 rounded-xl bg-white/3">
-                  <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
-                  <div>
-                    <p className="text-sm text-white/70">{s.desc}</p>
-                    {s.code && <code className="text-xs text-emerald-400 font-mono bg-black/30 px-2 py-1 rounded mt-1 inline-block">{s.code}</code>}
-                  </div>
-                </div>
-              ))}
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+            <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">WhatsApp Server Status Guide</p>
+            <div className="space-y-2 text-xs text-white/70">
+              <p>1. Terminal window me <code className="text-emerald-400 bg-black/40 px-1.5 py-0.5 rounded">npm run whatsapp</code> chalao.</p>
+              <p>2. WhatsApp → Linked Devices → Scan QR code.</p>
+              <p>3. Status <b>Connected ✅</b> aane ke baad automatic & bulk messages kaam karenge.</p>
             </div>
           </div>
         </div>
