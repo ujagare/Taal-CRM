@@ -151,10 +151,11 @@ function SidebarContent({ clerkEnabled, activePage, onNavigate, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-lg border border-white/[.07] bg-white/[.045] text-mist transition-colors hover:text-cream lg:hidden"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-500/30 bg-red-500/15 text-red-400 text-xs font-bold hover:bg-red-500/25 active:scale-95 transition-all shadow-md lg:hidden shrink-0"
             aria-label="Close menu"
           >
-            <Icon d={I.x} className="h-5 w-5" />
+            <Icon d={I.x} className="h-4 w-4 stroke-[2.5]" />
+            <span>Close</span>
           </button>
         </div>
       </div>
