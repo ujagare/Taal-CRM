@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
@@ -14,6 +14,28 @@ import AttendanceManager from "./components/AttendanceManager";
 import AdminPanel from "./components/AdminPanel";
 import WhatsAppCenter from "./components/WhatsAppCenter";
 import { useAuthLogger } from "./hooks/useAuthLogger";
+
+const PAGE_TO_HASH = {
+  "Dashboard": "#dashboard",
+  "Attendance": "#attendance",
+  "Shifting 1": "#shifting-1",
+  "Dhol Pan": "#dhol-pan",
+  "Dhol Maintenance": "#dhol-maintenance",
+  "Daily Report": "#daily-report",
+  "Expences": "#expenses",
+  "New Member Exam": "#new-member-exam",
+  "WhatsApp": "#whatsapp",
+  "Admin Panel": "#admin-panel",
+};
+
+const HASH_TO_PAGE = Object.fromEntries(
+  Object.entries(PAGE_TO_HASH).map(([page, hash]) => [hash, page])
+);
+
+function getPageFromHash() {
+  const hash = window.location.hash || "#dashboard";
+  return HASH_TO_PAGE[hash] || "Dashboard";
+}
 
 function ClerkGate({ children }) {
   const { isSignedIn, isLoaded } = useUser();
@@ -39,7 +61,7 @@ function AuthLoggerWrapper({ children }) {
   return children;
 }
 
-function AppShell({ clerkEnabled, activePage, setActivePage, mobileMenuOpen, setMobileMenuOpen }) {
+function AppShell({ clerkEnabled, activePage, onNavigate, mobileMenuOpen, setMobileMenuOpen }) {
   return (
     <div className="min-h-screen">
       <div className="fixed inset-0 -z-10 pointer-events-none">
@@ -58,7 +80,7 @@ function AppShell({ clerkEnabled, activePage, setActivePage, mobileMenuOpen, set
       <Sidebar
         clerkEnabled={clerkEnabled}
         activePage={activePage}
-        onNavigate={setActivePage}
+        onNavigate={onNavigate}
         mobileOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
       />
@@ -66,7 +88,7 @@ function AppShell({ clerkEnabled, activePage, setActivePage, mobileMenuOpen, set
         <Topbar activePage={activePage} onMenuToggle={() => setMobileMenuOpen(true)} />
         <main className="px-4 sm:px-6 lg:px-8 pt-6 pb-12 space-y-5 max-w-[1440px] mx-auto">
           {activePage === "Dashboard" ? (
-            <OperationsDashboard onNavigate={setActivePage} />
+            <OperationsDashboard onNavigate={onNavigate} />
           ) : activePage === "Attendance" ? (
             <AttendanceManager />
           ) : activePage === "Shifting 1" ? (
@@ -95,16 +117,53 @@ function AppShell({ clerkEnabled, activePage, setActivePage, mobileMenuOpen, set
 }
 
 export default function App({ clerkEnabled }) {
-  const [activePage, setActivePage] = useState("Dashboard");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activePage, setActivePageRaw] = useState(() => getPageFromHash());
+  const [mobileMenuOpen, setMobileMenuOpenRaw] = useState(false);
+
+  // Navigate to page & sync with browser history so mobile back button works like an app!
+  const changePage = useCallback((newPage) => {
+    setActivePageRaw(newPage);
+    const hash = PAGE_TO_HASH[newPage] || "#dashboard";
+    if (window.location.hash !== hash) {
+      window.history.pushState({ page: newPage }, "", hash);
+    }
+  }, []);
+
+  const handleMobileMenuToggle = useCallback((open) => {
+    setMobileMenuOpenRaw(open);
+    if (open) {
+      window.history.pushState({ menuOpen: true }, "");
+    }
+  }, []);
+
+  // Listen to browser / mobile device BACK button press (popstate)
+  useEffect(() => {
+    const initialHash = PAGE_TO_HASH[activePage] || "#dashboard";
+    if (!window.history.state) {
+      window.history.replaceState({ page: activePage }, "", initialHash);
+    }
+
+    const handlePopState = (e) => {
+      // If mobile menu is open, pressing back button closes the menu instead of exiting
+      if (mobileMenuOpen) {
+        setMobileMenuOpenRaw(false);
+        return;
+      }
+      const targetPage = e.state?.page || getPageFromHash();
+      setActivePageRaw(targetPage);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [activePage, mobileMenuOpen]);
 
   const shell = (
     <AppShell
       clerkEnabled={clerkEnabled}
       activePage={activePage}
-      setActivePage={setActivePage}
+      onNavigate={changePage}
       mobileMenuOpen={mobileMenuOpen}
-      setMobileMenuOpen={setMobileMenuOpen}
+      setMobileMenuOpen={handleMobileMenuToggle}
     />
   );
 

@@ -335,10 +335,16 @@ function DetailModal({ member, onClose, onExamUpdate }) {
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
+    window.history.pushState({ modalOpen: true }, "");
+    const handlePopState = () => {
+      onClose();
+    };
+    window.addEventListener("popstate", handlePopState);
     return () => {
       document.body.style.overflow = "unset";
+      window.removeEventListener("popstate", handlePopState);
     };
-  }, []);
+  }, [onClose]);
 
   return createPortal(
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4">
