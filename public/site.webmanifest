@@ -1,0 +1,26 @@
+{
+  "name": "TAAL Pathak CRM",
+  "short_name": "TAAL CRM",
+  "description": "TAAL Pathak Operations CRM — Attendance, Dhol Maintenance, Daily Reports & More",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#dc2626",
+  "background_color": "#0a0a0a",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "start_url": "/",
+  "lang": "mr"
+}
