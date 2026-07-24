@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { SignInButton, SignUpButton, UserButton, useUser, useClerk } from "@clerk/clerk-react";
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/clerk-react";
+import { useAuthLogger } from "../hooks/useAuthLogger";
 import { Icon, I } from "./icons";
 
 const NAV = [
@@ -20,7 +21,7 @@ const ADMIN_NAV = [
 /* ── Clerk: signed-in user section with logout ── */
 function ClerkUserSection() {
   const { isSignedIn, user } = useUser();
-  const { signOut } = useClerk();
+  const { handleLogout } = useAuthLogger();
 
   return isSignedIn ? (
     <div className="space-y-2">
@@ -34,7 +35,7 @@ function ClerkUserSection() {
       </div>
       {/* Logout button */}
       <button
-        onClick={() => signOut()}
+        onClick={handleLogout}
         className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-rose-400 transition-all duration-200 hover:bg-rose-500/10 hover:text-rose-300 group"
       >
         <Icon d={I.logout} className="h-[18px] w-[18px] transition-transform group-hover:translate-x-0.5" />

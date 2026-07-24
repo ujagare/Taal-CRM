@@ -12,6 +12,7 @@ import OperationsDashboard from "./components/OperationsDashboard";
 import ExpenseTracker from "./components/ExpenseTracker";
 import AttendanceManager from "./components/AttendanceManager";
 import AdminPanel from "./components/AdminPanel";
+import { useAuthLogger } from "./hooks/useAuthLogger";
 
 function ClerkGate({ children }) {
   const { isSignedIn, isLoaded } = useUser();
@@ -31,10 +32,13 @@ function LoginSkeleton() {
   );
 }
 
-function AppContent({ clerkEnabled }) {
-  const [activePage, setActivePage] = useState("Dashboard");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+/* Auth logger wrapper — only used inside ClerkProvider */
+function AuthLoggerWrapper({ children }) {
+  useAuthLogger();
+  return children;
+}
 
+function AppShell({ clerkEnabled, activePage, setActivePage, mobileMenuOpen, setMobileMenuOpen }) {
   return (
     <div className="min-h-screen">
       <div className="fixed inset-0 -z-10 pointer-events-none">
@@ -88,12 +92,25 @@ function AppContent({ clerkEnabled }) {
 }
 
 export default function App({ clerkEnabled }) {
+  const [activePage, setActivePage] = useState("Dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const shell = (
+    <AppShell
+      clerkEnabled={clerkEnabled}
+      activePage={activePage}
+      setActivePage={setActivePage}
+      mobileMenuOpen={mobileMenuOpen}
+      setMobileMenuOpen={setMobileMenuOpen}
+    />
+  );
+
   if (clerkEnabled) {
     return (
       <ClerkGate>
-        <AppContent clerkEnabled={clerkEnabled} />
+        <AuthLoggerWrapper>{shell}</AuthLoggerWrapper>
       </ClerkGate>
     );
   }
-  return <AppContent clerkEnabled={clerkEnabled} />;
+  return shell;
 }

@@ -313,6 +313,22 @@ alter table biometric_devices disable row level security;
 alter table attendance_logs disable row level security;
 
 
+-- =====================================================
+-- AUTH ACTIVITY LOGS (Login / Logout Tracking)
+-- =====================================================
+create table if not exists auth_activity_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_name text not null,
+  user_email text,
+  event_type text not null check (event_type in ('login', 'logout')),
+  device_info text,
+  logged_at timestamptz default now()
+);
+
+alter table auth_activity_logs disable row level security;
+create index if not exists idx_auth_activity_logs_time on auth_activity_logs(logged_at desc);
+create index if not exists idx_auth_activity_logs_event on auth_activity_logs(event_type);
+
 -- Note: Storage bucket for expense bills needs to be created separately
 -- In Supabase dashboard: Storage -> New Bucket -> Name: expense-bills -> Public access: Public
 -- Or via Supabase CLI: supabase storage create expense-bills --public

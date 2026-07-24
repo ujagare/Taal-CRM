@@ -386,7 +386,7 @@ async function downloadPDF(records, sessionName, sessionDate, dhols) {
   const timeStr = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
 
   const container = document.createElement("div");
-  container.style.cssText = "position:fixed;left:0;top:0;z-index:-9999;opacity:0.01;pointer-events:none;width:800px;background:#FFF;color:#111827;font-family:Outfit,system-ui,sans-serif;padding:40px 32px;box-sizing:border-box;";
+  container.style.cssText = "position:absolute;left:-9999px;top:0;width:800px;background:#FFF;color:#111827;font-family:Outfit,system-ui,sans-serif;padding:40px 32px;box-sizing:border-box;";
 
   container.innerHTML = `
     <div>

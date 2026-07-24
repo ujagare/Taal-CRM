@@ -1,45 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon, I } from "./icons";
+import { supabase } from "../lib/supabase";
 
-/* ─── Dummy data ─── */
-const USERS = [
-  { id: 1, name: "Rahul Sharma",   role: "Admin",   status: "Active",   avatar: "RS", joined: "Jan 2024" },
-  { id: 2, name: "Priya Mehta",    role: "Manager", status: "Active",   avatar: "PM", joined: "Mar 2024" },
-  { id: 3, name: "Arjun Patil",    role: "Staff",   status: "Active",   avatar: "AP", joined: "Jun 2024" },
-  { id: 4, name: "Sneha Joshi",    role: "Staff",   status: "Inactive", avatar: "SJ", joined: "Aug 2024" },
-  { id: 5, name: "Vikram Desai",   role: "Manager", status: "Active",   avatar: "VD", joined: "Sep 2024" },
-  { id: 6, name: "Anjali Rao",     role: "Staff",   status: "Active",   avatar: "AR", joined: "Nov 2024" },
-];
-
-const STATS = [
-  { label: "Total Users",     value: "6",     sub: "+2 this month",  color: "blue",   icon: I.users  },
-  { label: "Active Sessions", value: "4",     sub: "Right now",      color: "green",  icon: I.bolt   },
-  { label: "Modules Active",  value: "8",     sub: "All running",    color: "amber",  icon: I.grid   },
-  { label: "System Health",   value: "99.9%", sub: "Uptime 30 days", color: "brand",  icon: I.target },
-];
-
-const LOGS = [
-  { time: "11:42 AM", user: "Rahul Sharma",  action: "Updated Attendance record",    type: "edit"   },
-  { time: "11:30 AM", user: "Priya Mehta",   action: "Exported Daily Report PDF",    type: "export" },
-  { time: "10:58 AM", user: "Arjun Patil",   action: "Added new expense entry",      type: "add"    },
-  { time: "10:20 AM", user: "Vikram Desai",  action: "Modified Dhol Maintenance log",type: "edit"   },
-  { time: "09:45 AM", user: "Anjali Rao",    action: "Logged in to system",          type: "login"  },
-  { time: "09:30 AM", user: "Rahul Sharma",  action: "Reviewed New Member Exam",     type: "view"   },
-];
-
-const ROLE_COLORS = {
-  Admin:   "from-rose-500/20 to-rose-500/5  text-rose-300  border-rose-500/20",
-  Manager: "from-amber-500/20 to-amber-500/5 text-amber-300 border-amber-500/20",
-  Staff:   "from-sky-500/20  to-sky-500/5   text-sky-300   border-sky-500/20",
-};
-const LOG_DOT = {
-  edit:   "bg-amber-400",
-  export: "bg-sky-400",
-  add:    "bg-emerald-400",
-  login:  "bg-brand",
-  view:   "bg-purple-400",
-};
-
+/* ─── Color maps ─── */
 const STAT_COLORS = {
   blue:  { ring: "ring-sky-500/20",    glow: "bg-sky-500/10",    text: "text-sky-300",    icon: "text-sky-400"    },
   green: { ring: "ring-emerald-500/20",glow: "bg-emerald-500/10",text: "text-emerald-300",icon: "text-emerald-400"},
@@ -47,6 +10,12 @@ const STAT_COLORS = {
   brand: { ring: "ring-rose-500/20",   glow: "bg-rose-500/10",   text: "text-rose-300",   icon: "text-rose-400"   },
 };
 
+const EVENT_STYLES = {
+  login:  { dot: "bg-emerald-400", label: "Login",  icon: "✅" },
+  logout: { dot: "bg-rose-400",    label: "Logout", icon: "🚪" },
+};
+
+/* ─── Stat Card ─── */
 function StatCard({ label, value, sub, color, icon }) {
   const c = STAT_COLORS[color];
   return (
@@ -66,137 +35,81 @@ function StatCard({ label, value, sub, color, icon }) {
   );
 }
 
-function UserRow({ user, onEdit }) {
-  return (
-    <div className="group flex items-center gap-4 rounded-xl border border-white/[.04] bg-white/[.02] px-4 py-3 transition-all hover:border-white/[.08] hover:bg-white/[.05]">
-      {/* Avatar */}
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand/30 to-brand/10 text-[11px] font-bold text-brand-300 ring-1 ring-white/10">
-        {user.avatar}
-      </div>
-      {/* Name & joined */}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-cream">{user.name}</p>
-        <p className="text-[11px] text-mist/50">Joined {user.joined}</p>
-      </div>
-      {/* Role badge */}
-      <span className={`shrink-0 rounded-full border bg-gradient-to-r px-2.5 py-0.5 text-[11px] font-semibold ${ROLE_COLORS[user.role]}`}>
-        {user.role}
-      </span>
-      {/* Status */}
-      <div className="flex shrink-0 items-center gap-1.5">
-        <span className={`h-2 w-2 rounded-full ${user.status === "Active" ? "bg-emerald-400" : "bg-mist/30"}`} />
-        <span className="text-[11px] text-mist/60">{user.status}</span>
-      </div>
-      {/* Edit btn */}
-      <button
-        onClick={() => onEdit(user)}
-        className="hidden rounded-lg border border-white/[.07] bg-white/[.04] px-3 py-1.5 text-[11px] font-medium text-mist transition-all hover:bg-white/[.08] hover:text-cream group-hover:flex"
-      >
-        Edit
-      </button>
-    </div>
-  );
+/* ─── Format datetime ─── */
+function formatDateTime(isoString) {
+  const d = new Date(isoString);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+
+  const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+
+  if (isToday) return `Today, ${time}`;
+  if (isYesterday) return `Yesterday, ${time}`;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }) + `, ${time}`;
 }
 
-function ActivityLog() {
-  return (
-    <div className="space-y-2">
-      {LOGS.map((log, i) => (
-        <div key={i} className="flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[.03]">
-          <div className="relative mt-1.5 shrink-0">
-            <span className={`block h-2 w-2 rounded-full ${LOG_DOT[log.type]}`} />
-            {i < LOGS.length - 1 && (
-              <span className="absolute left-[3px] top-3 h-full w-px bg-white/[.06]" />
-            )}
+/* ─── Activity Log (Real Supabase data) ─── */
+function ActivityLog({ logs, loading }) {
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="flex items-start gap-3 rounded-lg px-3 py-2.5 animate-pulse">
+            <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-white/10" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-3/4 rounded bg-white/10" />
+              <div className="h-2.5 w-1/2 rounded bg-white/[.06]" />
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] text-cream/80">{log.action}</p>
-            <p className="mt-0.5 text-[11px] text-mist/50">
-              <span className="font-medium text-mist/70">{log.user}</span> · {log.time}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ─── Edit User Modal ─── */
-function EditUserModal({ user, onClose, onSave }) {
-  const [role, setRole] = useState(user.role);
-  const [status, setStatus] = useState(user.status);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
-      <div className="relative w-full max-w-sm rounded-2xl border border-white/[.08] bg-ink-900/95 p-6 shadow-[0_24px_80px_rgba(0,0,0,.7)]">
-        {/* Red top line */}
-        <span className="absolute left-[15%] right-[15%] top-0 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
-        <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-cream">Edit User</h3>
-          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg border border-white/[.07] text-mist hover:text-cream transition-colors">
-            <Icon d={I.x} className="h-4 w-4" />
-          </button>
-        </div>
-        {/* Avatar row */}
-        <div className="mb-5 flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-full bg-brand/15 text-sm font-bold text-brand-300 ring-1 ring-white/10">
-            {user.avatar}
-          </div>
-          <div>
-            <p className="font-semibold text-cream">{user.name}</p>
-            <p className="text-xs text-mist/50">Joined {user.joined}</p>
-          </div>
-        </div>
-        {/* Role select */}
-        <div className="mb-4">
-          <label className="mb-1.5 block text-xs font-medium text-mist/70 uppercase tracking-wider">Role</label>
-          <select
-            value={role}
-            onChange={e => setRole(e.target.value)}
-            className="w-full rounded-xl border border-white/[.08] bg-white/[.04] px-3 py-2.5 text-sm text-cream outline-none focus:border-amber-400/40 focus:ring-1 focus:ring-amber-400/20 transition"
-          >
-            <option value="Admin">Admin</option>
-            <option value="Manager">Manager</option>
-            <option value="Staff">Staff</option>
-          </select>
-        </div>
-        {/* Status toggle */}
-        <div className="mb-6">
-          <label className="mb-1.5 block text-xs font-medium text-mist/70 uppercase tracking-wider">Status</label>
-          <div className="flex gap-2">
-            {["Active", "Inactive"].map(s => (
-              <button
-                key={s}
-                onClick={() => setStatus(s)}
-                className={`flex-1 rounded-xl border py-2.5 text-sm font-medium transition-all ${
-                  status === s
-                    ? s === "Active"
-                      ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-300"
-                      : "border-rose-500/30 bg-rose-500/15 text-rose-300"
-                    : "border-white/[.06] bg-white/[.03] text-mist hover:bg-white/[.06]"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* Actions */}
-        <div className="flex gap-2">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-white/[.07] bg-white/[.04] py-2.5 text-sm font-medium text-mist transition-colors hover:text-cream"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave({ ...user, role, status })}
-            className="flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 py-2.5 text-sm font-semibold text-ink-950 shadow-[0_6px_20px_-4px_rgba(245,158,11,.5)] transition-all hover:shadow-[0_8px_24px_-4px_rgba(245,158,11,.65)] hover:-translate-y-0.5"
-          >
-            Save Changes
-          </button>
-        </div>
+        ))}
       </div>
+    );
+  }
+
+  if (logs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-mist/40">
+        <Icon d={I.calendar} className="h-10 w-10 mb-3 opacity-40" />
+        <p className="text-sm font-medium">No activity logs yet</p>
+        <p className="text-xs mt-1">Login/logout events will appear here</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      {logs.map((log, i) => {
+        const style = EVENT_STYLES[log.event_type] || EVENT_STYLES.login;
+        return (
+          <div key={log.id} className="flex items-start gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[.03]">
+            <div className="relative mt-1.5 shrink-0">
+              <span className={`block h-2.5 w-2.5 rounded-full ${style.dot} shadow-[0_0_6px_rgba(0,0,0,.3)]`} />
+              {i < logs.length - 1 && (
+                <span className="absolute left-[4px] top-3.5 h-full w-px bg-white/[.06]" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] text-cream/80">
+                <span className="mr-1.5">{style.icon}</span>
+                <span className="font-semibold text-cream">{log.user_name}</span>
+                {" "}
+                <span className={log.event_type === "login" ? "text-emerald-400/80" : "text-rose-400/80"}>
+                  {style.label}
+                </span>
+              </p>
+              <p className="mt-0.5 text-[11px] text-mist/50">
+                {log.user_email && (
+                  <span className="font-medium text-mist/60">{log.user_email} · </span>
+                )}
+                {formatDateTime(log.logged_at)}
+              </p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -204,27 +117,84 @@ function EditUserModal({ user, onClose, onSave }) {
 /* ─── Quick Actions ─── */
 const QUICK_ACTIONS = [
   { label: "Export All Data",    icon: I.note,     color: "sky"    },
-  { label: "Clear Audit Logs",   icon: I.trash,    color: "rose"   },
   { label: "Send Announcement",  icon: I.mail,     color: "amber"  },
   { label: "System Backup",      icon: I.shield,   color: "emerald"},
 ];
 const QA_COLORS = {
   sky:     "border-sky-500/20 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20",
-  rose:    "border-rose-500/20 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20",
   amber:   "border-amber-500/20 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20",
   emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20",
 };
 
 /* ─── Main Component ─── */
 export default function AdminPanel() {
-  const [users, setUsers]         = useState(USERS);
-  const [editUser, setEditUser]   = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [stats, setStats] = useState({ students: 0, expenses: 0, reports: 0, members: 0 });
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
 
-  const handleSave = (updated) => {
-    setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
-    setEditUser(null);
-  };
+  // Fetch real stats from Supabase
+  useEffect(() => {
+    async function fetchStats() {
+      setStatsLoading(true);
+      try {
+        const [studentsRes, expensesRes, reportsRes, membersRes] = await Promise.all([
+          supabase.from("students").select("id", { count: "exact", head: true }),
+          supabase.from("expenses").select("id", { count: "exact", head: true }),
+          supabase.from("daily_reports").select("id", { count: "exact", head: true }),
+          supabase.from("new_members").select("id", { count: "exact", head: true }),
+        ]);
+        setStats({
+          students: studentsRes.count ?? 0,
+          expenses: expensesRes.count ?? 0,
+          reports: reportsRes.count ?? 0,
+          members: membersRes.count ?? 0,
+        });
+      } catch (err) {
+        console.warn("Stats fetch error:", err);
+      }
+      setStatsLoading(false);
+    }
+    fetchStats();
+  }, []);
+
+  // Fetch activity logs from Supabase
+  useEffect(() => {
+    async function fetchLogs() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("auth_activity_logs")
+        .select("*")
+        .order("logged_at", { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.warn("Activity logs fetch error:", error.message);
+      } else {
+        setLogs(data || []);
+      }
+      setLoading(false);
+    }
+    fetchLogs();
+
+    // Real-time subscription for live updates
+    const channel = supabase
+      .channel("auth-activity-realtime")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "auth_activity_logs" }, (payload) => {
+        setLogs((prev) => [payload.new, ...prev].slice(0, 50));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const LIVE_STATS = [
+    { label: "Total Students",   value: statsLoading ? "…" : String(stats.students), sub: "Supabase → students",     color: "blue",  icon: I.users  },
+    { label: "Expenses Logged",  value: statsLoading ? "…" : String(stats.expenses), sub: "Supabase → expenses",     color: "green", icon: I.dollar },
+    { label: "Daily Reports",    value: statsLoading ? "…" : String(stats.reports),  sub: "Supabase → daily_reports", color: "amber", icon: I.note   },
+    { label: "New Members",      value: statsLoading ? "…" : String(stats.members),  sub: "Supabase → new_members",  color: "brand", icon: I.target },
+  ];
 
   return (
     <div className="space-y-6">
@@ -238,12 +208,12 @@ export default function AdminPanel() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-cream">Admin Panel</h1>
-              <p className="text-sm text-mist/60">Manage users, roles & system settings</p>
+              <p className="text-sm text-mist/60">System overview & login/logout activity</p>
             </div>
           </div>
           {/* Tabs */}
           <div className="flex gap-1 rounded-xl border border-white/[.06] bg-white/[.03] p-1">
-            {["overview", "users", "activity"].map(tab => (
+            {["overview", "activity"].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -263,15 +233,15 @@ export default function AdminPanel() {
       {/* ── OVERVIEW TAB ── */}
       {activeTab === "overview" && (
         <>
-          {/* Stats grid */}
+          {/* Stats grid — real Supabase counts */}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {STATS.map(s => <StatCard key={s.label} {...s} />)}
+            {LIVE_STATS.map(s => <StatCard key={s.label} {...s} />)}
           </div>
 
           {/* Quick Actions */}
           <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-5">
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-mist/70">Quick Actions</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {QUICK_ACTIONS.map(a => (
                 <button
                   key={a.label}
@@ -284,79 +254,43 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          {/* System info */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            {/* Permissions overview */}
-            <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-5">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-mist/70">Role Permissions</h2>
-              <div className="space-y-3">
-                {[
-                  { role: "Admin",   perms: ["Full Access", "User Mgmt", "Export", "Settings"] },
-                  { role: "Manager", perms: ["View All", "Edit Records", "Export"] },
-                  { role: "Staff",   perms: ["View Own", "Add Records"] },
-                ].map(r => (
-                  <div key={r.role} className="flex items-start gap-3 rounded-xl border border-white/[.04] bg-white/[.02] px-4 py-3">
-                    <span className={`mt-0.5 shrink-0 rounded-full border bg-gradient-to-r px-2.5 py-0.5 text-[11px] font-semibold ${ROLE_COLORS[r.role]}`}>
-                      {r.role}
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {r.perms.map(p => (
-                        <span key={p} className="rounded-md border border-white/[.06] bg-white/[.04] px-2 py-0.5 text-[11px] text-mist/70">
-                          {p}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {/* Recent Login/Logout Activity (preview in overview) */}
+          <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-mist/70">Recent Login / Logout</h2>
+              <button
+                onClick={() => setActiveTab("activity")}
+                className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors"
+              >
+                View All →
+              </button>
             </div>
-            {/* Recent Activity (preview) */}
-            <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-5">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-mist/70">Recent Activity</h2>
-              <ActivityLog />
-            </div>
+            <ActivityLog logs={logs.slice(0, 6)} loading={loading} />
           </div>
         </>
-      )}
-
-      {/* ── USERS TAB ── */}
-      {activeTab === "users" && (
-        <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-5">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-mist/70">
-              All Users
-              <span className="ml-2 rounded-full border border-white/[.08] bg-white/[.04] px-2 py-0.5 text-[11px] font-medium text-mist/50">
-                {users.length}
-              </span>
-            </h2>
-            <button className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/15 px-4 py-2 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/25">
-              <Icon d={I.plus} className="h-4 w-4" />
-              Add User
-            </button>
-          </div>
-          <div className="space-y-2">
-            {users.map(u => (
-              <UserRow key={u.id} user={u} onEdit={setEditUser} />
-            ))}
-          </div>
-        </div>
       )}
 
       {/* ── ACTIVITY TAB ── */}
       {activeTab === "activity" && (
         <div className="rounded-2xl border border-white/[.06] bg-white/[.02] p-5">
-          <h2 className="mb-5 text-sm font-semibold uppercase tracking-wider text-mist/70">Audit Log — Today</h2>
-          <ActivityLog />
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-mist/70">
+              Login / Logout Activity Log
+              <span className="ml-2 rounded-full border border-white/[.08] bg-white/[.04] px-2 py-0.5 text-[11px] font-medium text-mist/50">
+                {logs.length} events
+              </span>
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-[11px] text-mist/50">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" /> Login
+              </span>
+              <span className="flex items-center gap-1.5 text-[11px] text-mist/50">
+                <span className="h-2 w-2 rounded-full bg-rose-400" /> Logout
+              </span>
+            </div>
+          </div>
+          <ActivityLog logs={logs} loading={loading} />
         </div>
-      )}
-
-      {/* ── Edit Modal ── */}
-      {editUser && (
-        <EditUserModal
-          user={editUser}
-          onClose={() => setEditUser(null)}
-          onSave={handleSave}
-        />
       )}
     </div>
   );
