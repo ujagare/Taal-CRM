@@ -149,14 +149,6 @@ function SidebarContent({ clerkEnabled, activePage, onNavigate, onClose }) {
               <p className="truncate text-[10px] uppercase tracking-[.18em] text-mist">Operations CRM</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-500/30 bg-red-500/15 text-red-400 text-xs font-bold hover:bg-red-500/25 active:scale-95 transition-all shadow-md lg:hidden shrink-0"
-            aria-label="Close menu"
-          >
-            <Icon d={I.x} className="h-4 w-4 stroke-[2.5]" />
-            <span>Close</span>
-          </button>
         </div>
       </div>
 
@@ -183,7 +175,7 @@ function SidebarContent({ clerkEnabled, activePage, onNavigate, onClose }) {
       </nav>
 
       {/* User / Auth section at bottom */}
-      <div className="mt-auto space-y-4">
+      <div className="mt-auto space-y-4 pt-4">
         <div className="border-t hairline pt-4">
           {clerkEnabled
             ? <ClerkUserSection />
@@ -205,6 +197,7 @@ export default function Sidebar({ clerkEnabled, activePage, onNavigate, mobileOp
 
   return (
     <>
+      {/* Desktop Sidebar */}
       <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-64 flex-col border-r border-white/[.06] bg-ink-900/80 px-4 py-6 shadow-[4px_0_24px_rgba(0,0,0,.2)] backdrop-blur-xl">
         <SidebarContent
           clerkEnabled={clerkEnabled}
@@ -214,16 +207,28 @@ export default function Sidebar({ clerkEnabled, activePage, onNavigate, mobileOp
         />
       </aside>
 
+      {/* Mobile Backdrop */}
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-50 bg-black/70 backdrop-blur-md transition-opacity duration-300 lg:hidden
+        className={`fixed inset-0 z-50 bg-black/80 backdrop-blur-md transition-opacity duration-300 lg:hidden
           ${mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
       />
 
+      {/* Mobile Sidebar Drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-80 max-w-[88vw] flex-col border-r border-white/[.07] bg-ink-900/96 px-5 py-5 shadow-[12px_0_50px_rgba(0,0,0,.45)] backdrop-blur-2xl transition-transform duration-300 ease-out lg:hidden
+        className={`fixed inset-y-0 left-0 z-50 flex w-80 max-w-[88vw] flex-col border-r border-white/[.07] bg-ink-950/98 px-5 pt-14 pb-5 shadow-[12px_0_50px_rgba(0,0,0,.6)] backdrop-blur-2xl transition-transform duration-300 ease-out overflow-y-auto lg:hidden
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
+        {/* Fixed Floating Cross (✕) Close Button — ALWAYS 100% visible at top right! */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3.5 right-3.5 z-[60] grid h-10 w-10 place-items-center rounded-full bg-red-600 hover:bg-red-500 text-white shadow-xl shadow-red-950/80 ring-2 ring-white/30 active:scale-90 transition-all cursor-pointer"
+          aria-label="Close menu"
+        >
+          <Icon d={I.x} className="h-6 w-6 stroke-[3]" />
+        </button>
+
         <SidebarContent
           clerkEnabled={clerkEnabled}
           activePage={activePage}
