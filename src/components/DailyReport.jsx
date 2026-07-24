@@ -3,6 +3,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { Icon, I } from "./icons";
 import { supabase } from "../lib/supabase";
+import { sendWhatsApp } from "../utils/whatsapp";
 
 const STORAGE_KEY = "taal-daily-dhol-report-v2";
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -20,6 +21,27 @@ const WORK_TYPES = [
   "Pura Dhol Banaya",
   "General Maintenance",
 ];
+
+/* ─── Consumption Map: What each work type uses ─── */
+const CONSUMPTION_MAP = {
+  "Dhoom Change":        { dhoom: 1, thapi: 0, dori: 0 },
+  "Thapi Change":        { dhoom: 0, thapi: 1, dori: 0 },
+  "Dori Change":         { dhoom: 0, thapi: 0, dori: 1 },
+  "Dhoom & Dori Change": { dhoom: 1, thapi: 0, dori: 1 },
+  "Thapi & Dori Change": { dhoom: 0, thapi: 1, dori: 1 },
+  "Dhoom & Thapi Change":{ dhoom: 1, thapi: 1, dori: 0 },
+  "Pura Dhol Banaya":    { dhoom: 1, thapi: 1, dori: 1 },
+  "General Maintenance": { dhoom: 0, thapi: 0, dori: 0 },
+};
+
+function getConsumption(workType) {
+  return CONSUMPTION_MAP[workType] || { dhoom: 0, thapi: 0, dori: 0 };
+}
+
+/* Map form size (26/28/30) to DB size format */
+function sizeToDbKey(size) {
+  return `${size}\"`;
+}
 
 const emptyForm = {
   reportDate: todayISO(),
@@ -204,6 +226,7 @@ export default function DailyReport() {
   const [madeForm, setMadeForm] = useState({ ...emptyForm, reportDate: selectedDate, workType: "Pura Dhol Banaya", reportType: "Dhol Banane" });
 
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
 
   // Sync with LocalStorage
   useEffect(() => {
@@ -316,6 +339,15 @@ export default function DailyReport() {
     setSaving(false);
     setActiveModal(null);
     setBrokenForm({ ...emptyForm, reportDate: selectedDate, reportType: "Dhol Fodne" });
+
+    /* ─── AUTO WHATSAPP TRIGGER: Broken report alert ─── */
+    try {
+      const adminPhone = localStorage.getItem('wa_admin_phone');
+      if (adminPhone) {
+        const alertMsg = `📊 *TAAL Daily Report*\n\n🚨 Dhol Fodne Log:\n🥁 Dhol #${brokenForm.dholNumber} (${brokenForm.dholSize}")\n🔨 Kaam: ${brokenForm.workType}\n👤 Fodla: ${brokenForm.brokenBy}\n📅 Date: ${selectedDate}\n\nStatus: ${brokenForm.repairStatus}`;
+        sendWhatsApp(adminPhone, alertMsg).catch(() => {});
+      }
+    } catch { /* ignore */ }
   };
 
   const handleSaveMade = async (e) => {
@@ -355,9 +387,110 @@ export default function DailyReport() {
       });
     } catch { /* ignore */ }
 
+    /* ─── AUTO-DEDUCT: Dhol Pan + Dori ─── */
+    const consumption = getConsumption(madeForm.workType);
+    const deducted = [];
+
+    // Deduct from dhol_pan (old pane stock) based on dhol size
+    if (consumption.dhoom > 0 || consumption.thapi > 0) {
+      try {
+        // Find the matching row in dhol_pan for old pane of this size
+        const sizeKey = sizeToDbKey(madeForm.dholSize);
+        const possibleSizes = [
+          sizeKey,
+          `\u0966${sizeKey}`, // Devanagari digits
+          `${madeForm.dholSize}"`,
+          `${madeForm.dholSize}\"`,
+          `\u0968${madeForm.dholSize === 28 ? '\u096E' : madeForm.dholSize === 26 ? '\u0966' : '\u0966'}\"`,
+        ];
+
+        // First get current counts
+        const { data: panRows } = await supabase
+          .from("dhol_pan")
+          .select("*")
+          .eq("pane_type", "old");
+
+        if (panRows && panRows.length > 0) {
+          // Find the row that matches our size
+          const matchRow = panRows.find(r => {
+            const normalized = String(r.size || "")
+              .replace(/[\u0966-\u096F]/g, (d) => String(d.charCodeAt(0) - 0x0966))
+              .replace(/[\u201C\u201D]/g, '"')
+              .trim();
+            return normalized.includes(String(madeForm.dholSize));
+          });
+
+          if (matchRow) {
+            const newDhoom = Math.max(0, (Number(matchRow.dhoom) || 0) - consumption.dhoom);
+            const newThapi = Math.max(0, (Number(matchRow.thapi) || 0) - consumption.thapi);
+
+            await supabase
+              .from("dhol_pan")
+              .update({
+                dhoom: newDhoom,
+                thapi: newThapi,
+                arrived_at: new Date().toISOString(),
+              })
+              .eq("id", matchRow.id);
+
+            if (consumption.dhoom > 0) deducted.push(`Dhoom -${consumption.dhoom} (${madeForm.dholSize}"`);
+            if (consumption.thapi > 0) deducted.push(`Thapi -${consumption.thapi} (${madeForm.dholSize}"`);
+          }
+        }
+      } catch (err) {
+        console.warn("Dhol Pan auto-deduct failed:", err);
+      }
+    }
+
+    // Deduct from dori_inventory
+    if (consumption.dori > 0) {
+      try {
+        const { data: doriRows } = await supabase
+          .from("dori_inventory")
+          .select("*")
+          .limit(1);
+
+        if (doriRows && doriRows.length > 0) {
+          const currentCount = Number(doriRows[0].current_count) || 0;
+          const newCount = Math.max(0, currentCount - consumption.dori);
+
+          await supabase
+            .from("dori_inventory")
+            .update({
+              current_count: newCount,
+              last_updated_at: new Date().toISOString(),
+              last_updated_by: madeForm.madeBy.trim(),
+            })
+            .eq("id", doriRows[0].id);
+
+          deducted.push(`Dori -${consumption.dori}`);
+        }
+      } catch (err) {
+        console.warn("Dori auto-deduct failed:", err);
+      }
+    }
+
+    // Show toast notification
+    if (deducted.length > 0) {
+      setToast(`✅ Saved! Inventory updated: ${deducted.join(", ")}`);
+      setTimeout(() => setToast(null), 4500);
+    } else {
+      setToast("✅ Made log saved!");
+      setTimeout(() => setToast(null), 3000);
+    }
+
     setSaving(false);
     setActiveModal(null);
     setMadeForm({ ...emptyForm, reportDate: selectedDate, workType: "Pura Dhol Banaya", reportType: "Dhol Banane" });
+
+    /* ─── AUTO WHATSAPP TRIGGER: Made report notification ─── */
+    try {
+      const adminPhone = localStorage.getItem('wa_admin_phone');
+      if (adminPhone) {
+        const alertMsg = `📊 *TAAL Daily Report*\n\n✅ Dhol Banane Log:\n🥁 Dhol #${madeForm.dholNumber} (${madeForm.dholSize}")\n🔧 Kaam: ${madeForm.workType}\n👤 Banaya: ${madeForm.madeBy}\n📅 Date: ${selectedDate}\n\n${deducted.length > 0 ? `Inventory: ${deducted.join(', ')}` : ''}`;
+        sendWhatsApp(adminPhone, alertMsg).catch(() => {});
+      }
+    } catch { /* ignore */ }
   };
 
   const handleDelete = async (id) => {
@@ -718,6 +851,39 @@ export default function DailyReport() {
                 </select>
               </label>
 
+              {/* ─── Consumption Preview ─── */}
+              {(() => {
+                const c = getConsumption(madeForm.workType);
+                const hasAny = c.dhoom > 0 || c.thapi > 0 || c.dori > 0;
+                if (!hasAny) return null;
+                return (
+                  <div className="rounded-xl border border-gold/20 bg-gold/[.06] p-3 space-y-1.5">
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-gold-300 flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" />
+                      Auto-Deduct on Submit:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {c.dhoom > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-sky/25 bg-sky/10 px-2.5 py-1 text-[11px] font-semibold text-sky">
+                          Dhoom -{c.dhoom} ({madeForm.dholSize}")
+                        </span>
+                      )}
+                      {c.thapi > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1 text-[11px] font-semibold text-brand-300">
+                          Thapi -{c.thapi} ({madeForm.dholSize}")
+                        </span>
+                      )}
+                      {c.dori > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald/25 bg-emerald/10 px-2.5 py-1 text-[11px] font-semibold text-emerald">
+                          Dori -{c.dori}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-mist mt-1">Dhol Pan aur Dori count automatically update hoga!</p>
+                  </div>
+                );
+              })()}
+
               <button
                 type="submit"
                 disabled={saving}
@@ -726,6 +892,15 @@ export default function DailyReport() {
                 {saving ? "Saving..." : "Save Made Log"}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ TOAST NOTIFICATION ═══════ */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] animate-rise">
+          <div className="flex items-center gap-2 rounded-xl border border-emerald/30 bg-ink-900/95 backdrop-blur-xl px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,.5)] text-sm font-semibold text-emerald">
+            {toast}
           </div>
         </div>
       )}

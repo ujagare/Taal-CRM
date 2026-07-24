@@ -79,12 +79,14 @@ const Skeleton = () => (
 );
 
 /* ═══════ Dhol Card (Session Grid) ═══════ */
-function DholCard({ dhol, isDone, lastMaintenance, onClick }) {
+function DholCard({ dhol, isDone, lastMaintenance, sessionRecord, latestRecord, onClick }) {
   const status = statusInfo(lastMaintenance);
+  const rec = sessionRecord || latestRecord;
+
   return (
     <button
       onClick={() => onClick(dhol)}
-      className={`card-premium p-4 text-left transition-all duration-300 group relative overflow-hidden flex flex-col justify-between min-h-[130px] sm:min-h-[140px]
+      className={`card-premium p-3.5 sm:p-4 text-left transition-all duration-300 group relative overflow-hidden flex flex-col justify-between min-h-[155px] sm:min-h-[170px]
         ${isDone
           ? "ring-2 ring-emerald/40 bg-emerald/[.04] hover:-translate-y-0.5"
           : "hover:-translate-y-1"
@@ -109,14 +111,32 @@ function DholCard({ dhol, isDone, lastMaintenance, onClick }) {
             {SIZE_LABELS[dhol.size]}
           </span>
         </div>
-        <p className="text-[11px] text-mist mt-2 flex items-center gap-1.5">
+        <p className="text-[11px] text-mist mt-1.5 flex items-center gap-1.5">
           <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
           {status.label}
         </p>
       </div>
 
-      <div className="mt-auto pt-2 border-t border-white/[.06]">
-        <span className={`text-[11px] font-medium ${isDone ? "text-emerald" : "text-mist group-hover:text-cream"} transition-colors`}>
+      {/* Record info box (Who made it & Type of work) */}
+      {rec && (
+        <div className="mt-2.5 p-2 rounded-lg bg-ink-950/70 border border-white/[.07] space-y-1 text-[11px]">
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-mist shrink-0 font-medium">काम:</span>
+            <span className="font-semibold text-gold-300 truncate" title={rec.description}>
+              {rec.description}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-mist shrink-0 font-medium">किसने बनाया:</span>
+            <span className="font-semibold text-emerald truncate" title={rec.done_by + (rec.done_by_2 ? `, ${rec.done_by_2}` : "")}>
+              {rec.done_by}{rec.done_by_2 ? `, ${rec.done_by_2}` : ""}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-auto pt-2 border-t border-white/[.06] flex items-center justify-between">
+        <span className={`text-[11px] font-medium ${isDone ? "text-emerald font-semibold" : "text-mist group-hover:text-cream"} transition-colors`}>
           {isDone ? "✓ Done" : "Tap to Record →"}
         </span>
       </div>
@@ -876,12 +896,17 @@ export default function DholMaintenance() {
               {filteredDhols.map(dhol => {
                 const recs = maintByDhol[dhol.id] || [];
                 const lastDate = recs.length > 0 ? recs[0].maintenance_date : null;
+                const sessionRec = sessionRecords.find(r => r.dhol_id === dhol.id);
+                const latestRec = recs.length > 0 ? recs[0] : null;
+
                 return (
                   <DholCard
                     key={dhol.id}
                     dhol={dhol}
                     isDone={sessionDoneSet.has(dhol.id)}
                     lastMaintenance={lastDate}
+                    sessionRecord={sessionRec}
+                    latestRecord={latestRec}
                     onClick={d => setRecordDhol(d)}
                   />
                 );

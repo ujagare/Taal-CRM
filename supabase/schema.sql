@@ -99,12 +99,12 @@ insert into dhol_pan (pane_type, size, thapi, dhoom) values
   ('new', '३०"', 0, 0)
 on conflict (pane_type, size) do nothing;
 
--- New Member Registration table (from Google Forms)
+-- New Member Registration table (from Google Forms / CRM)
 create table if not exists new_members (
   id bigint primary key generated always as identity,
   timestamp text,
   full_name text not null,
-  email text unique,
+  email text,
   gender text,
   whatsapp text,
   parent_contact text,
@@ -119,11 +119,23 @@ create table if not exists new_members (
   other_instruments text,
   hobbies text,
   reference text,
-  exam_status text not null default 'pending' check (exam_status in ('passed', 'failed', 'pending')),
+  exam_status text not null default 'pending',
   exam_score text,
+  exam_rhythm text,
+  exam_physical text,
+  exam_attitude text,
+  batch_assigned text,
+  shortlisted boolean default false,
   exam_notes text,
   created_at timestamptz default now()
 );
+
+-- Add missing columns if table already exists (safe to run multiple times)
+alter table new_members add column if not exists exam_rhythm text;
+alter table new_members add column if not exists exam_physical text;
+alter table new_members add column if not exists exam_attitude text;
+alter table new_members add column if not exists batch_assigned text;
+alter table new_members add column if not exists shortlisted boolean default false;
 
 -- Dhol Master List (54 dhols)
 create table if not exists dhols (
@@ -232,14 +244,30 @@ create table if not exists daily_reports (
   created_at timestamptz default now()
 );
 
--- Enable RLS on daily_reports table (can be enabled when auth is set up)
-alter table daily_reports enable row level security;
+-- Disable RLS on daily_reports table for development access
+alter table daily_reports disable row level security;
 
 -- Indexes for better query performance
 create index if not exists idx_expenses_date on expenses(bill_date);
 create index if not exists idx_expenses_payment_method on expenses(payment_method);
 create index if not exists idx_daily_reports_date on daily_reports(report_date);
 create index if not exists idx_daily_reports_report_type on daily_reports(report_type);
+
+-- Dori (Rope) Inventory — single-row count tracker
+create table if not exists dori_inventory (
+  id bigint primary key generated always as identity,
+  current_count integer not null default 47,
+  last_updated_at timestamptz default now(),
+  last_updated_by text,
+  notes text
+);
+
+-- Seed initial dori count (47 रस्सी)
+insert into dori_inventory (current_count, notes)
+  values (47, 'Initial stock — 47 dori')
+on conflict do nothing;
+
+alter table dori_inventory disable row level security;
 
 -- =====================================================
 -- ATTENDANCE MANAGEMENT MODULE TABLES

@@ -12,6 +12,7 @@ const NAV = [
   { icon: I.note,       label: "Daily Report" },
   { icon: I.dollar,     label: "Expences" },
   { icon: I.users,      label: "New Member Exam" },
+  { icon: I.users,      label: "WhatsApp", emoji: "📱" },
 ];
 
 const ADMIN_NAV = [
@@ -91,7 +92,7 @@ function StaticUserSection({ onNavigate }) {
   );
 }
 
-const Item = ({ icon, label, active, badge, onClick, accent }) => (
+const Item = ({ icon, label, active, badge, onClick, accent, emoji }) => (
   <button
     onClick={() => onClick?.(label)}
     className={`group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-200
@@ -107,9 +108,14 @@ const Item = ({ icon, label, active, badge, onClick, accent }) => (
         <span className={`absolute inset-0 rounded-lg ring-1 ring-inset ${accent === "admin" ? "ring-amber-400/20" : "ring-brand/20"}`} />
       </>
     )}
-    <Icon d={icon} className={`relative h-[18px] w-[18px] ${active && accent === "admin" ? "text-amber-400" : ""}`} />
+    {emoji
+      ? <span className="relative text-base">{emoji}</span>
+      : <Icon d={icon} className={`relative h-[18px] w-[18px] ${active && accent === "admin" ? "text-amber-400" : ""}`} />}
     <span className="relative font-medium">{label}</span>
-    {badge && (
+    {label === "WhatsApp" && (
+      <span className="relative ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="WhatsApp Center" />
+    )}
+    {badge && label !== "WhatsApp" && (
       <span className="relative ml-auto rounded-full bg-gold/15 px-2 py-0.5 text-[11px] text-gold-300">
         {badge}
       </span>

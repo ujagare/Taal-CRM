@@ -12,6 +12,7 @@ import OperationsDashboard from "./components/OperationsDashboard";
 import ExpenseTracker from "./components/ExpenseTracker";
 import AttendanceManager from "./components/AttendanceManager";
 import AdminPanel from "./components/AdminPanel";
+import WhatsAppCenter from "./components/WhatsAppCenter";
 import { useAuthLogger } from "./hooks/useAuthLogger";
 
 function ClerkGate({ children }) {
@@ -80,6 +81,8 @@ function AppShell({ clerkEnabled, activePage, setActivePage, mobileMenuOpen, set
             <NewMemberExam />
           ) : activePage === "Expences" ? (
             <ExpenseTracker />
+          ) : activePage === "WhatsApp" ? (
+            <WhatsAppCenter />
           ) : activePage === "Admin Panel" ? (
             <AdminPanel />
           ) : (

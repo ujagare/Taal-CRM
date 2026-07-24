@@ -1,6 +1,9 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import { supabase } from "../lib/supabase";
+import { sendWhatsApp } from "../utils/whatsapp";
 import localMembersRaw from "../../scripts/members_data.json";
 
 const LOCAL_MEMBERS = localMembersRaw.map((m, i) => ({
@@ -20,6 +23,174 @@ const LOCAL_MEMBERS = localMembersRaw.map((m, i) => ({
 const INSTRUMENTS = ["ढोल", "ताशा", "कोणतेच नाही", "ढोल, ताशा"];
 const EXPERIENCE_LEVELS = ["Fresher", "1-3 Years  (१-३ वर्षे)", "3-7 Years (३-७ वर्षे)", "7 Years and Above (७ किंवा त्या पेक्षा जास्त)"];
 const BATCHES = ["Batch A (Morning)", "Batch B (Evening)", "Batch C (Weekend)", "Reserve"];
+
+function formatDate(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/* ─── PDF Report Generator ─────────────────────────── */
+async function downloadNewMemberExamPDF(records, filterTitle = "Exam Report") {
+  const dateStr = formatDate(new Date());
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+
+  const passedCount = records.filter(r => r.exam_status === "passed").length;
+  const failedCount = records.filter(r => r.exam_status === "failed").length;
+  const pendingCount = records.filter(r => (!r.exam_status || r.exam_status === "pending")).length;
+
+  const container = document.createElement("div");
+  container.style.cssText = "position:absolute;left:0;top:99999px;width:800px;background:#FFF;color:#111827;font-family:Outfit,system-ui,sans-serif;padding:40px 32px;box-sizing:border-box;visibility:visible;display:block;";
+
+  container.innerHTML = `
+    <div>
+      <div style="text-align:center;margin-bottom:24px;">
+        <img src="/taal-pathak-logo-red.png" style="height:75px;width:auto;margin:0 auto 12px;display:block;" />
+        <h1 style="margin:0;font-size:26px;font-weight:700;color:#111827;letter-spacing:-0.5px;">TAAL Pathak — New Member Exam Report</h1>
+        <p style="margin:6px 0 0;font-size:13px;color:#6B7280;font-weight:500;">Category: ${filterTitle} — ${dateStr} (${timeStr})</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;">
+        <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:11px;color:#6B7280;font-weight:600;text-transform:uppercase;">Total Candidates</div>
+          <div style="font-size:28px;font-weight:700;color:#111827;margin-top:4px;">${records.length}</div>
+        </div>
+        <div style="background:#ECFDF5;border:1.5px solid #6EE7B7;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:11px;color:#047857;font-weight:600;text-transform:uppercase;">Passed (✅)</div>
+          <div style="font-size:28px;font-weight:700;color:#047857;margin-top:4px;">${passedCount}</div>
+        </div>
+        <div style="background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:11px;color:#DC2626;font-weight:600;text-transform:uppercase;">Failed (❌)</div>
+          <div style="font-size:28px;font-weight:700;color:#DC2626;margin-top:4px;">${failedCount}</div>
+        </div>
+        <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:11px;color:#D97706;font-weight:600;text-transform:uppercase;">Pending (⏳)</div>
+          <div style="font-size:28px;font-weight:700;color:#D97706;margin-top:4px;">${pendingCount}</div>
+        </div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;font-size:11px;border:1px solid #E5E7EB;">
+        <thead>
+          <tr style="background:#111827;color:#FFF;">
+            <th style="padding:9px 6px;text-align:center;font-size:10px;font-weight:700;border:1px solid #111827;width:28px;">#</th>
+            <th style="padding:9px 6px;text-align:left;font-size:10px;font-weight:700;border:1px solid #111827;">Full Name</th>
+            <th style="padding:9px 6px;text-align:center;font-size:10px;font-weight:700;border:1px solid #111827;">Instrument</th>
+            <th style="padding:9px 6px;text-align:center;font-size:10px;font-weight:700;border:1px solid #111827;">1 to 7 Haat</th>
+            <th style="padding:9px 6px;text-align:center;font-size:10px;font-weight:700;border:1px solid #111827;">Gavthi</th>
+            <th style="padding:9px 6px;text-align:center;font-size:10px;font-weight:700;border:1px solid #111827;">Taal Theke</th>
+            <th style="padding:9px 6px;text-align:center;font-size:10px;font-weight:700;border:1px solid #111827;">Score</th>
+            <th style="padding:9px 6px;text-align:center;font-size:10px;font-weight:700;border:1px solid #111827;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${records.map((r, i) => {
+            const st = r.exam_status || "pending";
+            const stColor = st === "passed" ? "#047857" : st === "failed" ? "#DC2626" : "#D97706";
+            const stBg = st === "passed" ? "#ECFDF5" : st === "failed" ? "#FEF2F2" : "#FFFBEB";
+            return `
+              <tr style="background:#FFF;border-bottom:1px solid #E5E7EB;">
+                <td style="padding:8px 6px;text-align:center;color:#6B7280;font-weight:600;border:1px solid #E5E7EB;">${i + 1}</td>
+                <td style="padding:8px 6px;text-align:left;color:#111827;font-weight:700;border:1px solid #E5E7EB;">${r.full_name || "—"}</td>
+                <td style="padding:8px 6px;text-align:center;color:#374151;border:1px solid #E5E7EB;">${(r.instruments_played || "—").replace("कोणतेच नाही", "None")}</td>
+                <td style="padding:8px 6px;text-align:center;color:#374151;border:1px solid #E5E7EB;">${r.exam_rhythm || "—"}</td>
+                <td style="padding:8px 6px;text-align:center;color:#374151;border:1px solid #E5E7EB;">${r.exam_physical || "—"}</td>
+                <td style="padding:8px 6px;text-align:center;color:#374151;border:1px solid #E5E7EB;">${r.exam_attitude || "—"}</td>
+                <td style="padding:8px 6px;text-align:center;color:#111827;font-weight:700;border:1px solid #E5E7EB;">${r.exam_score ? r.exam_score + '/10' : "—"}</td>
+                <td style="padding:8px 6px;text-align:center;border:1px solid #E5E7EB;">
+                  <span style="background:${stBg};color:${stColor};padding:2px 7px;border-radius:10px;font-weight:700;font-size:9.5px;text-transform:uppercase;">
+                    ${st}
+                  </span>
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+
+      <div style="margin-top:28px;padding-top:14px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:11px;color:#9CA3AF;">
+        <div>TAAL PATHAK Operations CRM — Official Candidate Exam Document</div>
+        <div>Page Report</div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(container);
+  try {
+    const images = container.querySelectorAll("img");
+    await Promise.all(
+      Array.from(images).map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete && img.naturalWidth !== 0) resolve();
+            else {
+              img.onload = resolve;
+              img.onerror = resolve;
+              setTimeout(resolve, 2500);
+            }
+          })
+      )
+    );
+
+    const canvas = await html2canvas(container, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#FFFFFF", logging: false });
+    const imgData = canvas.toDataURL("image/png");
+    const imgW = 210, pageH = 297;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    let left = imgH, pos = 0;
+    pdf.addImage(imgData, "PNG", 0, pos, imgW, imgH);
+    left -= pageH;
+    while (left > 0) {
+      pos = left - imgH;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, pos, imgW, imgH);
+      left -= pageH;
+    }
+
+    pdf.save(`TAAL_Exam_Report_${filterTitle.replace(/[^a-zA-Z0-9]/g, "_")}_${dateStr.replace(/\s+/g, "_")}.pdf`);
+  } catch (err) {
+    console.error("PDF error:", err);
+  } finally {
+    document.body.removeChild(container);
+  }
+}
+
+/* ─── CSV / Excel Exporter ─────────────────────────── */
+function downloadCSV(records, filename = "TAAL_Member_Exam_Results.csv") {
+  if (!records || records.length === 0) return;
+
+  const headers = ["ID", "Full Name", "Gender", "WhatsApp", "Email", "Instrument", "Experience", "Exam Status", "Overall Score (1-10)", "1 to 7 Haat", "Gavthi", "Taal Theke", "Notes", "Shortlisted"];
+  const rows = records.map(r => [
+    r.id,
+    `"${(r.full_name || "").replace(/"/g, '""')}"`,
+    `"${r.gender || ""}"`,
+    `"${r.whatsapp || ""}"`,
+    `"${r.email || ""}"`,
+    `"${(r.instruments_played || "").replace(/"/g, '""')}"`,
+    `"${(r.experience || "").replace(/"/g, '""')}"`,
+    `"${r.exam_status || "pending"}"`,
+    `"${r.exam_score || ""}"`,
+    `"${r.exam_rhythm || ""}"`,
+    `"${r.exam_physical || ""}"`,
+    `"${r.exam_attitude || ""}"`,
+    `"${(r.exam_notes || "").replace(/"/g, '""')}"`,
+    `"${r.shortlisted ? "Yes" : "No"}"`
+  ]);
+
+  const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 
 function fmtDate(d) {
   if (!d) return "—";
@@ -66,6 +237,47 @@ function DetailModal({ member, onClose, onExamUpdate }) {
   const [shortlisted, setShortlisted] = useState(member.shortlisted || false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
+  const [sendingWa, setSendingWa] = useState(false);
+  const [waStatusMsg, setWaStatusMsg] = useState(null);
+  const [waServerOk, setWaServerOk] = useState(null); // null=checking, true=connected, false=offline
+
+  useEffect(() => {
+    // Check WhatsApp server status on mount
+    fetch('http://localhost:5001/api/whatsapp/status', { signal: AbortSignal.timeout(2000) })
+      .then(r => r.json())
+      .then(d => setWaServerOk(d.connected === true))
+      .catch(() => setWaServerOk(false));
+  }, []);
+
+  const sendAutoWhatsApp = async () => {
+    if (!member.whatsapp) return;
+    setSendingWa(true);
+    setWaStatusMsg(null);
+
+    const text = `जय गणेश! 🙏 *${member.full_name}*,\nताल वाद्यपथक — गणेशोत्सव २०२६ परीक्षा निकाल:\n\nनिकाल: *${(examStatus || 'pending').toUpperCase()}*\nगुण: *${examScore ? examScore + '/10' : '—'}*\n🥁 1 to 7 हात: *${examRhythm || '—'}*\n🌾 गावठी: *${examPhysical || '—'}*\n🎵 ताल ठेके: *${examAttitude || '—'}*\n\nधन्यवाद! 🥁`;
+
+    try {
+      const res = await fetch('http://localhost:5001/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: member.whatsapp, message: text }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setWaStatusMsg('✅ Automatic WhatsApp Message Sent!');
+      } else {
+        const url = `https://wa.me/91${member.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
+        window.open(url, "_blank");
+        setWaStatusMsg('💬 Opening WhatsApp Web...');
+      }
+    } catch {
+      const url = `https://wa.me/91${member.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank");
+      setWaStatusMsg('💬 Opening WhatsApp Web...');
+    }
+    setSendingWa(false);
+    setTimeout(() => setWaStatusMsg(null), 4000);
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -80,6 +292,14 @@ function DetailModal({ member, onClose, onExamUpdate }) {
       shortlisted,
     });
     setSaving(false);
+
+    /* ─── AUTO WHATSAPP TRIGGER: Exam result saved ─── */
+    if (member.whatsapp && (examStatus === 'passed' || examStatus === 'failed')) {
+      const resultText = examStatus === 'passed'
+        ? `जय गणेश! 🙏 *${member.full_name}*,\nताल वाद्यपथक गणेशोत्सव २०२६ परीक्षा निकाल:\n\n✅ निकाल: *PASSED*\n🏆 गुण: *${examScore || '—'}/10*\n🥁 1 to 7 हात: *${examRhythm || '—'}*\n🌾 गावठी: *${examPhysical || '—'}*\n🎵 ताल ठेके: *${examAttitude || '—'}*\n\nअभिनंदन! तुम्ही आमच्या पथकात निवडलात. 🥁`
+        : `जय गणेश! 🙏 *${member.full_name}*,\nताल वाद्यपथक गणेशोत्सव २०२६ परीक्षा निकाल:\n\n❌ निकाल: *FAILED*\n\nया वेळी तुम्ही पास होउ शकला नाहीत.\nपुढच्या वर्षी नक्की प्रयत्न करा! 🥁`;
+      sendWhatsApp(member.whatsapp, resultText).catch(() => {});
+    }
   };
 
   const statusConfig = {
@@ -222,37 +442,89 @@ function DetailModal({ member, onClose, onExamUpdate }) {
           {/* ── EXAM TAB ── */}
           {activeTab === "exam" && (
             <div className="space-y-5">
-              {/* Exam Status & Shortlist */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">Exam Status</label>
-                  <select value={examStatus} onChange={e => setExamStatus(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 text-sm text-white focus:outline-none focus:border-red-500 transition-all cursor-pointer font-medium"
-                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}>
-                    <option value="pending" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>⏳ Pending</option>
-                    <option value="passed" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>✅ Passed</option>
-                    <option value="failed" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>❌ Failed</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">Batch Assignment</label>
-                  <select value={batchAssigned} onChange={e => setBatchAssigned(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 text-sm text-white focus:outline-none focus:border-red-500 transition-all cursor-pointer font-medium"
-                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}>
-                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>Not Assigned Yet</option>
-                    {BATCHES.map(b => <option key={b} value={b} style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>{b}</option>)}
-                  </select>
-                </div>
+              {/* Exam Status (Full Width) */}
+              <div>
+                <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">Exam Status</label>
+                <select value={examStatus} onChange={e => setExamStatus(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 text-sm text-white focus:outline-none focus:border-red-500 transition-all cursor-pointer font-medium"
+                  style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}>
+                  <option value="pending" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>⏳ Pending</option>
+                  <option value="passed" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>✅ Passed</option>
+                  <option value="failed" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>❌ Failed</option>
+                </select>
               </div>
 
-              {/* Scores */}
+              {/* Skill Rating Dropdowns: 1 to 7 Haat, Gavthi, Taal Theke */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <ScoreInput label="🥁 Rhythm Score" value={examRhythm} onChange={setExamRhythm} placeholder="e.g. 8/10" />
-                <ScoreInput label="💪 Physical Fitness" value={examPhysical} onChange={setExamPhysical} placeholder="e.g. Good" />
-                <ScoreInput label="🧠 Attitude / Interest" value={examAttitude} onChange={setExamAttitude} placeholder="e.g. Excellent" />
+                {/* 1 to 7 Haat */}
+                <div>
+                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🥁 1 to 7 Haat</label>
+                  <select
+                    value={examRhythm}
+                    onChange={e => setExamRhythm(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
+                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                  >
+                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
+                    <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
+                    <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
+                    <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
+                    <option value="Perfect" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>Perfect (उत्तम)</option>
+                  </select>
+                </div>
+
+                {/* Gavthi */}
+                <div>
+                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🥁 Gavthi (गावठी)</label>
+                  <select
+                    value={examPhysical}
+                    onChange={e => setExamPhysical(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
+                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                  >
+                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
+                    <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
+                    <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
+                    <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
+                    <option value="Perfect" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>Perfect (उत्तम)</option>
+                  </select>
+                </div>
+
+                {/* Taal Theke */}
+                <div>
+                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🎵 Taal Theke (ताल ठेके)</label>
+                  <select
+                    value={examAttitude}
+                    onChange={e => setExamAttitude(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
+                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                  >
+                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
+                    <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
+                    <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
+                    <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
+                    <option value="Perfect" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>Perfect (उत्तम)</option>
+                  </select>
+                </div>
               </div>
 
-              <ScoreInput label="🏆 Overall Score" value={examScore} onChange={setExamScore} placeholder="e.g. 85/100" />
+              {/* Overall Score Dropdown (1 to 10) */}
+              <div>
+                <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🏆 Overall Score (1 to 10)</label>
+                <select
+                  value={examScore}
+                  onChange={e => setExamScore(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
+                  style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                >
+                  <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select Score (1 to 10) --</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                    <option key={num} value={String(num)} style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>
+                      {num} / 10 {num >= 8 ? '⭐ Excellent' : num >= 6 ? '👍 Good' : num >= 4 ? '😐 Average' : '⚠️ Needs Practice'}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div>
                 <label className="block text-[10px] text-white/50 uppercase tracking-wider mb-1.5">📝 Examiner Notes / Remarks</label>
@@ -288,15 +560,28 @@ function DetailModal({ member, onClose, onExamUpdate }) {
 
               {/* Quick action buttons */}
               {member.whatsapp && (
-                <div className="flex gap-3 mt-4 pt-4 border-t border-white/8">
-                  <a href={`https://wa.me/91${member.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/25 transition-all">
-                    💬 WhatsApp
-                  </a>
-                  <a href={`tel:${member.whatsapp}`}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-400 text-sm font-semibold hover:bg-blue-500/25 transition-all">
-                    📞 Call
-                  </a>
+                <div className="space-y-2.5 mt-4 pt-4 border-t border-white/8">
+                  <button
+                    type="button"
+                    onClick={sendAutoWhatsApp}
+                    disabled={sendingWa}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-950/40 transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    🤖 {sendingWa ? "Sending WhatsApp..." : "Send Auto WhatsApp Result"}
+                  </button>
+                  {waStatusMsg && (
+                    <p className="text-xs text-emerald-400 text-center font-medium animate-rise">{waStatusMsg}</p>
+                  )}
+                  <div className="flex gap-3">
+                    <a href={`https://wa.me/91${member.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-white/5 border border-white/10 text-white/80 text-xs font-semibold hover:bg-white/10 transition-all">
+                      💬 Manual WhatsApp
+                    </a>
+                    <a href={`tel:${member.whatsapp}`}
+                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-400 text-xs font-semibold hover:bg-blue-500/25 transition-all">
+                      📞 Call
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
@@ -304,15 +589,47 @@ function DetailModal({ member, onClose, onExamUpdate }) {
         </div>
 
         {/* Bottom Action Bar */}
-        <div className="px-6 py-4 border-t border-white/8 flex gap-3 shrink-0">
-          <button onClick={onClose}
-            className="px-5 py-2.5 rounded-xl border border-white/10 text-sm text-white/60 hover:text-white hover:bg-white/8 transition-all">
-            Close
-          </button>
-          <button onClick={handleSave} disabled={saving}
-            className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-bold hover:from-red-500 hover:to-red-600 disabled:opacity-40 transition-all shadow-lg shadow-red-900/30">
-            {saving ? "Saving…" : "💾 Save Changes"}
-          </button>
+        <div className="px-6 py-4 border-t border-white/8 shrink-0 space-y-2">
+          {/* WhatsApp Status Banner */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-medium ${
+            waServerOk === true ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+            waServerOk === false ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+            'bg-white/5 text-white/30 border border-white/10'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              waServerOk === true ? 'bg-emerald-400 animate-pulse' :
+              waServerOk === false ? 'bg-amber-400' : 'bg-white/30'
+            }`} />
+            {waServerOk === true
+              ? '🤖 WhatsApp Server: Connected — Auto messages ready!'
+              : waServerOk === false
+              ? '⚠️ WhatsApp Server: Offline — Run "npm run whatsapp" in a new terminal'
+              : '🔄 Checking WhatsApp server...'}
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={onClose}
+              className="px-5 py-2.5 rounded-xl border border-white/10 text-sm text-white/60 hover:text-white hover:bg-white/8 transition-all">
+              Close
+            </button>
+            {member.whatsapp && (
+              <button
+                type="button"
+                onClick={sendAutoWhatsApp}
+                disabled={sendingWa}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-950/40 transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap"
+              >
+                {sendingWa ? '🤖 Sending...' : '🤖 Send WhatsApp'}
+              </button>
+            )}
+            <button onClick={handleSave} disabled={saving}
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-bold hover:from-red-500 hover:to-red-600 disabled:opacity-40 transition-all shadow-lg shadow-red-900/30">
+              {saving ? 'Saving…' : '💾 Save Changes'}
+            </button>
+          </div>
+          {waStatusMsg && (
+            <p className="text-xs text-center font-medium text-emerald-400">{waStatusMsg}</p>
+          )}
         </div>
       </div>
     </div>
@@ -417,7 +734,7 @@ export default function NewMemberExam() {
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-500/8 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative px-6 py-6 sm:px-8 sm:py-7">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -429,43 +746,84 @@ export default function NewMemberExam() {
               </h1>
               <p className="text-white/45 text-sm mt-1.5">ताल वाद्यपथक, पुणे — {total} registered applicants</p>
             </div>
-            {/* Progress bar */}
-            <div className="sm:w-56">
-              <div className="flex justify-between text-xs text-white/40 mb-1.5">
-                <span>Exam Progress</span>
-                <span>{total > 0 ? Math.round(((passed + failed) / total) * 100) : 0}%</span>
-              </div>
-              <div className="h-2 bg-white/8 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full transition-all" style={{ width: `${total > 0 ? ((passed + failed) / total) * 100 : 0}%` }} />
-              </div>
-              <div className="flex justify-between text-[10px] text-white/30 mt-1">
-                <span>{passed + failed} evaluated</span>
-                <span>{pending} pending</span>
+
+            {/* Action Buttons & Progress */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <button
+                onClick={() => downloadNewMemberExamPDF(filtered, filterExam !== "all" ? `${filterExam.toUpperCase()} Candidates` : "Filtered Candidates")}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-semibold hover:from-red-500 hover:to-red-600 shadow-lg shadow-red-900/30 transition-all"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="12" y1="18" x2="12" y2="12" />
+                  <polyline points="9 15 12 18 15 15" />
+                </svg>
+                PDF Report ({filtered.length})
+              </button>
+
+              <button
+                onClick={() => downloadCSV(filtered, `TAAL_Exam_Results_${filterExam}_${new Date().toISOString().slice(0,10)}.csv`)}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/15 bg-white/5 text-white text-xs font-semibold hover:bg-white/10 transition-all"
+              >
+                📊 Excel / CSV ({filtered.length})
+              </button>
+
+              {/* Progress bar */}
+              <div className="sm:w-44 bg-white/4 p-2.5 rounded-xl border border-white/8">
+                <div className="flex justify-between text-xs text-white/50 mb-1">
+                  <span>Evaluated</span>
+                  <span className="font-bold text-white">{total > 0 ? Math.round(((passed + failed) / total) * 100) : 0}%</span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-red-500 to-emerald-400 rounded-full transition-all" style={{ width: `${total > 0 ? ((passed + failed) / total) * 100 : 0}%` }} />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── STATS GRID ── */}
+      {/* ── STATS GRID & QUICK STATUS TABS ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
-          { label: "Total", value: total, emoji: "👥", color: "text-white" },
-          { label: "Dhol", value: dholCount, emoji: "🥁", color: "text-red-400" },
-          { label: "Tasha", value: tashaCount, emoji: "🎵", color: "text-sky-400" },
-          { label: "Freshers", value: fresherCount, emoji: "🌱", color: "text-emerald-400" },
-          { label: "Passed", value: passed, emoji: "✅", color: "text-emerald-400" },
-          { label: "Failed", value: failed, emoji: "❌", color: "text-red-400" },
-          { label: "Shortlisted", value: shortlisted, emoji: "⭐", color: "text-amber-400" },
-        ].map(s => (
-          <div key={s.label} className="group rounded-2xl bg-white/4 border border-white/8 hover:border-white/16 hover:-translate-y-0.5 transition-all duration-200 cursor-default">
-            <div className="p-4 text-center">
+          { label: "All Applicants", value: total, emoji: "👥", color: "text-white", filterKey: "all" },
+          { label: "Dhol Players", value: dholCount, emoji: "🥁", color: "text-red-400", filterInstKey: "ढोल" },
+          { label: "Tasha Players", value: tashaCount, emoji: "🎵", color: "text-sky-400", filterInstKey: "ताशा" },
+          { label: "Freshers", value: fresherCount, emoji: "🌱", color: "text-emerald-400", filterExpKey: "Fresher" },
+          { label: "Passed (✅)", value: passed, emoji: "✅", color: "text-emerald-400", filterExamKey: "passed" },
+          { label: "Failed (❌)", value: failed, emoji: "❌", color: "text-red-400", filterExamKey: "failed" },
+          { label: "Shortlisted", value: shortlisted, emoji: "⭐", color: "text-amber-400", filterShortlistKey: "yes" },
+        ].map(s => {
+          const isActive =
+            (s.filterKey && filterExam === "all" && filterInst === "all" && filterExp === "all" && filterShortlist === "all") ||
+            (s.filterExamKey && filterExam === s.filterExamKey) ||
+            (s.filterInstKey && filterInst === s.filterInstKey) ||
+            (s.filterExpKey && filterExp === s.filterExpKey) ||
+            (s.filterShortlistKey && filterShortlist === "yes");
+
+          return (
+            <button
+              key={s.label}
+              onClick={() => {
+                if (s.filterExamKey) setFilterExam(s.filterExamKey);
+                else if (s.filterInstKey) setFilterInst(s.filterInstKey);
+                else if (s.filterExpKey) setFilterExp(s.filterExpKey);
+                else if (s.filterShortlistKey) setFilterShortlist("yes");
+                else { setFilterExam("all"); setFilterInst("all"); setFilterExp("all"); setFilterShortlist("all"); }
+              }}
+              className={`group rounded-2xl border transition-all duration-200 text-center p-3.5 ${
+                isActive
+                  ? "bg-white/10 border-red-500/60 shadow-lg shadow-red-950/40"
+                  : "bg-white/4 border-white/8 hover:border-white/20 hover:-translate-y-0.5"
+              }`}
+            >
               <p className="text-xl mb-1">{s.emoji}</p>
               <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
-              <p className="text-[10px] text-white/35 uppercase tracking-wider mt-0.5">{s.label}</p>
-            </div>
-          </div>
-        ))}
+              <p className="text-[10px] text-white/50 uppercase tracking-wider mt-0.5 font-medium">{s.label}</p>
+            </button>
+          );
+        })}
       </div>
 
       {/* ── FILTERS ── */}

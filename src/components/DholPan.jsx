@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { sendWhatsApp } from "../utils/whatsapp";
 import { Icon, I } from "./icons";
 
 const SIZES = ['26"', '28"', '30"'];
@@ -399,6 +400,13 @@ export default function DholPan() {
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState(null);
 
+  /* Dori Inventory State */
+  const [doriCount, setDoriCount] = useState(47);
+  const [doriLoading, setDoriLoading] = useState(false);
+  const [doriEditMode, setDoriEditMode] = useState(false);
+  const [doriAddCount, setDoriAddCount] = useState("");
+  const [doriAddedBy, setDoriAddedBy] = useState("");
+
   const toRow = (paneType, size, item) => ({
     pane_type: paneType,
     size,
@@ -469,6 +477,93 @@ export default function DholPan() {
       supabase.removeChannel(channel);
     };
   }, [loadData]);
+
+  /* ─── Dori Inventory Load ─── */
+  const loadDori = useCallback(async () => {
+    try {
+      const { data: rows } = await supabase
+        .from("dori_inventory")
+        .select("*")
+        .limit(1);
+      if (rows && rows.length > 0) {
+        setDoriCount(Number(rows[0].current_count) || 0);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    loadDori();
+  }, [loadDori]);
+
+  /* Dori real-time subscription */
+  useEffect(() => {
+    const channel = supabase
+      .channel("dori-inventory-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "dori_inventory" }, () => {
+        loadDori();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadDori]);
+
+  /* ─── Dori Add/Subtract ─── */
+  const handleDoriUpdate = async (delta) => {
+    setDoriLoading(true);
+    try {
+      const { data: rows } = await supabase
+        .from("dori_inventory")
+        .select("*")
+        .limit(1);
+
+      if (rows && rows.length > 0) {
+        const current = Number(rows[0].current_count) || 0;
+        const newCount = Math.max(0, current + delta);
+
+        await supabase
+          .from("dori_inventory")
+          .update({
+            current_count: newCount,
+            last_updated_at: new Date().toISOString(),
+            last_updated_by: doriAddedBy.trim() || null,
+          })
+          .eq("id", rows[0].id);
+
+        setDoriCount(newCount);
+      } else {
+        // No row exists, insert one
+        await supabase
+          .from("dori_inventory")
+          .insert({
+            current_count: Math.max(0, delta),
+            last_updated_by: doriAddedBy.trim() || null,
+          });
+        setDoriCount(Math.max(0, delta));
+      }
+    } catch (err) {
+      console.warn("Dori update failed:", err);
+    }
+
+    /* ─── AUTO WHATSAPP TRIGGER: Dori low stock alert ─── */
+    try {
+      const { data: checkRows } = await supabase.from("dori_inventory").select("current_count").limit(1);
+      const finalCount = checkRows?.[0]?.current_count ?? 0;
+      if (Number(finalCount) < 10 && Number(finalCount) >= 0) {
+        const adminPhone = localStorage.getItem('wa_admin_phone');
+        if (adminPhone) {
+          const alertMsg = `⚠️ *TAAL CRM Alert*\n\n📦 Dori Stock Low!\nसध्या डोरी stock: *${finalCount}*\n\nकृपया नवीन डोरी आणा! 🙏`;
+          sendWhatsApp(adminPhone, alertMsg).catch(() => {});
+        }
+      }
+    } catch { /* ignore */ }
+
+    setDoriLoading(false);
+    setDoriEditMode(false);
+    setDoriAddCount("");
+    setDoriAddedBy("");
+  };
 
   const updateCounts = async (paneType, size, counts, broughtBy, broughtAt) => {
     const now = new Date().toISOString();
@@ -683,11 +778,12 @@ export default function DholPan() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Old Pane" value={oldTotal} sub="Existing thapi + dhoom" tone="brand" icon={I.chart} />
         <MetricCard label="New Pane" value={newTotal} sub="Fresh available stock" tone="gold" icon={I.plus} />
         <MetricCard label="Total Thapi" value={thapiTotal} sub="All sizes combined" tone="emerald" icon={I.check} />
         <MetricCard label="Total Dhoom" value={dhoomTotal} sub="All sizes combined" tone="sky" icon={I.target} />
+        <MetricCard label="Dori (रस्सी)" value={doriCount} sub="Available ropes" tone="gold" icon={I.inbox} />
       </section>
 
       <PaneSection
@@ -707,6 +803,83 @@ export default function DholPan() {
         onEdit={openEdit}
         onReset={resetPane}
       />
+
+      {/* ═══════ DORI INVENTORY SECTION ═══════ */}
+      <section className="rounded-xl border border-white/[.07] bg-ink-850/80 p-5 shadow-card sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-[.2em] text-gold-300">Rope Inventory</p>
+            <h2 className="mt-1 font-display text-2xl font-semibold">ढोलाची दोरी (Dori)</h2>
+            <p className="mt-1 text-sm text-mist">Auto-updated when Daily Report me dori use hoti hai</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="font-display text-5xl font-semibold tabular-nums text-gold-300">{doriCount}</span>
+            <span className="text-sm text-mist">रस्सी</span>
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-3">
+          {!doriEditMode ? (
+            <>
+              <button
+                onClick={() => setDoriEditMode(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald/10 border border-emerald/25 px-4 py-2.5 text-sm font-semibold text-emerald transition-colors hover:bg-emerald/20"
+              >
+                <Icon d={I.plus} className="h-4 w-4" />
+                Add Dori
+              </button>
+              <button
+                onClick={() => handleDoriUpdate(-1)}
+                disabled={doriLoading || doriCount <= 0}
+                className="inline-flex items-center gap-2 rounded-lg bg-brand/10 border border-brand/25 px-4 py-2.5 text-sm font-semibold text-brand-300 transition-colors hover:bg-brand/20 disabled:opacity-40"
+              >
+                <Icon d={I.trash} className="h-4 w-4" />
+                Remove 1
+              </button>
+            </>
+          ) : (
+            <div className="flex flex-wrap items-end gap-3 w-full">
+              <label className="block">
+                <span className="text-xs font-medium uppercase tracking-wider text-mist">Add Count</span>
+                <input
+                  type="number"
+                  value={doriAddCount}
+                  onChange={(e) => setDoriAddCount(e.target.value)}
+                  placeholder="e.g. 10"
+                  className="mt-1 w-28 rounded-lg border border-white/[.08] bg-ink-950 px-3 py-2.5 font-mono text-lg text-cream focus:border-brand/50 focus:outline-none"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium uppercase tracking-wider text-mist">Added By</span>
+                <input
+                  type="text"
+                  value={doriAddedBy}
+                  onChange={(e) => setDoriAddedBy(e.target.value)}
+                  placeholder="Name"
+                  className="mt-1 w-40 rounded-lg border border-white/[.08] bg-ink-950 px-3 py-2.5 text-cream placeholder:text-ink-500 focus:border-brand/50 focus:outline-none"
+                />
+              </label>
+              <button
+                onClick={() => {
+                  const count = Number(doriAddCount) || 0;
+                  if (count > 0) handleDoriUpdate(count);
+                }}
+                disabled={doriLoading || !doriAddCount || Number(doriAddCount) <= 0}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald px-5 py-2.5 text-sm font-bold text-white shadow-glow transition-all hover:bg-emerald/80 disabled:opacity-50"
+              >
+                <Icon d={I.check} className="h-4 w-4" />
+                {doriLoading ? "Saving..." : "Add"}
+              </button>
+              <button
+                onClick={() => { setDoriEditMode(false); setDoriAddCount(""); setDoriAddedBy(""); }}
+                className="rounded-lg px-4 py-2.5 text-sm font-semibold text-mist hover:text-cream"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
 
       <section className="rounded-xl border border-white/[.07] bg-ink-850/80 p-5 shadow-card sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
