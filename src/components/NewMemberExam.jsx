@@ -236,7 +236,7 @@ function DetailModal({ member, onClose, onExamUpdate }) {
   const [batchAssigned, setBatchAssigned] = useState(member.batch_assigned || "");
   const [shortlisted, setShortlisted] = useState(member.shortlisted || false);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("info");
+  const [activeTab, setActiveTab] = useState("exam"); // Default to Exam tab for quick scoring & notes
   const [sendingWa, setSendingWa] = useState(false);
   const [waStatusMsg, setWaStatusMsg] = useState(null);
   const [waServerOk, setWaServerOk] = useState(null); // null=checking, true=connected, false=offline
@@ -281,16 +281,22 @@ function DetailModal({ member, onClose, onExamUpdate }) {
 
   const handleSave = async () => {
     setSaving(true);
-    await onExamUpdate(member.id, {
-      exam_status: examStatus,
-      exam_score: examScore || null,
-      exam_notes: examNotes || null,
-      exam_rhythm: examRhythm || null,
-      exam_physical: examPhysical || null,
-      exam_attitude: examAttitude || null,
-      batch_assigned: batchAssigned || null,
-      shortlisted,
-    });
+    try {
+      await onExamUpdate(member.id, {
+        exam_status: examStatus,
+        exam_score: examScore || null,
+        exam_notes: examNotes ? examNotes.trim() : null,
+        exam_rhythm: examRhythm || null,
+        exam_physical: examPhysical || null,
+        exam_attitude: examAttitude || null,
+        batch_assigned: batchAssigned || null,
+        shortlisted,
+      });
+      setWaStatusMsg('✅ Exam details & remarks saved successfully!');
+    } catch (err) {
+      console.error("Save error:", err);
+      setWaStatusMsg('❌ Save error: ' + err.message);
+    }
     setSaving(false);
 
     /* ─── AUTO WHATSAPP TRIGGER: Exam result saved ─── */
@@ -319,20 +325,6 @@ function DetailModal({ member, onClose, onExamUpdate }) {
     </div>
   );
 
-  const ScoreInput = ({ label, value, onChange, placeholder }) => (
-    <div>
-      <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">{label}</label>
-      <input
-        type="text"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-red-500/50 transition-all"
-        style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}
-      />
-    </div>
-  );
-
   useEffect(() => {
     document.body.style.overflow = "hidden";
     window.history.pushState({ modalOpen: true }, "");
@@ -347,9 +339,9 @@ function DetailModal({ member, onClose, onExamUpdate }) {
   }, [onClose]);
 
   return createPortal(
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl max-h-[88vh] overflow-y-auto bg-[#18181c] border border-white/20 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.95)] flex flex-col my-auto text-white">
+      <div className="relative z-10 w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto bg-[#18181c] border border-white/20 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.95)] flex flex-col my-auto text-white">
 
         {/* Drag handle (mobile) */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
@@ -357,26 +349,26 @@ function DetailModal({ member, onClose, onExamUpdate }) {
         </div>
 
         {/* Header */}
-        <div className="relative px-6 pt-4 pb-5 shrink-0 border-b border-white/8">
+        <div className="relative px-4 sm:px-6 pt-4 pb-5 shrink-0 border-b border-white/8">
           {/* Close btn */}
-          <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/8 hover:bg-white/15 text-white/60 hover:text-white transition-all text-sm">✕</button>
+          <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/8 hover:bg-white/15 text-white/60 hover:text-white transition-all text-sm cursor-pointer">✕</button>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3.5">
             {/* Avatar */}
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${getAvatarColor(member.full_name)} flex items-center justify-center text-white font-bold text-lg shrink-0`}>
+            <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${getAvatarColor(member.full_name)} flex items-center justify-center text-white font-bold text-base sm:text-lg shrink-0 shadow-md`}>
               {getInitials(member.full_name)}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 pr-6">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg font-bold text-white leading-tight">{member.full_name}</h2>
+                <h2 className="text-base sm:text-lg font-bold text-white leading-tight truncate">{member.full_name}</h2>
                 {shortlisted && (
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">⭐ Shortlisted</span>
                 )}
               </div>
-              <p className="text-sm text-white/50 mt-0.5">
+              <p className="text-xs sm:text-sm text-white/50 mt-0.5 truncate">
                 {calcAge(member.dob)} yrs · {member.gender} · {member.instruments_played || "—"}
               </p>
-              <div className="flex items-center gap-1.5 mt-1.5">
+              <div className="flex items-center gap-1.5 mt-1">
                 <div className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
                 <span className={`text-xs font-medium ${sc.text}`}>{sc.label}</span>
               </div>
@@ -389,27 +381,27 @@ function DetailModal({ member, onClose, onExamUpdate }) {
               { label: "Age", value: `${calcAge(member.dob)} yr` },
               { label: "Instrument", value: (member.instruments_played || "—").replace("कोणतेच नाही", "None") },
               { label: "Experience", value: (member.experience || "—").split(" ")[0] },
-              { label: "Score", value: examScore || "—" },
+              { label: "Score", value: examScore ? `${examScore}/10` : "—" },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-white/5 rounded-xl p-2.5 text-center">
+              <div key={label} className="bg-white/5 rounded-xl p-2 sm:p-2.5 text-center">
                 <p className="text-[9px] text-white/40 uppercase tracking-wider">{label}</p>
-                <p className="text-sm font-bold text-white mt-0.5 truncate">{value}</p>
+                <p className="text-xs sm:text-sm font-bold text-white mt-0.5 truncate">{value}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-white/8 shrink-0 px-6">
+        <div className="flex border-b border-white/8 shrink-0 px-4 sm:px-6 bg-white/[0.02]">
           {[
-            { id: "info", label: "📋 Info" },
-            { id: "exam", label: "📝 Exam" },
+            { id: "exam", label: "📝 Exam & Notes" },
+            { id: "info", label: "📋 Applicant Info" },
             { id: "contact", label: "📞 Contact" },
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-xs font-semibold border-b-2 transition-all ${
+              className={`px-3.5 sm:px-4 py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
                 activeTab === tab.id
-                  ? "border-red-500 text-red-400"
+                  ? "border-red-500 text-red-400 bg-white/5"
                   : "border-transparent text-white/40 hover:text-white/70"
               }`}>
               {tab.label}
@@ -418,7 +410,124 @@ function DetailModal({ member, onClose, onExamUpdate }) {
         </div>
 
         {/* Tab Content */}
-        <div className="p-6 flex-1 space-y-4">
+        <div className="p-4 sm:p-6 flex-1 space-y-4">
+
+          {/* ── EXAM TAB ── */}
+          {activeTab === "exam" && (
+            <div className="space-y-5">
+              {/* Exam Status (Full Width) */}
+              <div>
+                <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">Exam Status</label>
+                <select value={examStatus} onChange={e => setExamStatus(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 text-sm text-white focus:outline-none focus:border-red-500 transition-all cursor-pointer font-medium"
+                  style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}>
+                  <option value="pending" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>⏳ Pending</option>
+                  <option value="passed" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>✅ Passed</option>
+                  <option value="failed" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>❌ Failed</option>
+                </select>
+              </div>
+
+              {/* Skill Rating Dropdowns: 1 to 7 Haat, Gavthi, Taal Theke */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                {/* 1 to 7 Haat */}
+                <div>
+                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🥁 1 to 7 Haat</label>
+                  <select
+                    value={examRhythm}
+                    onChange={e => setExamRhythm(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
+                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                  >
+                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
+                    <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
+                    <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
+                    <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
+                    <option value="Perfect" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>Perfect (उत्तम)</option>
+                  </select>
+                </div>
+
+                {/* Gavthi */}
+                <div>
+                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🥁 Gavthi (गावठी)</label>
+                  <select
+                    value={examPhysical}
+                    onChange={e => setExamPhysical(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
+                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                  >
+                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
+                    <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
+                    <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
+                    <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
+                    <option value="Perfect" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>Perfect (उत्तम)</option>
+                  </select>
+                </div>
+
+                {/* Taal Theke */}
+                <div>
+                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🎵 Taal Theke (ताल ठेके)</label>
+                  <select
+                    value={examAttitude}
+                    onChange={e => setExamAttitude(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
+                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                  >
+                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
+                    <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
+                    <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
+                    <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
+                    <option value="Perfect" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>Perfect (उत्तम)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Overall Score Dropdown (1 to 10) */}
+              <div>
+                <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🏆 Overall Score (1 to 10)</label>
+                <select
+                  value={examScore}
+                  onChange={e => setExamScore(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
+                  style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                >
+                  <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select Score (1 to 10) --</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                    <option key={num} value={String(num)} style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>
+                      {num} / 10 {num >= 8 ? '⭐ Excellent' : num >= 6 ? '👍 Good' : num >= 4 ? '😐 Average' : '⚠️ Needs Practice'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Examiner Notes / Remarks Field */}
+              <div>
+                <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">📝 Examiner Notes / Remarks</label>
+                <textarea
+                  value={examNotes}
+                  onChange={e => setExamNotes(e.target.value)}
+                  placeholder="Write remarks about this candidate's performance, attitude, special notes..."
+                  rows={4}
+                  className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-xs sm:text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-red-500/50 transition-all resize-none shadow-inner"
+                  style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}
+                />
+              </div>
+
+              {/* Shortlist Toggle */}
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25">
+                <div>
+                  <p className="text-xs sm:text-sm font-semibold text-amber-300">⭐ Mark as Shortlisted</p>
+                  <p className="text-[10px] sm:text-[11px] text-white/50 mt-0.5">Mark candidate for priority batch selection</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShortlisted(!shortlisted)}
+                  className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer ${shortlisted ? "bg-amber-500" : "bg-white/20"}`}
+                >
+                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300 ${shortlisted ? "left-6" : "left-0.5"}`} />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* ── INFO TAB ── */}
           {activeTab === "info" && (
@@ -440,118 +549,9 @@ function DetailModal({ member, onClose, onExamUpdate }) {
                 </div>
               </div>
               <InfoRow icon="🎯" label="Hobbies / Interests" value={member.hobbies} />
+              <InfoRow icon="📝" label="Saved Examiner Notes" value={examNotes || member.exam_notes || "No remarks entered yet"} />
               <InfoRow icon="👤" label="Reference / Referred By" value={member.reference} />
               <InfoRow icon="📅" label="Registration Date" value={fmtDate(member.timestamp)} />
-            </div>
-          )}
-
-          {/* ── EXAM TAB ── */}
-          {activeTab === "exam" && (
-            <div className="space-y-5">
-              {/* Exam Status (Full Width) */}
-              <div>
-                <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">Exam Status</label>
-                <select value={examStatus} onChange={e => setExamStatus(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 text-sm text-white focus:outline-none focus:border-red-500 transition-all cursor-pointer font-medium"
-                  style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}>
-                  <option value="pending" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>⏳ Pending</option>
-                  <option value="passed" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>✅ Passed</option>
-                  <option value="failed" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>❌ Failed</option>
-                </select>
-              </div>
-
-              {/* Skill Rating Dropdowns: 1 to 7 Haat, Gavthi, Taal Theke */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* 1 to 7 Haat */}
-                <div>
-                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🥁 1 to 7 Haat</label>
-                  <select
-                    value={examRhythm}
-                    onChange={e => setExamRhythm(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
-                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
-                  >
-                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
-                    <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
-                    <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
-                    <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
-                    <option value="Perfect" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>Perfect (उत्तम)</option>
-                  </select>
-                </div>
-
-                {/* Gavthi */}
-                <div>
-                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🥁 Gavthi (गावठी)</label>
-                  <select
-                    value={examPhysical}
-                    onChange={e => setExamPhysical(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
-                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
-                  >
-                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
-                    <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
-                    <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
-                    <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
-                    <option value="Perfect" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>Perfect (उत्तम)</option>
-                  </select>
-                </div>
-
-                {/* Taal Theke */}
-                <div>
-                  <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🎵 Taal Theke (ताल ठेके)</label>
-                  <select
-                    value={examAttitude}
-                    onChange={e => setExamAttitude(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
-                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
-                  >
-                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
-                    <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
-                    <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
-                    <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
-                    <option value="Perfect" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>Perfect (उत्तम)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Overall Score Dropdown (1 to 10) */}
-              <div>
-                <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">🏆 Overall Score (1 to 10)</label>
-                <select
-                  value={examScore}
-                  onChange={e => setExamScore(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
-                  style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
-                >
-                  <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select Score (1 to 10) --</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                    <option key={num} value={String(num)} style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>
-                      {num} / 10 {num >= 8 ? '⭐ Excellent' : num >= 6 ? '👍 Good' : num >= 4 ? '😐 Average' : '⚠️ Needs Practice'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] text-white/50 uppercase tracking-wider mb-1.5">📝 Examiner Notes / Remarks</label>
-                <textarea value={examNotes} onChange={e => setExamNotes(e.target.value)}
-                  placeholder="Write remarks about this candidate's performance, attitude, special notes..."
-                  rows={3}
-                  className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-red-500/50 transition-all resize-none"
-                  style={{ backgroundColor: '#1c1c20', color: '#ffffff' }} />
-              </div>
-
-              {/* Shortlist Toggle */}
-              <div className="flex items-center justify-between p-4 rounded-xl bg-amber-500/8 border border-amber-500/20">
-                <div>
-                  <p className="text-sm font-semibold text-amber-300">⭐ Mark as Shortlisted</p>
-                  <p className="text-[11px] text-white/40 mt-0.5">Mark this candidate for priority selection</p>
-                </div>
-                <button onClick={() => setShortlisted(!shortlisted)}
-                  className={`relative w-12 h-6 rounded-full transition-all duration-300 ${shortlisted ? "bg-amber-500" : "bg-white/15"}`}>
-                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300 ${shortlisted ? "left-6" : "left-0.5"}`} />
-                </button>
-              </div>
             </div>
           )}
 
@@ -594,47 +594,67 @@ function DetailModal({ member, onClose, onExamUpdate }) {
           )}
         </div>
 
-        {/* Bottom Action Bar */}
-        <div className="px-6 py-4 border-t border-white/8 shrink-0 space-y-2">
+        {/* ── Bottom Action Bar (Fixed & Fully Responsive) ── */}
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-white/10 shrink-0 space-y-2.5 bg-[#141418]">
           {/* WhatsApp Status Banner */}
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-medium ${
             waServerOk === true ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
             waServerOk === false ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
             'bg-white/5 text-white/30 border border-white/10'
           }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
               waServerOk === true ? 'bg-emerald-400 animate-pulse' :
               waServerOk === false ? 'bg-amber-400' : 'bg-white/30'
             }`} />
-            {waServerOk === true
-              ? '🤖 WhatsApp Server: Connected — Auto messages ready!'
-              : waServerOk === false
-              ? '⚠️ WhatsApp Server: Offline — Run "npm run whatsapp" in a new terminal'
-              : '🔄 Checking WhatsApp server...'}
+            <span className="truncate">
+              {waServerOk === true
+                ? '🤖 WhatsApp Server: Connected'
+                : waServerOk === false
+                ? '⚠️ WhatsApp Server: Offline'
+                : '🔄 Checking WhatsApp server...'}
+            </span>
           </div>
 
-          <div className="flex gap-3">
-            <button onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-white/10 text-sm text-white/60 hover:text-white hover:bg-white/8 transition-all">
-              Close
+          {/* Responsive Action Buttons Container */}
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            {/* Save Button (Primary Action - Prominent & Full Width on Mobile) */}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full sm:flex-1 order-1 sm:order-3 py-3 sm:py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-red-950/50 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span className="text-sm sm:text-base">💾</span>
+              <span>{saving ? 'Saving Changes...' : 'Save Changes'}</span>
             </button>
-            {member.whatsapp && (
+
+            <div className="flex gap-2 order-2 sm:order-1 flex-1">
+              {/* Close Button */}
               <button
                 type="button"
-                onClick={sendAutoWhatsApp}
-                disabled={sendingWa}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-950/40 transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                onClick={onClose}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-white/15 bg-white/5 text-xs sm:text-sm font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-all text-center cursor-pointer"
               >
-                {sendingWa ? '🤖 Sending...' : '🤖 Send WhatsApp'}
+                Close
               </button>
-            )}
-            <button onClick={handleSave} disabled={saving}
-              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-bold hover:from-red-500 hover:to-red-600 disabled:opacity-40 transition-all shadow-lg shadow-red-900/30">
-              {saving ? 'Saving…' : '💾 Save Changes'}
-            </button>
+
+              {/* Send WhatsApp Button */}
+              {member.whatsapp && (
+                <button
+                  type="button"
+                  onClick={sendAutoWhatsApp}
+                  disabled={sendingWa}
+                  className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold shadow-md shadow-emerald-950/40 transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap"
+                >
+                  <span>🤖</span>
+                  <span>{sendingWa ? 'Sending...' : 'Send WhatsApp'}</span>
+                </button>
+              )}
+            </div>
           </div>
+
           {waStatusMsg && (
-            <p className="text-xs text-center font-medium text-emerald-400">{waStatusMsg}</p>
+            <p className="text-xs text-center font-semibold text-emerald-400 mt-1 animate-fade-in">{waStatusMsg}</p>
           )}
         </div>
       </div>
