@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/clerk-react";
 import { useAuthLogger } from "../hooks/useAuthLogger";
 import { Icon, I } from "./icons";
@@ -23,6 +23,13 @@ const ADMIN_NAV = [
 function ClerkUserSection() {
   const { isSignedIn, user } = useUser();
   const { handleLogout } = useAuthLogger();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const onLogoutClick = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    await handleLogout();
+  };
 
   return isSignedIn ? (
     <div className="space-y-2">
@@ -30,28 +37,30 @@ function ClerkUserSection() {
       <div className="flex items-center gap-3 rounded-xl border border-white/[.08] bg-white/[.04] p-2.5 backdrop-blur-md">
         <UserButton />
         <div className="min-w-0 leading-tight">
-          <p className="truncate text-xs font-semibold text-cream">{user.fullName}</p>
+          <p className="truncate text-xs font-semibold text-cream">{user.fullName || user.username || "User"}</p>
           <p className="truncate text-[10px] text-mist">{user.primaryEmailAddress?.emailAddress}</p>
         </div>
       </div>
       {/* Logout button */}
       <button
-        onClick={handleLogout}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-400 transition-all duration-200 hover:bg-rose-500/20 hover:text-rose-300 group"
+        type="button"
+        disabled={isLoggingOut}
+        onClick={onLogoutClick}
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-400 transition-all duration-200 hover:bg-rose-500/20 hover:text-rose-300 active:scale-95 disabled:opacity-50 cursor-pointer group"
       >
-        <Icon d={I.logout} className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-        <span>Logout</span>
+        <Icon d={I.logout} className={`h-4 w-4 transition-transform ${isLoggingOut ? "animate-spin" : "group-hover:translate-x-0.5"}`} />
+        <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
       </button>
     </div>
   ) : (
     <div className="flex gap-2 w-full">
       <SignInButton mode="modal">
-        <button className="flex-1 py-2 rounded-lg bg-white/[.06] border border-white/10 text-cream text-xs font-semibold hover:bg-white/10 transition-colors">
+        <button className="flex-1 py-2 rounded-lg bg-white/[.06] border border-white/10 text-cream text-xs font-semibold hover:bg-white/10 transition-colors cursor-pointer">
           Sign In
         </button>
       </SignInButton>
       <SignUpButton mode="modal">
-        <button className="flex-1 py-2 rounded-lg bg-gradient-to-r from-brand to-rose-600 text-white text-xs font-semibold hover:from-brand-300 hover:to-rose-500 transition-colors shadow-md shadow-brand/20">
+        <button className="flex-1 py-2 rounded-lg bg-gradient-to-r from-brand to-rose-600 text-white text-xs font-semibold hover:from-brand-300 hover:to-rose-500 transition-colors shadow-md shadow-brand/20 cursor-pointer">
           Sign Up
         </button>
       </SignUpButton>
