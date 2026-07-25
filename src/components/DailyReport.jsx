@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import { Icon, I } from "./icons";
 import { supabase } from "../lib/supabase";
 import { sendWhatsApp } from "../utils/whatsapp";
@@ -92,6 +90,10 @@ function statusStyle(status) {
 
 /* ─── High-Definition White PDF Generator ───────────── */
 async function downloadDailyReportPDF(records, reportDate) {
+  if (!records || records.length === 0) {
+    alert("⚠️ No report entries recorded for the selected date to download.");
+    return;
+  }
   const dateStr = formatDate(reportDate || new Date());
   const now = new Date();
   const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
@@ -181,6 +183,7 @@ async function downloadDailyReportPDF(records, reportDate) {
       )
     );
 
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas"), import("jspdf")]);
     const canvas = await html2canvas(container, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#FFFFFF", logging: false });
     const imgData = canvas.toDataURL("image/png");
     const imgW = 210, pageH = 297;
@@ -269,6 +272,14 @@ export default function DailyReport() {
 
   useEffect(() => {
     loadSupabaseData();
+  }, [loadSupabaseData]);
+
+  // Realtime Subscription — जेव्हा कोणीही नवीन report add करेल, सर्वांना दिसेल
+  useEffect(() => {
+    const channel = supabase.channel("daily-report-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "daily_reports" }, () => loadSupabaseData())
+      .subscribe();
+    return () => supabase.removeChannel(channel);
   }, [loadSupabaseData]);
 
   // Selected date reports

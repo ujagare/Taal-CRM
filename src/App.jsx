@@ -1,30 +1,34 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { supabase } from "./lib/supabase";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import LoginPage from "./components/LoginPage";
-import Shifting1 from "./components/Shifting1";
-import DholPan from "./components/DholPan";
-import DholMaintenance from "./components/DholMaintenance";
-import NewMemberExam from "./components/NewMemberExam";
-import DailyReport from "./components/DailyReport";
-import OperationsDashboard from "./components/OperationsDashboard";
-import ExpenseTracker from "./components/ExpenseTracker";
-import AttendanceManager from "./components/AttendanceManager";
-import AdminPanel from "./components/AdminPanel";
-import WhatsAppCenter from "./components/WhatsAppCenter";
+import PublicRegistration from "./components/PublicRegistration";
 
+// ── Lazy-loaded page components (load only when tab is visited) ──
+const Shifting1         = lazy(() => import("./components/Shifting1"));
+const DholPan           = lazy(() => import("./components/DholPan"));
+const DholMaintenance   = lazy(() => import("./components/DholMaintenance"));
+const NewMemberExam     = lazy(() => import("./components/NewMemberExam"));
+const DailyReport       = lazy(() => import("./components/DailyReport"));
+const OperationsDashboard = lazy(() => import("./components/OperationsDashboard"));
+const ExpenseTracker    = lazy(() => import("./components/ExpenseTracker"));
+const AttendanceManager = lazy(() => import("./components/AttendanceManager"));
+const AdminPanel        = lazy(() => import("./components/AdminPanel"));
+const WhatsAppCenter    = lazy(() => import("./components/WhatsAppCenter"));
+
+// Bug fix: "Expences" → "Expenses" (standardized)
 const PAGE_TO_HASH = {
-  "Dashboard": "#dashboard",
-  "Attendance": "#attendance",
-  "Shifting 1": "#shifting-1",
-  "Dhol Pan": "#dhol-pan",
+  "Dashboard":        "#dashboard",
+  "Attendance":       "#attendance",
+  "Shifting 1":       "#shifting-1",
+  "Dhol Pan":         "#dhol-pan",
   "Dhol Maintenance": "#dhol-maintenance",
-  "Daily Report": "#daily-report",
-  "Expences": "#expenses",
-  "New Member Exam": "#new-member-exam",
-  "WhatsApp": "#whatsapp",
-  "Admin Panel": "#admin-panel",
+  "Daily Report":     "#daily-report",
+  "Expenses":         "#expenses",
+  "New Member Exam":  "#new-member-exam",
+  "WhatsApp":         "#whatsapp",
+  "Admin Panel":      "#admin-panel",
 };
 
 const HASH_TO_PAGE = Object.fromEntries(
@@ -33,7 +37,20 @@ const HASH_TO_PAGE = Object.fromEntries(
 
 function getPageFromHash() {
   const hash = window.location.hash || "#dashboard";
+  // Support legacy "#expenses" hash and old "Expences" key
   return HASH_TO_PAGE[hash] || "Dashboard";
+}
+
+// ── Loading spinner shown while lazy component loads ──
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 rounded-full border-2 border-brand border-t-transparent animate-spin" />
+        <span className="text-cream/50 text-sm font-medium">Loading…</span>
+      </div>
+    </div>
+  );
 }
 
 function LoginSkeleton() {
@@ -74,29 +91,32 @@ function AppShell({ session, activePage, onNavigate, mobileMenuOpen, setMobileMe
       <div className="lg:pl-64">
         <Topbar activePage={activePage} onMenuToggle={() => setMobileMenuOpen(true)} />
         <main className="px-4 sm:px-6 lg:px-8 pt-6 pb-12 space-y-5 max-w-[1440px] mx-auto">
-          {activePage === "Dashboard" ? (
-            <OperationsDashboard onNavigate={onNavigate} />
-          ) : activePage === "Attendance" ? (
-            <AttendanceManager />
-          ) : activePage === "Shifting 1" ? (
-            <Shifting1 />
-          ) : activePage === "Dhol Pan" ? (
-            <DholPan />
-          ) : activePage === "Dhol Maintenance" ? (
-            <DholMaintenance />
-          ) : activePage === "Daily Report" ? (
-            <DailyReport />
-          ) : activePage === "New Member Exam" ? (
-            <NewMemberExam />
-          ) : activePage === "Expences" ? (
-            <ExpenseTracker />
-          ) : activePage === "WhatsApp" ? (
-            <WhatsAppCenter />
-          ) : activePage === "Admin Panel" ? (
-            <AdminPanel />
-          ) : (
-            <Shifting1 />
-          )}
+          <Suspense fallback={<PageLoader />}>
+            {activePage === "Dashboard"        ? <OperationsDashboard onNavigate={onNavigate} />
+            : activePage === "Attendance"       ? <AttendanceManager />
+            : activePage === "Shifting 1"       ? <Shifting1 />
+            : activePage === "Dhol Pan"         ? <DholPan />
+            : activePage === "Dhol Maintenance" ? <DholMaintenance />
+            : activePage === "Daily Report"     ? <DailyReport />
+            : activePage === "New Member Exam"  ? <NewMemberExam />
+            : activePage === "Expenses"         ? <ExpenseTracker />
+            : activePage === "WhatsApp"         ? <WhatsAppCenter />
+            : activePage === "Admin Panel"      ? <AdminPanel />
+            : (
+              // Bug fix: proper 404 fallback instead of random Shifting1
+              <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="text-6xl">🔍</div>
+                <h2 className="text-xl font-bold text-cream">Page Not Found</h2>
+                <p className="text-cream/50 text-sm">The page you are looking for does not exist.</p>
+                <button
+                  onClick={() => onNavigate("Dashboard")}
+                  className="px-4 py-2 rounded-lg bg-brand text-white text-sm font-semibold hover:bg-brand/80"
+                >
+                  Go to Dashboard
+                </button>
+              </div>
+            )}
+          </Suspense>
         </main>
       </div>
     </div>
@@ -111,12 +131,10 @@ export default function App() {
 
   // ── Supabase Auth listener ──
   useEffect(() => {
-    // Get current session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setAuthLoading(false);
 
-      // Log login event
       if (session) {
         const deviceInfo = typeof navigator !== "undefined" ? navigator.userAgent.substring(0, 120) : "Unknown Device";
         supabase
@@ -133,7 +151,6 @@ export default function App() {
       }
     });
 
-    // Listen for auth state changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setAuthLoading(false);
@@ -147,7 +164,6 @@ export default function App() {
     try {
       if (session) {
         const deviceInfo = typeof navigator !== "undefined" ? navigator.userAgent.substring(0, 120) : "Unknown Device";
-        // Fire-and-forget logout log (max 800ms wait)
         await Promise.race([
           supabase.from("auth_activity_logs").insert({
             user_name: session.user?.user_metadata?.full_name || session.user?.email?.split("@")[0] || "User",
@@ -182,7 +198,6 @@ export default function App() {
     }
   }, []);
 
-  // Listen to browser / mobile device BACK button press (popstate)
   useEffect(() => {
     const initialHash = PAGE_TO_HASH[activePage] || "#dashboard";
     if (!window.history.state) {
@@ -202,7 +217,14 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [activePage, mobileMenuOpen]);
 
-  // ── Render ──
+  // Check for public registration route
+  const currentHash = window.location.hash.toLowerCase();
+  const isPublicRegister = currentHash === "#register" || currentHash === "#join" || currentHash === "#new-member-registration";
+
+  if (isPublicRegister) {
+    return <PublicRegistration />;
+  }
+
   if (authLoading) return <LoginSkeleton />;
 
   if (!session) {

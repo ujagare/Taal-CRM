@@ -1,7 +1,17 @@
 // src/utils/whatsapp.js
 // Shared utility for sending WhatsApp messages via the local Baileys server
 
-const WA_SERVER = 'http://localhost:5001';
+const getWaServerUrl = () => {
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WA_SERVER_URL) {
+    return import.meta.env.VITE_WA_SERVER_URL;
+  }
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    return `http://${window.location.hostname}:5001`;
+  }
+  return 'http://localhost:5001';
+};
+
+const WA_SERVER = getWaServerUrl();
 
 /**
  * Send a single WhatsApp message

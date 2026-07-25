@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import { supabase } from "../lib/supabase";
 import { Icon, I } from "./icons";
 
@@ -180,6 +178,7 @@ async function downloadPDF(assets) {
       )
     );
 
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas"), import("jspdf")]);
     const canvas = await html2canvas(container, {
       scale: 2,
       useCORS: true,
@@ -491,6 +490,13 @@ export default function Shifting1() {
 
   useEffect(() => {
     loadAssets();
+  }, [loadAssets]);
+
+  useEffect(() => {
+    const channel = supabase.channel("shifting1-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "taal_assets" }, () => loadAssets())
+      .subscribe();
+    return () => supabase.removeChannel(channel);
   }, [loadAssets]);
 
   /* ─── CRUD Functions ──────────────────────────── */

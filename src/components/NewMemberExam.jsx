@@ -1,7 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import { supabase } from "../lib/supabase";
 import { sendWhatsApp } from "../utils/whatsapp";
 import localMembersRaw from "../../scripts/members_data.json";
@@ -135,6 +133,7 @@ async function downloadNewMemberExamPDF(records, filterTitle = "Exam Report") {
       )
     );
 
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas"), import("jspdf")]);
     const canvas = await html2canvas(container, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#FFFFFF", logging: false });
     const imgData = canvas.toDataURL("image/png");
     const imgW = 210, pageH = 297;
@@ -243,7 +242,8 @@ function DetailModal({ member, onClose, onExamUpdate }) {
 
   useEffect(() => {
     // Check WhatsApp server status on mount
-    fetch('http://localhost:5001/api/whatsapp/status', { signal: AbortSignal.timeout(2000) })
+    const waHost = typeof window !== 'undefined' ? `http://${window.location.hostname}:5001` : 'http://localhost:5001';
+    fetch(`${waHost}/api/whatsapp/status`, { signal: AbortSignal.timeout(2000) })
       .then(r => r.json())
       .then(d => setWaServerOk(d.connected === true))
       .catch(() => setWaServerOk(false));
@@ -257,7 +257,8 @@ function DetailModal({ member, onClose, onExamUpdate }) {
     const text = `जय गणेश! 🙏 *${member.full_name}*,\nताल वाद्यपथक — गणेशोत्सव २०२६ परीक्षा निकाल:\n\nनिकाल: *${(examStatus || 'pending').toUpperCase()}*\nगुण: *${examScore ? examScore + '/10' : '—'}*\n🥁 1 to 7 हात: *${examRhythm || '—'}*\n🌾 गावठी: *${examPhysical || '—'}*\n🎵 ताल ठेके: *${examAttitude || '—'}*\n\nधन्यवाद! 🥁`;
 
     try {
-      const res = await fetch('http://localhost:5001/api/whatsapp/send', {
+      const waHost = typeof window !== 'undefined' ? `http://${window.location.hostname}:5001` : 'http://localhost:5001';
+      const res = await fetch(`${waHost}/api/whatsapp/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: member.whatsapp, message: text }),
@@ -662,6 +663,174 @@ function DetailModal({ member, onClose, onExamUpdate }) {
   , document.body);
 }
 
+/* ─── Add Member Modal ─────────────────────────────── */
+function AddMemberModal({ onClose, onAddSuccess }) {
+  const [formData, setFormData] = useState({
+    full_name: "",
+    email: "",
+    gender: "Male",
+    whatsapp: "",
+    parent_contact: "",
+    dob: "",
+    address: "",
+    profession: "",
+    injury_info: "No",
+    previous_pathak: "",
+    instruments_played: "ढोल",
+    experience: "Fresher",
+    flag_dancing: "नाही",
+    other_instruments: "",
+    hobbies: "",
+    reference: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.full_name.trim()) {
+      setErrorMsg("Please enter Full Name.");
+      return;
+    }
+    if (!formData.whatsapp.trim()) {
+      setErrorMsg("Please enter WhatsApp Number.");
+      return;
+    }
+    setSaving(true);
+    setErrorMsg(null);
+
+    try {
+      const payload = {
+        timestamp: new Date().toISOString().split("T")[0],
+        full_name: formData.full_name.trim(),
+        email: formData.email.trim() || null,
+        gender: formData.gender,
+        whatsapp: formData.whatsapp.trim(),
+        parent_contact: formData.parent_contact.trim() || null,
+        dob: formData.dob || null,
+        address: formData.address.trim() || null,
+        profession: formData.profession.trim() || null,
+        injury_info: formData.injury_info.trim() || "No",
+        previous_pathak: formData.previous_pathak.trim() || null,
+        instruments_played: formData.instruments_played,
+        experience: formData.experience,
+        flag_dancing: formData.flag_dancing,
+        other_instruments: formData.other_instruments.trim() || null,
+        hobbies: formData.hobbies.trim() || null,
+        reference: formData.reference.trim() || null,
+        exam_status: "pending",
+        created_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase.from("new_members").insert([payload]).select();
+
+      if (error) throw error;
+
+      onAddSuccess(data && data.length > 0 ? data[0] : { id: Date.now(), ...payload });
+      onClose();
+    } catch (err) {
+      console.error("Add candidate error:", err);
+      setErrorMsg("Save failed: " + (err.message || "Unknown error"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-xl max-h-[90vh] overflow-y-auto bg-[#18181c] border border-white/20 rounded-2xl p-5 sm:p-6 shadow-2xl text-white space-y-4 my-auto">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div>
+            <h3 className="text-base sm:text-lg font-bold text-white">➕ Add New Candidate / Member</h3>
+            <p className="text-xs text-white/50">Direct entry into Supabase database</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 text-white/60 hover:text-white flex items-center justify-center text-sm cursor-pointer">✕</button>
+        </div>
+
+        {errorMsg && (
+          <div className="p-3 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-medium">
+            ⚠️ {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Full Name *</label>
+              <input type="text" required value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })}
+                placeholder="Candidate Full Name" className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white focus:outline-none focus:border-red-500" />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">WhatsApp Number *</label>
+              <input type="tel" required value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })}
+                placeholder="10 digit phone" className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white focus:outline-none focus:border-red-500" />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Gender</label>
+              <select value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Email</label>
+              <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@domain.com" className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white focus:outline-none focus:border-red-500" />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Date of Birth</label>
+              <input type="date" value={formData.dob} onChange={e => setFormData({ ...formData, dob: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500" />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Instrument</label>
+              <select value={formData.instruments_played} onChange={e => setFormData({ ...formData, instruments_played: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500">
+                {INSTRUMENTS.map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Experience</label>
+              <select value={formData.experience} onChange={e => setFormData({ ...formData, experience: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500">
+                {EXPERIENCE_LEVELS.map(exp => <option key={exp} value={exp}>{exp}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Reference</label>
+              <input type="text" value={formData.reference} onChange={e => setFormData({ ...formData, reference: e.target.value })}
+                placeholder="Referred by..." className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white focus:outline-none focus:border-red-500" />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Profession</label>
+              <input type="text" value={formData.profession} onChange={e => setFormData({ ...formData, profession: e.target.value })}
+                placeholder="Student / Job / Business" className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm text-white focus:outline-none focus:border-red-500" />
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2 border-t border-white/10">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/15 bg-white/5 text-white text-xs font-semibold hover:bg-white/10">Cancel</button>
+            <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold shadow-lg disabled:opacity-50">
+              {saving ? "Saving..." : "Save Candidate"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  , document.body);
+}
+
 /* ─── Skeleton ─────────────────────────────────────── */
 const Skeleton = () => (
   <div className="space-y-5 animate-pulse">
@@ -678,6 +847,8 @@ export default function NewMemberExam() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detailMember, setDetailMember] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [toastMsg, setToastMsg] = useState(null);
   const [search, setSearch] = useState("");
   const [filterInst, setFilterInst] = useState("all");
   const [filterExp, setFilterExp] = useState("all");
@@ -705,9 +876,30 @@ export default function NewMemberExam() {
 
   const updateExam = async (id, fields) => {
     const { error } = await supabase.from("new_members").update(fields).eq("id", id);
-    if (error) console.warn("Update failed:", error.message);
+    if (error) {
+      console.error("Update failed:", error.message);
+      setToastMsg(`❌ Supabase Update Error: ${error.message}`);
+      setTimeout(() => setToastMsg(null), 6000);
+      return;
+    }
+    setToastMsg("✅ Member record updated in Supabase database!");
+    setTimeout(() => setToastMsg(null), 3000);
     setMembers(prev => prev.map(m => m.id === id ? { ...m, ...fields } : m));
     setDetailMember(null);
+  };
+
+  const handleShareLink = () => {
+    const link = `${window.location.origin}/#register`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(() => {
+        setToastMsg("🔗 Registration Form Link Copied! Share with candidate friends.");
+        setTimeout(() => setToastMsg(null), 4000);
+      }).catch(() => {
+        prompt("Copy candidate registration link to share:", link);
+      });
+    } else {
+      prompt("Copy candidate registration link to share:", link);
+    }
   };
 
   if (loading) return <Skeleton />;
@@ -753,6 +945,16 @@ export default function NewMemberExam() {
     <Fragment>
     <div className="space-y-6 animate-rise">
 
+      {/* Toast Notification Banner */}
+      {toastMsg && (
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-red-950/80 via-[#1e1014] to-black border border-red-500/40 text-white text-xs sm:text-sm font-semibold flex items-center justify-between shadow-xl animate-rise">
+          <div className="flex items-center gap-2">
+            <span>{toastMsg}</span>
+          </div>
+          <button onClick={() => setToastMsg(null)} className="text-white/40 hover:text-white text-xs">✕</button>
+        </div>
+      )}
+
       {/* ── HEADER BANNER ── */}
       <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#1a0505] via-[#120303] to-[#0d0d10] border border-white/8">
         {/* Decorative glows */}
@@ -774,29 +976,39 @@ export default function NewMemberExam() {
             </div>
 
             {/* Action Buttons & Progress */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-wrap">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer"
+              >
+                <span>➕</span>
+                <span>Add Candidate</span>
+              </button>
+
+              <button
+                onClick={handleShareLink}
+                className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white text-xs font-bold hover:from-amber-500 hover:to-orange-500 shadow-lg shadow-amber-950/40 transition-all cursor-pointer"
+              >
+                <span>🔗</span>
+                <span>Share Form Link</span>
+              </button>
+
               <button
                 onClick={() => downloadNewMemberExamPDF(filtered, filterExam !== "all" ? `${filterExam.toUpperCase()} Candidates` : "Filtered Candidates")}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-semibold hover:from-red-500 hover:to-red-600 shadow-lg shadow-red-900/30 transition-all"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white/8 border border-white/15 text-white text-xs font-semibold hover:bg-white/15 transition-all cursor-pointer"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="12" y1="18" x2="12" y2="12" />
-                  <polyline points="9 15 12 18 15 15" />
-                </svg>
-                PDF Report ({filtered.length})
+                📄 PDF ({filtered.length})
               </button>
 
               <button
                 onClick={() => downloadCSV(filtered, `TAAL_Exam_Results_${filterExam}_${new Date().toISOString().slice(0,10)}.csv`)}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/15 bg-white/5 text-white text-xs font-semibold hover:bg-white/10 transition-all"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-white/15 bg-white/5 text-white text-xs font-semibold hover:bg-white/10 transition-all cursor-pointer"
               >
-                📊 Excel / CSV ({filtered.length})
+                📊 Excel ({filtered.length})
               </button>
 
               {/* Progress bar */}
-              <div className="sm:w-44 bg-white/4 p-2.5 rounded-xl border border-white/8">
+              <div className="sm:w-36 bg-white/4 p-2.5 rounded-xl border border-white/8">
                 <div className="flex justify-between text-xs text-white/50 mb-1">
                   <span>Evaluated</span>
                   <span className="font-bold text-white">{total > 0 ? Math.round(((passed + failed) / total) * 100) : 0}%</span>
@@ -1022,6 +1234,18 @@ export default function NewMemberExam() {
           member={detailMember}
           onClose={() => setDetailMember(null)}
           onExamUpdate={updateExam}
+        />
+      )}
+
+      {/* ── ADD MEMBER MODAL ── */}
+      {showAddModal && (
+        <AddMemberModal
+          onClose={() => setShowAddModal(false)}
+          onAddSuccess={(newMember) => {
+            setMembers(prev => [newMember, ...prev]);
+            setToastMsg(`✅ Candidate "${newMember.full_name}" added to database!`);
+            setTimeout(() => setToastMsg(null), 4000);
+          }}
         />
       )}
       </div>

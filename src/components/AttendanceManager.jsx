@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import { supabase } from "../lib/supabase";
 import { Icon, I } from "./icons";
 
@@ -199,6 +197,7 @@ async function downloadAttendancePDF(records, batchFilter, dateRangeLabel) {
       )
     );
 
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas"), import("jspdf")]);
     const canvas = await html2canvas(container, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#FFFFFF", logging: false });
     const imgData = canvas.toDataURL("image/png");
     const imgW = 210, pageH = 297;
@@ -350,6 +349,16 @@ export default function AttendanceManager() {
     loadData();
   }, [loadData]);
 
+  // Realtime Supabase Subscriptions for Multi-Device Sync
+  useEffect(() => {
+    const channel = supabase.channel("attendance-manager-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "students" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "batches" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => loadData())
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [loadData]);
+
   // Sync to local storage
   useEffect(() => {
     try {
@@ -376,13 +385,22 @@ export default function AttendanceManager() {
     setBatches(prev => [newB, ...prev]);
 
     try {
-      await supabase.from("batches").insert({
+      const { data, error } = await supabase.from("batches").insert({
         name: newB.name,
         year: newB.year,
         course: newB.course,
         trainer_name: newB.trainer_name,
-      });
-    } catch { /* ignore */ }
+      }).select();
+
+      if (error) {
+        console.error("Batch save error:", error.message);
+        alert("⚠️ Supabase Batch Save Failed: " + error.message);
+      } else if (data && data.length > 0) {
+        setBatches(prev => [data[0], ...prev.filter(b => b.id !== newB.id)]);
+      }
+    } catch (err) {
+      console.error("Batch insert error:", err);
+    }
 
     setNewBatchName("");
     setNewBatchTrainer("");
@@ -407,7 +425,7 @@ export default function AttendanceManager() {
     setStudents(prev => [...prev, newS]);
 
     try {
-      await supabase.from("students").insert({
+      const { data, error } = await supabase.from("students").insert({
         roll_number: newS.roll_number,
         name: newS.name,
         phone: newS.phone,
