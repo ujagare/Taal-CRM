@@ -1,6 +1,78 @@
-import { SignIn } from "@clerk/clerk-react";
+import { useState } from "react";
+import { supabase } from "../lib/supabase";
 
-export default function LoginPage() {
+export default function LoginPage({ onLoginSuccess }) {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [infoMsg, setInfoMsg] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setInfoMsg("");
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        // Sign Up with Supabase Auth
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        if (data.session) {
+          onLoginSuccess?.(data.session);
+        } else {
+          setInfoMsg("खाते तयार झाले! ईमेल पडताळणी किंवा साईन इन करा.");
+        }
+      } else {
+        // Sign In with Supabase Auth
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        if (data.session) {
+          onLoginSuccess?.(data.session);
+        }
+      }
+    } catch (err) {
+      setErrorMsg(err.message || "लॉगिन अयशस्वी. ईमेल किंवा पासवर्ड तपासा.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setErrorMsg("");
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+    } catch (err) {
+      setErrorMsg("Google Sign-In त्रुटी: " + err.message);
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <style>{`
@@ -16,7 +88,6 @@ export default function LoginPage() {
           background: #000000;
         }
 
-        /* ── Fullscreen Background Container ── */
         .lp-bg-wrapper {
           position: fixed;
           inset: 0;
@@ -25,7 +96,6 @@ export default function LoginPage() {
           overflow: hidden;
         }
 
-        /* Background Image */
         .lp-bg-img {
           position: absolute;
           inset: 0;
@@ -42,17 +112,15 @@ export default function LoginPage() {
           100% { transform: scale(1.08); }
         }
 
-        /* Black Overlay (Lighter & Subtle so taal.png is clearly visible) */
         .lp-bg-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.55)),
-                      radial-gradient(circle at center, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.6) 100%);
-          backdrop-filter: blur(1px);
-          -webkit-backdrop-filter: blur(1px);
+          background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.65)),
+                      radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.75) 100%);
+          backdrop-filter: blur(2px);
+          -webkit-backdrop-filter: blur(2px);
         }
 
-        /* Red Ambient Spotlights */
         .lp-ambient-glow-1 {
           position: absolute;
           top: -15%;
@@ -60,7 +128,7 @@ export default function LoginPage() {
           transform: translateX(-50%);
           width: 600px;
           height: 600px;
-          background: radial-gradient(circle, rgba(220, 38, 38, 0.22) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(220, 38, 38, 0.25) 0%, transparent 70%);
           pointer-events: none;
           border-radius: 50%;
         }
@@ -71,12 +139,11 @@ export default function LoginPage() {
           right: -10%;
           width: 500px;
           height: 500px;
-          background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
           pointer-events: none;
           border-radius: 50%;
         }
 
-        /* Main Center Shell */
         .lp-shell {
           position: fixed;
           inset: 0;
@@ -88,13 +155,12 @@ export default function LoginPage() {
           overflow-y: auto;
         }
 
-        /* Glassmorphism Card Container */
         .lp-card {
           position: relative;
           width: 100%;
           max-width: 440px;
           margin: auto;
-          background: rgba(8, 8, 12, 0.92);
+          background: rgba(10, 10, 15, 0.94);
           border: 1px solid rgba(255, 255, 255, 0.14);
           border-radius: 28px;
           padding: 36px 32px;
@@ -118,7 +184,6 @@ export default function LoginPage() {
           }
         }
 
-        /* Top Glowing Line */
         .lp-card-top-glow {
           position: absolute;
           top: 0;
@@ -129,7 +194,6 @@ export default function LoginPage() {
           border-radius: 2px;
         }
 
-        /* Header & Logo */
         .lp-header {
           display: flex;
           flex-direction: column;
@@ -188,294 +252,156 @@ export default function LoginPage() {
           color: rgba(255, 255, 255, 0.8);
           font-weight: 500;
           margin-top: 10px;
-          margin-bottom: 20px;
+          margin-bottom: 10px;
         }
 
-        /* ── CLERK STYLING OVERRIDES (CLEAN & NON-CLIPPED) ── */
-        .cl-rootBox, .cl-card, .cl-cardBox, .cl-main, .cl-form, .cl-socialButtons {
-          width: 100% !important;
-          max-width: 100% !important;
-          box-sizing: border-box !important;
-          margin: 0 !important;
-          padding: 0 !important;
+        .lp-input-group {
+          margin-bottom: 14px;
+          text-align: left;
         }
 
-        .cl-card, .cl-cardBox {
-          background: transparent !important;
-          box-shadow: none !important;
-          border: none !important;
-          overflow: visible !important;
+        .lp-label {
+          display: block;
+          color: rgba(255, 255, 255, 0.88);
+          font-size: 12.5px;
+          font-weight: 600;
+          margin-bottom: 6px;
         }
 
-        .cl-header, .cl-headerTitle, .cl-headerSubtitle {
-          display: none !important;
+        .lp-input {
+          display: block;
+          width: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          border-radius: 12px;
+          color: #FFFFFF;
+          font-size: 14px;
+          height: 44px;
+          padding: 0 14px;
+          outline: none;
+          transition: all 0.2s ease;
+          box-sizing: border-box;
         }
 
-        .cl-socialButtons {
-          width: 100% !important;
-          margin-top: 4px !important;
-          margin-bottom: 20px !important;
+        .lp-input:focus {
+          border-color: rgba(220, 38, 38, 0.75);
+          box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.22);
+          background: rgba(0, 0, 0, 0.65);
         }
 
-        /* Completely hide "Last used" badges & tags from Clerk */
-        .cl-badge,
-        .cl-socialButtonsBlockButtonBadge,
-        .cl-socialButtonsBlockButtonBadgeText,
-        .cl-socialButtonsBlockButton__googleBadge,
-        .cl-tag,
-        [class*="Badge"],
-        [class*="badge"],
-        [class*="Tag"],
-        [class*="tag"],
-        [class*="socialButtonsBlockButtonBadge"] {
-          display: none !important;
-          visibility: hidden !important;
-          opacity: 0 !important;
-          height: 0 !important;
-          width: 0 !important;
-          overflow: hidden !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          position: absolute !important;
-          top: -9999px !important;
-          left: -9999px !important;
-          pointer-events: none !important;
+        .lp-btn-primary {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+          border: 1px solid rgba(248, 113, 113, 0.3);
+          border-radius: 12px;
+          color: #FFFFFF;
+          font-size: 14.5px;
+          font-weight: 700;
+          height: 46px;
+          margin-top: 18px;
+          cursor: pointer;
+          box-shadow: 0 8px 25px rgba(220, 38, 38, 0.45);
+          transition: all 0.2s ease;
         }
 
-        /* Social Button (Google) */
-        .cl-socialButtonsBlockButton {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          position: relative !important;
-          background: rgba(255, 255, 255, 0.08) !important;
-          border: 1px solid rgba(255, 255, 255, 0.16) !important;
-          border-radius: 14px !important;
-          color: #F3F4F6 !important;
-          height: 48px !important;
-          width: 100% !important;
-          max-width: 100% !important;
-          padding: 0 16px !important;
-          font-size: 14px !important;
-          font-weight: 600 !important;
-          transition: all 0.2s ease !important;
-          box-sizing: border-box !important;
-          overflow: visible !important;
-          cursor: pointer !important;
-        }
-        .cl-socialButtonsBlockButton:hover {
-          background: rgba(255, 255, 255, 0.14) !important;
-          border-color: rgba(255, 255, 255, 0.28) !important;
-          transform: translateY(-1px) !important;
-        }
-        .cl-socialButtonsBlockButtonText {
-          color: #F3F4F6 !important;
-          font-size: 14px !important;
-          font-weight: 600 !important;
-          opacity: 1 !important;
-        }
-        .cl-socialButtonsBlockButtonIcon {
-          margin-right: 10px !important;
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
+        .lp-btn-primary:hover {
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+          box-shadow: 0 10px 30px rgba(220, 38, 38, 0.6);
+          transform: translateY(-1px);
         }
 
-        /* Divider */
-        .cl-dividerRow {
-          margin: 20px 0 !important;
-          display: flex !important;
-          align-items: center !important;
-        }
-        .cl-dividerLine {
-          background: rgba(255, 255, 255, 0.14) !important;
-          height: 1px !important;
-        }
-        .cl-dividerText {
-          color: rgba(255, 255, 255, 0.5) !important;
-          font-size: 12px !important;
-          font-weight: 600 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.1em !important;
-          padding: 0 12px !important;
-        }
-
-        /* Form Labels */
-        .cl-formFieldLabel {
-          display: block !important;
-          color: rgba(255, 255, 255, 0.88) !important;
-          font-size: 13px !important;
-          font-weight: 600 !important;
-          margin-bottom: 6px !important;
+        .lp-btn-google {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          width: 100%;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          border-radius: 12px;
+          color: #F3F4F6;
+          height: 44px;
+          font-size: 13.5px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          margin-bottom: 16px;
         }
 
-        /* Input Fields */
-        .cl-formFieldInput {
-          display: block !important;
-          width: 100% !important;
-          background: rgba(0, 0, 0, 0.5) !important;
-          border: 1px solid rgba(255, 255, 255, 0.16) !important;
-          border-radius: 12px !important;
-          color: #FFFFFF !important;
-          font-size: 14px !important;
-          height: 46px !important;
-          padding: 0 16px !important;
-          outline: none !important;
-          transition: all 0.2s ease !important;
-          box-sizing: border-box !important;
-        }
-        .cl-formFieldInput::placeholder {
-          color: rgba(255, 255, 255, 0.35) !important;
-        }
-        .cl-formFieldInput:focus {
-          border-color: rgba(220, 38, 38, 0.75) !important;
-          box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.22) !important;
-          background: rgba(0, 0, 0, 0.65) !important;
+        .lp-btn-google:hover {
+          background: rgba(255, 255, 255, 0.14);
+          border-color: rgba(255, 255, 255, 0.28);
         }
 
-        /* Password Toggle */
-        .cl-formFieldInputShowPasswordButton {
-          color: rgba(255, 255, 255, 0.6) !important;
+        .lp-divider {
+          display: flex;
+          align-items: center;
+          margin: 16px 0;
+          color: rgba(255, 255, 255, 0.4);
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+        .lp-divider::before, .lp-divider::after {
+          content: "";
+          flex: 1;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.14);
+        }
+        .lp-divider span {
+          padding: 0 10px;
         }
 
-        /* Primary Submit Button */
-        .cl-formButtonPrimary {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          width: 100% !important;
-          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%) !important;
-          border: 1px solid rgba(248, 113, 113, 0.3) !important;
-          border-radius: 12px !important;
-          color: #FFFFFF !important;
-          font-size: 15px !important;
-          font-weight: 700 !important;
-          height: 48px !important;
-          margin-top: 16px !important;
-          cursor: pointer !important;
-          box-shadow: 0 8px 25px rgba(220, 38, 38, 0.45) !important;
-          transition: all 0.2s ease !important;
-          letter-spacing: 0.02em !important;
-          box-sizing: border-box !important;
-        }
-        .cl-formButtonPrimary:hover {
-          background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%) !important;
-          box-shadow: 0 10px 30px rgba(220, 38, 38, 0.6) !important;
-          transform: translateY(-1px) !important;
+        .lp-alert {
+          background: rgba(220, 38, 38, 0.18);
+          border: 1px solid rgba(220, 38, 38, 0.4);
+          border-radius: 10px;
+          padding: 10px 14px;
+          color: #fca5a5;
+          font-size: 12.5px;
+          margin-bottom: 14px;
+          text-align: left;
         }
 
-        /* Footer Action Links */
-        .cl-footer {
-          margin-top: 14px !important;
-        }
-        .cl-footerActionText {
-          color: rgba(255, 255, 255, 0.6) !important;
-          font-size: 13px !important;
-        }
-        .cl-footerActionLink {
-          color: #f87171 !important;
-          font-weight: 700 !important;
-          font-size: 13px !important;
-          text-decoration: none !important;
-        }
-        .cl-footerActionLink:hover {
-          color: #fca5a5 !important;
-          text-decoration: underline !important;
+        .lp-info {
+          background: rgba(52, 211, 153, 0.15);
+          border: 1px solid rgba(52, 211, 153, 0.4);
+          border-radius: 10px;
+          padding: 10px 14px;
+          color: #6ee7b7;
+          font-size: 12.5px;
+          margin-bottom: 14px;
+          text-align: left;
         }
 
-        /* Alerts & Errors */
-        .cl-formFieldErrorText {
-          color: #fca5a5 !important;
-          font-size: 12px !important;
-          margin-top: 4px !important;
-        }
-        .cl-alert {
-          background: rgba(220, 38, 38, 0.15) !important;
-          border: 1px solid rgba(220, 38, 38, 0.3) !important;
-          border-radius: 10px !important;
-        }
-        .cl-alertText {
-          color: #fca5a5 !important;
-          font-size: 13px !important;
-        }
-
-        /* Footer Note */
-        .lp-footer-text {
-          margin-top: 24px;
+        .lp-toggle-text {
+          margin-top: 18px;
           text-align: center;
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.35);
-          letter-spacing: 0.03em;
+          font-size: 13px;
+          color: rgba(255, 255, 255, 0.6);
         }
 
-        /* Further Compacted Mobile View */
-        @media (max-width: 640px) {
-          .lp-shell {
-            padding: 8px !important;
-          }
-          .lp-card {
-            padding: 16px 14px !important;
-            border-radius: 18px !important;
-          }
-          .lp-header {
-            margin-bottom: 10px !important;
-          }
-          .lp-logo-box {
-            width: 44px !important;
-            height: 44px !important;
-            border-radius: 12px !important;
-            margin-bottom: 6px !important;
-          }
-          .lp-logo-box img {
-            width: 28px !important;
-            height: 28px !important;
-          }
-          .lp-title {
-            font-size: 18px !important;
-          }
-          .lp-badge {
-            margin-top: 2px !important;
-            padding: 1px 6px !important;
-            font-size: 9.5px !important;
-          }
-          .lp-subtitle {
-            display: none !important;
-          }
-          .cl-socialButtons {
-            margin-top: 0 !important;
-            margin-bottom: 8px !important;
-          }
-          .cl-socialButtonsBlockButton {
-            height: 38px !important;
-            border-radius: 9px !important;
-            font-size: 13px !important;
-          }
-          .cl-dividerRow {
-            margin: 8px 0 !important;
-          }
-          .cl-formFieldLabel {
-            font-size: 11.5px !important;
-            margin-bottom: 3px !important;
-          }
-          .cl-formFieldInput {
-            height: 38px !important;
-            border-radius: 9px !important;
-            font-size: 13px !important;
-            padding: 0 12px !important;
-          }
-          .cl-formButtonPrimary {
-            height: 38px !important;
-            border-radius: 9px !important;
-            font-size: 13.5px !important;
-            margin-top: 8px !important;
-          }
-          .cl-footer {
-            margin-top: 6px !important;
-          }
-          .lp-footer-text {
-            margin-top: 8px !important;
-            font-size: 10px !important;
-          }
+        .lp-toggle-btn {
+          color: #f87171;
+          font-weight: 700;
+          cursor: pointer;
+          background: none;
+          border: none;
+          padding: 0;
+          margin-left: 4px;
+        }
+        .lp-toggle-btn:hover {
+          text-decoration: underline;
+        }
+
+        .lp-footer-text {
+          margin-top: 20px;
+          text-align: center;
+          font-size: 11.5px;
+          color: rgba(255, 255, 255, 0.35);
         }
       `}</style>
 
@@ -501,40 +427,109 @@ export default function LoginPage() {
             <div className="lp-badge">
               <span>★ Operations CRM ★</span>
             </div>
-            <p className="lp-subtitle">Sign in to access your CRM control center</p>
+            <p className="lp-subtitle">
+              {isSignUp ? "नवीन खाते तयार करा (Sign Up)" : "CRM मध्ये प्रवेश करण्यासाठी लॉगिन करा"}
+            </p>
           </div>
 
-          {/* Clerk Auth Component */}
-          <SignIn
-            routing="hash"
-            appearance={{
-              variables: {
-                colorPrimary: "#dc2626",
-                colorBackground: "transparent",
-                colorText: "#FFFFFF",
-                colorTextSecondary: "rgba(255,255,255,0.7)",
-                colorInputBackground: "rgba(0,0,0,0.5)",
-                colorInputText: "#FFFFFF",
-                colorNeutral: "#FFFFFF",
-                borderRadius: "14px",
-                fontFamily: "Outfit, system-ui, sans-serif",
-                fontSize: "14px",
-              },
-              elements: {
-                rootBox: { width: "100%" },
-                card: { background: "transparent", boxShadow: "none", border: "none", padding: 0, width: "100%" },
-                header: { display: "none" },
-                headerTitle: { display: "none" },
-                headerSubtitle: { display: "none" },
-                socialButtonsBlockButtonBadge: { display: "none !important" },
-                socialButtonsBlockButtonBadgeText: { display: "none !important" },
-                badge: { display: "none !important" },
-              },
-            }}
-          />
+          {/* Error & Info Alerts */}
+          {errorMsg && <div className="lp-alert">⚠️ {errorMsg}</div>}
+          {infoMsg && <div className="lp-info">✅ {infoMsg}</div>}
+
+          {/* Google OAuth Login Button */}
+          <button type="button" onClick={handleGoogleLogin} className="lp-btn-google">
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <path
+                fill="#EA4335"
+                d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.1 9 5 12 5z"
+              />
+              <path
+                fill="#4285F4"
+                d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.1-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
+              />
+            </svg>
+            Google द्वारे लॉगिन करा
+          </button>
+
+          <div className="lp-divider">
+            <span>किंवा ईमेलने लॉगिन करा</span>
+          </div>
+
+          {/* Form Fields */}
+          <form onSubmit={handleSubmit}>
+            {isSignUp && (
+              <div className="lp-input-group">
+                <label className="lp-label">पूर्ण नाव (Full Name)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="उदा. राहुल शिंदे"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="lp-input"
+                />
+              </div>
+            )}
+
+            <div className="lp-input-group">
+              <label className="lp-label">ईमेल (Email Address)</label>
+              <input
+                type="email"
+                required
+                placeholder="उदा. user@taalpathak.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="lp-input"
+              />
+            </div>
+
+            <div className="lp-input-group">
+              <label className="lp-label">पासवर्ड (Password)</label>
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="lp-input"
+              />
+            </div>
+
+            <button type="submit" disabled={loading} className="lp-btn-primary">
+              {loading
+                ? "कृपया थांबा..."
+                : isSignUp
+                ? "खाते तयार करा (Sign Up)"
+                : "लॉगिन करा (Sign In)"}
+            </button>
+          </form>
+
+          {/* Toggle Sign In / Sign Up */}
+          <div className="lp-toggle-text">
+            {isSignUp ? "तुमचे आधीच खाते आहे का?" : "नवीन सदस्य आहात का?"}
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setErrorMsg("");
+                setInfoMsg("");
+              }}
+              className="lp-toggle-btn"
+            >
+              {isSignUp ? "येथे साईन इन करा" : "नवीन खाते तयार करा"}
+            </button>
+          </div>
 
           <div className="lp-footer-text">
-            🔒 Secure System · TAAL Pathak Pune
+            🔒 Secure Supabase Authentication · TAAL Pathak Pune
           </div>
         </div>
       </div>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/clerk-react";
-import { useAuthLogger } from "../hooks/useAuthLogger";
+import { supabase } from "../lib/supabase";
 import { Icon, I } from "./icons";
 
 const NAV = [
@@ -19,26 +18,33 @@ const ADMIN_NAV = [
   { icon: I.shield, label: "Admin Panel" },
 ];
 
-/* ── Clerk: signed-in user section with logout ── */
-function ClerkUserSection() {
-  const { isSignedIn, user } = useUser();
-  const { handleLogout } = useAuthLogger();
+/* ── Supabase: signed-in user section with logout ── */
+function UserSection({ session, onLogout }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const userName = session?.user?.user_metadata?.full_name
+    || session?.user?.email?.split("@")[0]
+    || "User";
+  const userEmail = session?.user?.email || "";
+  const initials = userName.substring(0, 2).toUpperCase();
 
   const onLogoutClick = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
-    await handleLogout();
+    await onLogout?.();
   };
 
-  return isSignedIn ? (
+  return (
     <div className="space-y-2">
       {/* User info row */}
       <div className="flex items-center gap-3 rounded-xl border border-white/[.08] bg-white/[.04] p-2.5 backdrop-blur-md">
-        <UserButton />
+        <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand/30 to-brand/10 text-xs font-bold text-cream ring-1 ring-brand/40 shadow-inner">
+          {initials}
+          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-ink-950" />
+        </div>
         <div className="min-w-0 leading-tight">
-          <p className="truncate text-xs font-semibold text-cream">{user.fullName || user.username || "User"}</p>
-          <p className="truncate text-[10px] text-mist">{user.primaryEmailAddress?.emailAddress}</p>
+          <p className="truncate text-xs font-semibold text-cream">{userName}</p>
+          <p className="truncate text-[10px] text-mist">{userEmail}</p>
         </div>
       </div>
       {/* Logout button */}
@@ -51,53 +57,6 @@ function ClerkUserSection() {
         <Icon d={I.logout} className={`h-4 w-4 transition-transform ${isLoggingOut ? "animate-spin" : "group-hover:translate-x-0.5"}`} />
         <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
       </button>
-    </div>
-  ) : (
-    <div className="flex gap-2 w-full">
-      <SignInButton mode="modal">
-        <button className="flex-1 py-2 rounded-lg bg-white/[.06] border border-white/10 text-cream text-xs font-semibold hover:bg-white/10 transition-colors cursor-pointer">
-          Sign In
-        </button>
-      </SignInButton>
-      <SignUpButton mode="modal">
-        <button className="flex-1 py-2 rounded-lg bg-gradient-to-r from-brand to-rose-600 text-white text-xs font-semibold hover:from-brand-300 hover:to-rose-500 transition-colors shadow-md shadow-brand/20 cursor-pointer">
-          Sign Up
-        </button>
-      </SignUpButton>
-    </div>
-  );
-}
-
-/* ── Static (no-Clerk) user section ── */
-function StaticUserSection({ onNavigate }) {
-  return (
-    <div className="space-y-2.5">
-      <div className="flex items-center gap-3 rounded-xl border border-white/[.08] bg-white/[.04] p-2.5 backdrop-blur-md">
-        <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand/30 to-brand/10 text-xs font-bold text-cream ring-1 ring-brand/40 shadow-inner">
-          TP
-          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-ink-950" />
-        </div>
-        <div className="min-w-0 leading-tight">
-          <p className="truncate text-xs font-semibold text-cream">TAAL Team</p>
-          <p className="truncate text-[10px] text-mist">Operations CRM</p>
-        </div>
-      </div>
-      {/* Login / Logout buttons for static mode */}
-      <div className="flex gap-2">
-        <button
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/[.08] bg-white/[.04] px-2.5 py-2 text-xs font-medium text-mist transition-all hover:bg-white/[.08] hover:text-cream active:scale-95"
-        >
-          <Icon d={I.users} className="h-3.5 w-3.5" />
-          Log In
-        </button>
-        <button
-          onClick={() => onNavigate?.("Admin Panel")}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-rose-500/25 bg-rose-500/10 px-2.5 py-2 text-xs font-medium text-rose-400 transition-all hover:bg-rose-500/20 hover:text-rose-300 active:scale-95"
-        >
-          <Icon d={I.logout} className="h-3.5 w-3.5" />
-          Logout
-        </button>
-      </div>
     </div>
   );
 }
@@ -130,7 +89,7 @@ const Item = ({ icon, label, active, badge, onClick, accent, emoji }) => (
   </button>
 );
 
-function SidebarContent({ clerkEnabled, activePage, onNavigate, onClose }) {
+function SidebarContent({ session, activePage, onNavigate, onClose, onLogout }) {
   const handleNav = (label) => {
     onNavigate?.(label);
     onClose?.();
@@ -210,16 +169,13 @@ function SidebarContent({ clerkEnabled, activePage, onNavigate, onClose }) {
 
       {/* User / Auth section fixed at bottom */}
       <div className="shrink-0 pt-3 border-t border-white/[.08]">
-        {clerkEnabled
-          ? <ClerkUserSection />
-          : <StaticUserSection onNavigate={handleNav} />
-        }
+        <UserSection session={session} onLogout={onLogout} />
       </div>
     </div>
   );
 }
 
-export default function Sidebar({ clerkEnabled, activePage, onNavigate, mobileOpen, onClose }) {
+export default function Sidebar({ session, activePage, onNavigate, mobileOpen, onClose, onLogout }) {
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => {
@@ -232,9 +188,10 @@ export default function Sidebar({ clerkEnabled, activePage, onNavigate, mobileOp
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-64 flex-col border-r border-white/[.08] bg-ink-950/85 px-4 py-5 shadow-[4px_0_24px_rgba(0,0,0,.4)] backdrop-blur-2xl">
         <SidebarContent
-          clerkEnabled={clerkEnabled}
+          session={session}
           activePage={activePage}
           onNavigate={onNavigate}
+          onLogout={onLogout}
         />
       </aside>
 
@@ -253,13 +210,13 @@ export default function Sidebar({ clerkEnabled, activePage, onNavigate, mobileOp
         }`}
       >
         <SidebarContent
-          clerkEnabled={clerkEnabled}
+          session={session}
           activePage={activePage}
           onNavigate={onNavigate}
           onClose={onClose}
+          onLogout={onLogout}
         />
       </aside>
     </>
   );
 }
-

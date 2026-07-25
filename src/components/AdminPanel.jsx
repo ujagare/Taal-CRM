@@ -362,7 +362,7 @@ export default function AdminPanel() {
           <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
           <div className="min-w-0">
             <p className="text-[10px] uppercase font-bold text-mist/60">Authentication Server</p>
-            <p className="truncate text-xs font-semibold text-cream">Clerk Auth Service (Online)</p>
+            <p className="truncate text-xs font-semibold text-cream">Supabase Auth Service (Online)</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.03] p-3.5">

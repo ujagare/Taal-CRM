@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { supabase } from "./lib/supabase";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import LoginPage from "./components/LoginPage";
@@ -13,7 +13,6 @@ import ExpenseTracker from "./components/ExpenseTracker";
 import AttendanceManager from "./components/AttendanceManager";
 import AdminPanel from "./components/AdminPanel";
 import WhatsAppCenter from "./components/WhatsAppCenter";
-import { useAuthLogger } from "./hooks/useAuthLogger";
 
 const PAGE_TO_HASH = {
   "Dashboard": "#dashboard",
@@ -37,13 +36,6 @@ function getPageFromHash() {
   return HASH_TO_PAGE[hash] || "Dashboard";
 }
 
-function ClerkGate({ children }) {
-  const { isSignedIn, isLoaded } = useUser();
-  if (!isLoaded) return <LoginSkeleton />;
-  if (!isSignedIn) return <LoginPage />;
-  return children;
-}
-
 function LoginSkeleton() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-ink-950">
@@ -55,13 +47,7 @@ function LoginSkeleton() {
   );
 }
 
-/* Auth logger wrapper — only used inside ClerkProvider */
-function AuthLoggerWrapper({ children }) {
-  useAuthLogger();
-  return children;
-}
-
-function AppShell({ clerkEnabled, activePage, onNavigate, mobileMenuOpen, setMobileMenuOpen }) {
+function AppShell({ session, activePage, onNavigate, mobileMenuOpen, setMobileMenuOpen, onLogout }) {
   return (
     <div className="min-h-screen">
       <div className="fixed inset-0 -z-10 pointer-events-none">
@@ -78,11 +64,12 @@ function AppShell({ clerkEnabled, activePage, onNavigate, mobileMenuOpen, setMob
       </div>
 
       <Sidebar
-        clerkEnabled={clerkEnabled}
+        session={session}
         activePage={activePage}
         onNavigate={onNavigate}
         mobileOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
+        onLogout={onLogout}
       />
       <div className="lg:pl-64">
         <Topbar activePage={activePage} onMenuToggle={() => setMobileMenuOpen(true)} />
@@ -116,11 +103,70 @@ function AppShell({ clerkEnabled, activePage, onNavigate, mobileMenuOpen, setMob
   );
 }
 
-export default function App({ clerkEnabled }) {
+export default function App() {
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [activePage, setActivePageRaw] = useState(() => getPageFromHash());
   const [mobileMenuOpen, setMobileMenuOpenRaw] = useState(false);
 
-  // Navigate to page & sync with browser history so mobile back button works like an app!
+  // ── Supabase Auth listener ──
+  useEffect(() => {
+    // Get current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+
+      // Log login event
+      if (session) {
+        const deviceInfo = typeof navigator !== "undefined" ? navigator.userAgent.substring(0, 120) : "Unknown Device";
+        supabase
+          .from("auth_activity_logs")
+          .insert({
+            user_name: session.user?.user_metadata?.full_name || session.user?.email?.split("@")[0] || "User",
+            user_email: session.user?.email || null,
+            event_type: "login",
+            device_info: deviceInfo,
+          })
+          .then(({ error }) => {
+            if (error) console.warn("Login log failed:", error.message);
+          });
+      }
+    });
+
+    // Listen for auth state changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ── Logout handler ──
+  const handleLogout = useCallback(async () => {
+    try {
+      if (session) {
+        const deviceInfo = typeof navigator !== "undefined" ? navigator.userAgent.substring(0, 120) : "Unknown Device";
+        // Fire-and-forget logout log (max 800ms wait)
+        await Promise.race([
+          supabase.from("auth_activity_logs").insert({
+            user_name: session.user?.user_metadata?.full_name || session.user?.email?.split("@")[0] || "User",
+            user_email: session.user?.email || null,
+            event_type: "logout",
+            device_info: deviceInfo,
+          }),
+          new Promise((resolve) => setTimeout(resolve, 800)),
+        ]).catch(() => {});
+      }
+    } catch (_) {
+      // swallow
+    } finally {
+      await supabase.auth.signOut();
+      window.location.href = window.location.origin;
+    }
+  }, [session]);
+
+  // ── Navigation ──
   const changePage = useCallback((newPage) => {
     setActivePageRaw(newPage);
     const hash = PAGE_TO_HASH[newPage] || "#dashboard";
@@ -144,7 +190,6 @@ export default function App({ clerkEnabled }) {
     }
 
     const handlePopState = (e) => {
-      // If mobile menu is open, pressing back button closes the menu instead of exiting
       if (mobileMenuOpen) {
         setMobileMenuOpenRaw(false);
         return;
@@ -157,22 +202,21 @@ export default function App({ clerkEnabled }) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [activePage, mobileMenuOpen]);
 
-  const shell = (
+  // ── Render ──
+  if (authLoading) return <LoginSkeleton />;
+
+  if (!session) {
+    return <LoginPage onLoginSuccess={(s) => setSession(s)} />;
+  }
+
+  return (
     <AppShell
-      clerkEnabled={clerkEnabled}
+      session={session}
       activePage={activePage}
       onNavigate={changePage}
       mobileMenuOpen={mobileMenuOpen}
       setMobileMenuOpen={handleMobileMenuToggle}
+      onLogout={handleLogout}
     />
   );
-
-  if (clerkEnabled) {
-    return (
-      <ClerkGate>
-        <AuthLoggerWrapper>{shell}</AuthLoggerWrapper>
-      </ClerkGate>
-    );
-  }
-  return shell;
 }
