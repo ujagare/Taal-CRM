@@ -30,42 +30,54 @@ const MODULES = [
     title: "Assets Inventory",
     text: "Custodian, category and stock control.",
     icon: I.briefcase,
-    tone: "text-gold-300",
+    tone: "text-amber-300",
+    gradient: "from-amber-500/20 to-orange-500/5",
+    border: "border-amber-500/30",
   },
   {
     label: "Dhol Pan",
     title: "Dhol Pan Stock",
     text: "Old pane, new pane and size-wise counts.",
     icon: I.chart,
-    tone: "text-sky",
+    tone: "text-sky-300",
+    gradient: "from-sky-500/20 to-blue-500/5",
+    border: "border-sky-500/30",
   },
   {
     label: "Dhol Maintenance",
     title: "Dhol Maintenance",
     text: "Cycle health, due dhols and repair records.",
     icon: I.sliders,
-    tone: "text-brand-300",
+    tone: "text-rose-400",
+    gradient: "from-rose-500/20 to-red-500/5",
+    border: "border-rose-500/30",
   },
   {
     label: "Daily Report",
     title: "Daily Dhol Report",
     text: "Fodne and banane forms with daily history.",
     icon: I.note,
-    tone: "text-emerald",
+    tone: "text-emerald-300",
+    gradient: "from-emerald-500/20 to-teal-500/5",
+    border: "border-emerald-500/30",
   },
   {
     label: "New Member Exam",
     title: "Member Exams",
     text: "Registration intake and exam status.",
     icon: I.users,
-    tone: "text-coral",
+    tone: "text-purple-300",
+    gradient: "from-purple-500/20 to-pink-500/5",
+    border: "border-purple-500/30",
   },
   {
     label: "Expense Tracker",
     title: "Expense Management",
     text: "Track team expenses with bill images and payment details.",
     icon: I.dollar,
-    tone: "text-gold-300",
+    tone: "text-amber-400",
+    gradient: "from-amber-400/20 to-yellow-500/5",
+    border: "border-amber-400/30",
   },
 ];
 
@@ -89,27 +101,27 @@ function maintenanceStatus(date) {
 
 function CountValue({ value }) {
   const numeric = Number(value);
-  const count = useCountUp(Number.isFinite(numeric) ? numeric : 0, 1050);
+  const count = useCountUp(Number.isFinite(numeric) ? numeric : 0, 1100);
   if (!Number.isFinite(numeric)) return value;
   return Math.round(count).toLocaleString("en-IN");
 }
 
-function StatCard({ label, value, sub, icon, tone }) {
+function StatCard({ label, value, sub, icon, tone, gradient, ringColor }) {
   return (
-    <div className="card-premium relative min-h-[132px] overflow-hidden p-5">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-wide" />
+    <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${gradient || "from-white/[0.07] to-white/[0.02]"} p-5 shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl group`}>
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[.16em] text-mist">{label}</p>
-          <p className={`mt-3 font-display text-3xl font-semibold tabular-nums ${tone}`}>
+          <p className="text-[10px] font-bold uppercase tracking-[.18em] text-mist/70">{label}</p>
+          <p className={`mt-2.5 font-display text-3xl font-extrabold tabular-nums tracking-tight ${tone}`}>
             <CountValue value={value} />
           </p>
         </div>
-        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/[.05] ${tone}`}>
+        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-black/40 ${tone} shadow-inner transition-transform group-hover:scale-110 duration-300`}>
           <Icon d={icon} className="h-5 w-5" />
         </span>
       </div>
-      <p className="mt-3 text-xs leading-5 text-mist">{sub}</p>
+      <p className="mt-3 text-xs font-medium leading-relaxed text-mist/70">{sub}</p>
     </div>
   );
 }
@@ -117,13 +129,13 @@ function StatCard({ label, value, sub, icon, tone }) {
 function BarRow({ label, value, total, color }) {
   const pct = total ? Math.round((value / total) * 100) : 0;
   return (
-    <div>
-      <div className="mb-1.5 flex justify-between gap-3 text-sm">
+    <div className="space-y-1.5">
+      <div className="flex justify-between items-center text-xs font-medium">
         <span className="text-cream/90">{label}</span>
-        <span className="text-mist tabular-nums">{value}</span>
+        <span className="text-mist font-semibold tabular-nums">{value} <span className="text-[10px] text-mist/50">({pct}%)</span></span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/[.07]">
-        <div className={`h-full rounded-full ${color} transition-all duration-1000 ease-out`} style={{ width: `${pct}%` }} />
+      <div className="h-2.5 overflow-hidden rounded-full bg-black/40 border border-white/5 p-0.5">
+        <div className={`h-full rounded-full ${color} transition-all duration-1000 ease-out shadow-sm`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -136,19 +148,19 @@ function RingGraph({ ok, due, risk, total }) {
   const riskPct = (risk / safeTotal) * 100;
 
   return (
-    <div className="relative mx-auto h-48 w-48">
+    <div className="relative mx-auto h-48 w-48 my-2">
       <div
-        className="absolute inset-0 rounded-full animate-scale-in"
+        className="absolute inset-0 rounded-full shadow-2xl transition-all duration-1000 ease-out"
         style={{
-          background: `conic-gradient(#38BDF8 0 ${okPct}%, #F59E0B ${okPct}% ${okPct + duePct}%, #DC2626 ${okPct + duePct}% ${okPct + duePct + riskPct}%, rgba(255,255,255,.08) 0)`,
+          background: `conic-gradient(#38BDF8 0 ${okPct}%, #F59E0B ${okPct}% ${okPct + duePct}%, #F43F5E ${okPct + duePct}% ${okPct + duePct + riskPct}%, rgba(255,255,255,.08) 0)`,
         }}
       />
-      <div className="absolute inset-4 rounded-full border border-white/[.07] bg-ink-900 grid place-items-center text-center">
+      <div className="absolute inset-4 rounded-full border border-white/10 bg-ink-950/90 backdrop-blur-md grid place-items-center text-center shadow-inner">
         <div>
-          <p className="font-display text-4xl font-semibold tabular-nums">
+          <p className="font-display text-4xl font-extrabold text-cream tabular-nums">
             <CountValue value={risk} />
           </p>
-          <p className="text-[11px] uppercase tracking-[.16em] text-mist">At Risk</p>
+          <p className="text-[10px] uppercase font-bold tracking-[.18em] text-rose-400 mt-0.5">At Risk</p>
         </div>
       </div>
     </div>
@@ -158,18 +170,18 @@ function RingGraph({ ok, due, risk, total }) {
 function SparkBars({ items, max }) {
   const shown = items.length ? items : [{ label: "No entries", value: 0, color: "bg-ink-500" }];
   return (
-    <div className="flex h-44 items-end gap-2">
+    <div className="flex h-44 items-end gap-2.5 pt-4">
       {shown.map((item, index) => {
-        const pct = max ? Math.max(8, Math.round((item.value / max) * 100)) : 8;
+        const pct = max ? Math.max(10, Math.round((item.value / max) * 100)) : 10;
         return (
-          <div key={`${item.label}-${index}`} className="flex min-w-0 flex-1 flex-col items-center gap-2">
-            <div className="flex h-32 w-full items-end rounded-lg bg-white/[.04] p-1">
+          <div key={`${item.label}-${index}`} className="flex min-w-0 flex-1 flex-col items-center gap-2 group">
+            <div className="flex h-32 w-full items-end rounded-xl bg-black/40 border border-white/5 p-1">
               <div
-                className={`w-full rounded-md ${item.color} transition-all duration-1000 ease-out`}
-                style={{ height: `${pct}%`, transitionDelay: `${index * 90}ms` }}
+                className={`w-full rounded-lg ${item.color} transition-all duration-1000 ease-out shadow-md group-hover:brightness-125`}
+                style={{ height: `${pct}%`, transitionDelay: `${index * 80}ms` }}
               />
             </div>
-            <span className="max-w-full truncate text-[10px] text-mist">{item.label}</span>
+            <span className="max-w-full truncate text-[10px] font-medium text-mist/70 group-hover:text-cream">{item.label}</span>
           </div>
         );
       })}
@@ -181,21 +193,21 @@ function ModuleCard({ module, metric, onNavigate }) {
   return (
     <button
       onClick={() => onNavigate(module.label)}
-      className="card-premium group min-h-[164px] p-5 text-left transition-all hover:-translate-y-1"
+      className={`relative overflow-hidden rounded-2xl border ${module.border} bg-gradient-to-br ${module.gradient} p-5 text-left transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl group cursor-pointer`}
     >
       <div className="flex items-start justify-between gap-3">
-        <span className={`grid h-11 w-11 place-items-center rounded-xl bg-white/[.05] ${module.tone}`}>
+        <span className={`grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-black/50 ${module.tone} shadow-inner transition-transform group-hover:scale-110 duration-300`}>
           <Icon d={module.icon} className="h-5 w-5" />
         </span>
-        <span className="rounded-full border border-white/[.07] bg-white/[.04] px-2.5 py-1 text-[11px] text-mist group-hover:text-cream">
-          Open
+        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold text-mist uppercase tracking-wider group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-cream transition-all">
+          Open →
         </span>
       </div>
-      <h3 className="mt-5 font-display text-lg text-cream">{module.title}</h3>
-      <p className="mt-1 text-sm leading-5 text-mist">{module.text}</p>
-      <div className="mt-5 flex items-end justify-between gap-3">
-        <p className={`font-display text-2xl tabular-nums ${module.tone}`}>{metric.value}</p>
-        <p className="text-right text-xs text-mist">{metric.label}</p>
+      <h3 className="mt-4 font-display text-lg font-bold text-cream group-hover:text-white">{module.title}</h3>
+      <p className="mt-1 text-xs leading-5 text-mist/70 line-clamp-2">{module.text}</p>
+      <div className="mt-4 pt-3 border-t border-white/10 flex items-end justify-between gap-3">
+        <p className={`font-display text-2xl font-extrabold tabular-nums ${module.tone}`}>{metric.value}</p>
+        <p className="text-right text-[11px] font-medium text-mist/60 uppercase tracking-wider">{metric.label}</p>
       </div>
     </button>
   );
@@ -205,10 +217,10 @@ function WorkItem({ label, value, tone, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-between gap-3 rounded-xl border border-white/[.07] bg-white/[.035] px-4 py-3 text-left transition-colors hover:bg-white/[.06]"
+      className="w-full flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition-all duration-200 hover:bg-white/[0.07] hover:border-white/20 active:scale-[0.99] cursor-pointer group"
     >
-      <span className="text-sm text-cream/90">{label}</span>
-      <span className={`font-semibold tabular-nums ${tone}`}>{value}</span>
+      <span className="text-xs font-semibold text-cream/90 group-hover:text-white">{label}</span>
+      <span className={`text-xs font-bold tabular-nums rounded-lg bg-black/40 px-2.5 py-1 border border-white/5 ${tone}`}>{value}</span>
     </button>
   );
 }
@@ -330,7 +342,7 @@ export default function OperationsDashboard({ onNavigate }) {
       .map(([label, value], index) => ({
         label,
         value,
-        color: ["bg-brand", "bg-gold", "bg-sky", "bg-emerald", "bg-coral"][index % 5],
+        color: ["bg-rose-500", "bg-amber-500", "bg-sky-500", "bg-emerald-500", "bg-purple-500"][index % 5],
       }))
       .slice(0, 6);
 
@@ -398,163 +410,180 @@ export default function OperationsDashboard({ onNavigate }) {
 
   if (loading) {
     return (
-      <div className="space-y-5">
-        <div className="card h-64 shimmer" />
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => <div key={i} className="card h-36 shimmer" />)}
+      <div className="space-y-5 animate-pulse">
+        <div className="h-64 rounded-2xl bg-white/[0.05] border border-white/10" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => <div key={i} className="h-32 rounded-2xl bg-white/[0.05] border border-white/10" />)}
         </div>
-        <div className="grid gap-5 xl:grid-cols-3">
-          <div className="card h-80 xl:col-span-2 shimmer" />
-          <div className="card h-80 shimmer" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-40 rounded-2xl bg-white/[0.05] border border-white/10" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 animate-rise">
-      <section className="dashboard-hero overflow-hidden rounded-xl border border-white/[.08] bg-ink-900/90 shadow-premium-xl">
-        <div className="grid gap-6 p-5 sm:p-7 xl:grid-cols-[1.05fr_.95fr]">
+    <div className="space-y-6">
+      {/* ── ULTRA-PREMIUM HERO BANNER ── */}
+      <section className="relative overflow-hidden rounded-3xl border border-rose-500/25 bg-gradient-to-r from-ink-950 via-[#180808] to-ink-950 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
+        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-brand/15 blur-3xl pointer-events-none" />
+        <div className="absolute -left-16 -bottom-16 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+
+        <div className="relative grid gap-6 xl:grid-cols-[1.1fr_.9fr] items-center">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[.16em] text-brand-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulseDot" />
-                TAAL Live Command
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[.18em] text-brand-300 shadow-inner">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                TAAL Command Center
               </span>
-              <span className="rounded-full border border-white/[.08] bg-white/[.04] px-3 py-1 text-xs text-mist">
-                Internal operations snapshot
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-mist">
+                Live Operations Telemetry
               </span>
             </div>
-            <h1 className="mt-5 font-display text-3xl leading-tight text-cream sm:text-4xl xl:text-5xl">
-              Taal Pathak Operations Dashboard
+
+            <h1 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl xl:text-5xl leading-tight">
+              Taal Pathak Operations Suite
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-mist sm:text-base">
-              Assets, dhol pan, maintenance cycle, daily dhol report and new member exams in one premium responsive control room.
+            <p className="mt-3 max-w-xl text-xs sm:text-sm leading-relaxed text-mist/80">
+              Real-time control room for Dhol fleet maintenance, Pan stock, candidate exams, daily reports, and asset tracking.
             </p>
+
             <div className="mt-6 flex flex-wrap gap-3">
               <button
+                type="button"
                 onClick={() => onNavigate("Daily Report")}
-                className="inline-flex h-11 items-center gap-2 rounded-lg bg-cream px-4 text-sm font-bold text-ink-950 transition-all hover:-translate-y-0.5 hover:bg-gold-300"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 px-5 text-xs font-bold text-white shadow-lg shadow-rose-950/50 transition-all hover:-translate-y-0.5 active:scale-95 cursor-pointer"
               >
                 <Icon d={I.note} className="h-4 w-4" />
-                Add Daily Report
+                <span>+ Add Daily Report</span>
               </button>
               <button
+                type="button"
                 onClick={() => onNavigate("Dhol Maintenance")}
-                className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/[.08] bg-white/[.05] px-4 text-sm font-semibold text-cream transition-colors hover:bg-white/[.08]"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 px-5 text-xs font-semibold text-cream transition-all hover:-translate-y-0.5 active:scale-95 cursor-pointer"
               >
                 <Icon d={I.sliders} className="h-4 w-4" />
-                Review Maintenance
+                <span>Review Maintenance</span>
               </button>
             </div>
           </div>
 
+          {/* Quick Metrics Grid */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-white/[.07] bg-white/[.045] p-4">
-              <p className="text-[10px] uppercase tracking-[.16em] text-mist">Dhol Fleet</p>
-              <p className="mt-2 font-display text-3xl text-sky tabular-nums"><CountValue value={data.dhols.length} /></p>
-              <p className="mt-1 text-xs text-mist">30 / 28 / 26 mapped</p>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-md shadow-lg">
+              <p className="text-[10px] font-bold uppercase tracking-[.18em] text-mist/60">Dhol Fleet</p>
+              <p className="mt-2 font-display text-3xl font-extrabold text-sky-300 tabular-nums"><CountValue value={data.dhols.length} /></p>
+              <p className="mt-1 text-[11px] font-medium text-mist/60">30 / 28 / 26 mapped</p>
             </div>
-            <div className="rounded-xl border border-white/[.07] bg-white/[.045] p-4">
-              <p className="text-[10px] uppercase tracking-[.16em] text-mist">Pane Total</p>
-              <p className="mt-2 font-display text-3xl text-gold-300 tabular-nums"><CountValue value={summary.paneTotal} /></p>
-              <p className="mt-1 text-xs text-mist">old + new stock</p>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-md shadow-lg">
+              <p className="text-[10px] font-bold uppercase tracking-[.18em] text-mist/60">Pane Stock Total</p>
+              <p className="mt-2 font-display text-3xl font-extrabold text-amber-300 tabular-nums"><CountValue value={summary.paneTotal} /></p>
+              <p className="mt-1 text-[11px] font-medium text-mist/60">{summary.paneOld} old / {summary.paneNew} new</p>
             </div>
-            <div className="rounded-xl border border-white/[.07] bg-white/[.045] p-4">
-              <p className="text-[10px] uppercase tracking-[.16em] text-mist">Today Report</p>
-              <p className="mt-2 font-display text-3xl text-emerald tabular-nums"><CountValue value={summary.todayReports} /></p>
-              <p className="mt-1 text-xs text-mist">{summary.todayBroken} broken / {summary.todayMade} made</p>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-md shadow-lg">
+              <p className="text-[10px] font-bold uppercase tracking-[.18em] text-mist/60">Today Reports</p>
+              <p className="mt-2 font-display text-3xl font-extrabold text-emerald-300 tabular-nums"><CountValue value={summary.todayReports} /></p>
+              <p className="mt-1 text-[11px] font-medium text-mist/60">{summary.todayBroken} broken / {summary.todayMade} made</p>
             </div>
-            <div className="rounded-xl border border-white/[.07] bg-white/[.045] p-4">
-              <p className="text-[10px] uppercase tracking-[.16em] text-mist">Attention</p>
-              <p className="mt-2 font-display text-3xl text-brand-300 tabular-nums"><CountValue value={riskCount + summary.pending} /></p>
-              <p className="mt-1 text-xs text-mist">maintenance + exams</p>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-md shadow-lg">
+              <p className="text-[10px] font-bold uppercase tracking-[.18em] text-mist/60">Attention Needed</p>
+              <p className="mt-2 font-display text-3xl font-extrabold text-rose-400 tabular-nums"><CountValue value={riskCount + summary.pending} /></p>
+              <p className="mt-1 text-[11px] font-medium text-mist/60">maintenance + exams</p>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Asset Records" value={summary.assetRecords} sub={`${summary.assetCategories} categories, ${summary.assetCustodians} custodians`} tone="text-gold-300" icon={I.briefcase} />
-        <StatCard label="Dhol Pane" value={summary.paneTotal} sub={`${summary.paneOld} old pane and ${summary.paneNew} new pane`} tone="text-sky" icon={I.chart} />
-        <StatCard label="Maintenance Risk" value={riskCount} sub={`${summary.health.due} due soon, ${summary.health.ok} recently maintained`} tone="text-brand-300" icon={I.target} />
-        <StatCard label="Exam Pending" value={summary.pending} sub={`${summary.passed} passed, ${summary.failed} failed, ${summary.members} total`} tone="text-emerald" icon={I.users} />
+      {/* ── KPI STAT CARDS ── */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Asset Records" value={summary.assetRecords} sub={`${summary.assetCategories} categories, ${summary.assetCustodians} custodians`} tone="text-amber-300" icon={I.briefcase} gradient="from-amber-500/15 via-orange-500/5 to-transparent" />
+        <StatCard label="Dhol Pane Stock" value={summary.paneTotal} sub={`${summary.paneOld} old pane and ${summary.paneNew} new pane`} tone="text-sky-300" icon={I.chart} gradient="from-sky-500/15 via-blue-500/5 to-transparent" />
+        <StatCard label="Maintenance Risk" value={riskCount} sub={`${summary.health.due} due soon, ${summary.health.ok} maintained`} tone="text-rose-400" icon={I.target} gradient="from-rose-500/15 via-red-500/5 to-transparent" />
+        <StatCard label="Exam Pending" value={summary.pending} sub={`${summary.passed} passed, ${summary.failed} failed, ${summary.members} total`} tone="text-emerald-300" icon={I.users} gradient="from-emerald-500/15 via-teal-500/5 to-transparent" />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-5">
+      {/* ── MODULE CARDS ── */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {MODULES.map((module) => (
           <ModuleCard key={module.label} module={module} metric={moduleMetrics[module.label]} onNavigate={onNavigate} />
         ))}
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-3">
-        <section className="card-premium p-6 xl:col-span-2">
-          <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
+      {/* ── ANIMATED CHARTS & QUICK ACTIONS ── */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 backdrop-blur-xl lg:col-span-2 shadow-xl space-y-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-white/10 pb-4">
             <div>
-              <h2 className="font-display text-lg">Animated Operations Graphs</h2>
-              <p className="mt-0.5 text-xs text-mist">Live health from dhol, pane, daily report and member modules.</p>
+              <h2 className="font-display text-lg font-bold text-cream">Live Operations Telemetry</h2>
+              <p className="mt-0.5 text-xs text-mist/70">Real-time health cycle from Dhol, Pane, and Daily Report telemetry.</p>
             </div>
-            <span className="rounded-full border border-emerald/20 bg-emerald/10 px-2.5 py-1 text-[11px] text-emerald">
-              Premium live view
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
+              Live Feed
             </span>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-[.8fr_1.2fr]">
-            <div className="rounded-xl border border-white/[.07] bg-white/[.03] p-4">
-              <h3 className="text-sm font-semibold">Dhol Maintenance Ring</h3>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-black/40 p-4 shadow-inner">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-mist/70">Dhol Maintenance Cycle</h3>
               <RingGraph ok={summary.health.ok} due={summary.health.due} risk={riskCount} total={data.dhols.length} />
-              <div className="mt-2 grid grid-cols-3 gap-2 text-center text-[11px] text-mist">
-                <span><span className="text-sky">OK</span> {summary.health.ok}</span>
-                <span><span className="text-gold">Due</span> {summary.health.due}</span>
-                <span><span className="text-brand">Risk</span> {riskCount}</span>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold text-mist/80">
+                <span className="rounded-lg bg-sky-500/10 border border-sky-500/20 py-1"><span className="text-sky-300">OK:</span> {summary.health.ok}</span>
+                <span className="rounded-lg bg-amber-500/10 border border-amber-500/20 py-1"><span className="text-amber-300">Due:</span> {summary.health.due}</span>
+                <span className="rounded-lg bg-rose-500/10 border border-rose-500/20 py-1"><span className="text-rose-400">Risk:</span> {riskCount}</span>
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/[.07] bg-white/[.03] p-4">
-              <h3 className="text-sm font-semibold">Today's Dhol Work Type</h3>
+            <div className="rounded-2xl border border-white/10 bg-black/40 p-4 shadow-inner">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-mist/70">Today's Work Breakdown</h3>
               <SparkBars items={summary.workBreakdown} max={maxWork} />
             </div>
           </div>
         </section>
 
-        <section className="card-premium p-6">
-          <div className="mb-5">
-            <h2 className="font-display text-lg">Today's Work Queue</h2>
-            <p className="mt-0.5 text-xs text-mist">Fast actions based on real CRM data.</p>
+        <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="border-b border-white/10 pb-4 mb-4">
+              <h2 className="font-display text-lg font-bold text-cream">Today's Action Queue</h2>
+              <p className="mt-0.5 text-xs text-mist/70">Fast navigation triggers based on CRM data.</p>
+            </div>
+            <div className="space-y-3">
+              <WorkItem label="Daily dhol entries today" value={summary.todayReports} tone="text-emerald-300" onClick={() => onNavigate("Daily Report")} />
+              <WorkItem label="Dhols needing maintenance" value={riskCount} tone="text-rose-400" onClick={() => onNavigate("Dhol Maintenance")} />
+              <WorkItem label="Member exams pending" value={summary.pending} tone="text-amber-300" onClick={() => onNavigate("New Member Exam")} />
+              <WorkItem label="Pane stock to verify" value={summary.paneTotal} tone="text-sky-300" onClick={() => onNavigate("Dhol Pan")} />
+            </div>
           </div>
-          <div className="space-y-3">
-            <WorkItem label="Daily dhol entries today" value={summary.todayReports} tone="text-emerald" onClick={() => onNavigate("Daily Report")} />
-            <WorkItem label="Dhols needing maintenance" value={riskCount} tone="text-brand-300" onClick={() => onNavigate("Dhol Maintenance")} />
-            <WorkItem label="Member exams pending" value={summary.pending} tone="text-gold-300" onClick={() => onNavigate("New Member Exam")} />
-            <WorkItem label="Pane stock to verify" value={summary.paneTotal} tone="text-sky" onClick={() => onNavigate("Dhol Pan")} />
+          <div className="mt-6 pt-4 border-t border-white/10 text-center">
+            <p className="text-[11px] text-mist/50">TAAL Pathak Pune · CRM v2.5</p>
           </div>
         </section>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-3">
-        <section className="card-premium p-6">
-          <h2 className="font-display text-lg">Pane Stock Split</h2>
+      {/* ── SPLIT METRIC BARS ── */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 backdrop-blur-xl shadow-xl">
+          <h2 className="font-display text-sm font-bold uppercase tracking-wider text-mist/80">Pane Stock Split</h2>
           <div className="mt-5 space-y-4">
-            <BarRow label="Old Pane" value={summary.paneOld} total={summary.paneTotal} color="bg-brand" />
-            <BarRow label="New Pane" value={summary.paneNew} total={summary.paneTotal} color="bg-sky" />
+            <BarRow label="Old Pane Stock" value={summary.paneOld} total={summary.paneTotal} color="bg-gradient-to-r from-rose-500 to-red-600" />
+            <BarRow label="New Pane Stock" value={summary.paneNew} total={summary.paneTotal} color="bg-gradient-to-r from-sky-400 to-blue-500" />
           </div>
         </section>
 
-        <section className="card-premium p-6">
-          <h2 className="font-display text-lg">Dhol Size Mix</h2>
+        <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 backdrop-blur-xl shadow-xl">
+          <h2 className="font-display text-sm font-bold uppercase tracking-wider text-mist/80">Dhol Size Distribution</h2>
           <div className="mt-5 space-y-4">
-            <BarRow label={'30" Dhol'} value={summary.dholSize[30]} total={data.dhols.length} color="bg-gold" />
-            <BarRow label={'28" Dhol'} value={summary.dholSize[28]} total={data.dhols.length} color="bg-sky" />
-            <BarRow label={'26" Dhol'} value={summary.dholSize[26]} total={data.dhols.length} color="bg-coral" />
+            <BarRow label={'30" Dhol'} value={summary.dholSize[30]} total={data.dhols.length} color="bg-gradient-to-r from-amber-400 to-orange-500" />
+            <BarRow label={'28" Dhol'} value={summary.dholSize[28]} total={data.dhols.length} color="bg-gradient-to-r from-sky-400 to-blue-500" />
+            <BarRow label={'26" Dhol'} value={summary.dholSize[26]} total={data.dhols.length} color="bg-gradient-to-r from-purple-400 to-pink-500" />
           </div>
         </section>
 
-        <section className="card-premium p-6">
-          <h2 className="font-display text-lg">Member Intake</h2>
+        <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 backdrop-blur-xl shadow-xl">
+          <h2 className="font-display text-sm font-bold uppercase tracking-wider text-mist/80">Member Applicant Breakdown</h2>
           <div className="mt-5 space-y-4">
-            <BarRow label="Dhol interest" value={summary.dholMembers} total={summary.members} color="bg-brand" />
-            <BarRow label="Tasha interest" value={summary.tashaMembers} total={summary.members} color="bg-sky" />
-            <BarRow label="Exam passed" value={summary.passed} total={summary.members} color="bg-emerald" />
+            <BarRow label="Dhol Interest" value={summary.dholMembers} total={summary.members} color="bg-gradient-to-r from-rose-500 to-red-600" />
+            <BarRow label="Tasha Interest" value={summary.tashaMembers} total={summary.members} color="bg-gradient-to-r from-sky-400 to-blue-500" />
+            <BarRow label="Exam Passed" value={summary.passed} total={summary.members} color="bg-gradient-to-r from-emerald-400 to-teal-500" />
           </div>
         </section>
       </div>
