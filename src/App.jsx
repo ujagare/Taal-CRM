@@ -26,6 +26,8 @@ const PAGE_TO_HASH = {
   "Dhol Maintenance": "#dhol-maintenance",
   "Daily Report":     "#daily-report",
   "Expenses":         "#expenses",
+  "Expences":         "#expenses",
+  "Expense Tracker":  "#expenses",
   "New Member Exam":  "#new-member-exam",
   "WhatsApp":         "#whatsapp",
   "Admin Panel":      "#admin-panel",
@@ -99,7 +101,7 @@ function AppShell({ session, activePage, onNavigate, mobileMenuOpen, setMobileMe
             : activePage === "Dhol Maintenance" ? <DholMaintenance />
             : activePage === "Daily Report"     ? <DailyReport />
             : activePage === "New Member Exam"  ? <NewMemberExam />
-            : activePage === "Expenses"         ? <ExpenseTracker />
+            : (activePage === "Expenses" || activePage === "Expences" || activePage === "Expense Tracker") ? <ExpenseTracker />
             : activePage === "WhatsApp"         ? <WhatsAppCenter />
             : activePage === "Admin Panel"      ? <AdminPanel />
             : (

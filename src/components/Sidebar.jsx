@@ -9,7 +9,7 @@ const NAV = [
   { icon: I.chart,      label: "Dhol Pan" },
   { icon: I.sliders,    label: "Dhol Maintenance" },
   { icon: I.note,       label: "Daily Report" },
-  { icon: I.dollar,     label: "Expences" },
+  { icon: I.dollar,     label: "Expenses" },
   { icon: I.users,      label: "New Member Exam" },
   { icon: I.users,      label: "WhatsApp", emoji: "📱" },
 ];

@@ -71,7 +71,7 @@ const MODULES = [
     border: "border-purple-500/30",
   },
   {
-    label: "Expense Tracker",
+    label: "Expenses",
     title: "Expense Management",
     text: "Track team expenses with bill images and payment details.",
     icon: I.dollar,
@@ -399,6 +399,8 @@ export default function OperationsDashboard({ onNavigate }) {
       case "New Member Exam":
         acc[module.label] = { value: summary.members, label: `${summary.pending} pending` };
         break;
+      case "Expenses":
+      case "Expences":
       case "Expense Tracker":
         acc[module.label] = { value: summary.totalExpenses, label: "total expenses" };
         break;
