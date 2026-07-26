@@ -678,7 +678,7 @@ export default function ExpenseTracker() {
 
       {/* ═══ Add/Edit Expense Modal ═══════════════════ */}
       {showForm && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center sm:p-4">
           <div
             className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm"
             onClick={() => {
@@ -687,8 +687,12 @@ export default function ExpenseTracker() {
               setImagePreview(null);
             }}
           />
-          <div className="relative card-premium p-6 w-full max-w-xl space-y-5 animate-rise shadow-lift max-h-[92vh] overflow-y-auto scroll-thin">
+          <div className="relative card-premium p-4 sm:p-6 w-full sm:max-w-xl space-y-3 sm:space-y-5 animate-rise shadow-lift max-h-[88vh] sm:max-h-[92vh] overflow-y-auto scroll-thin rounded-b-none sm:rounded-2xl">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
+            {/* Drag handle for mobile */}
+            <div className="flex justify-center sm:hidden -mt-1 mb-1">
+              <div className="w-10 h-1 rounded-full bg-white/20" />
+            </div>
 
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-display font-semibold">
@@ -706,10 +710,10 @@ export default function ExpenseTracker() {
               </button>
             </div>
 
-            <form onSubmit={saveExpense} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={saveExpense} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-xs text-mist uppercase tracking-wider">
+                  <span className="text-[11px] text-mist uppercase tracking-wider">
                     Who bought it? *
                   </span>
                   <input
@@ -718,12 +722,12 @@ export default function ExpenseTracker() {
                       setForm({ ...form, payer_name: e.target.value })
                     }
                     placeholder="e.g. Rahul Kumar"
-                    className="w-full mt-1.5 px-3 py-2.5 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream placeholder:text-ink-500 focus:outline-none focus:border-brand/50 transition-colors"
+                    className="w-full mt-1 px-3 py-2 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream placeholder:text-ink-500 focus:outline-none focus:border-brand/50 transition-colors"
                     required
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs text-mist uppercase tracking-wider">
+                  <span className="text-[11px] text-mist uppercase tracking-wider">
                     What was bought? *
                   </span>
                   <input
@@ -732,18 +736,18 @@ export default function ExpenseTracker() {
                       setForm({ ...form, item_description: e.target.value })
                     }
                     placeholder="e.g. Dhol skin, Cable"
-                    className="w-full mt-1.5 px-3 py-2.5 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream placeholder:text-ink-500 focus:outline-none focus:border-brand/50 transition-colors"
+                    className="w-full mt-1 px-3 py-2 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream placeholder:text-ink-500 focus:outline-none focus:border-brand/50 transition-colors"
                     required
                   />
                 </label>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-xs text-mist uppercase tracking-wider">
+                  <span className="text-[11px] text-mist uppercase tracking-wider">
                     Amount (₹) *
                   </span>
-                  <div className="relative mt-1.5">
+                  <div className="relative mt-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-mist text-sm font-medium">
                       ₹
                     </span>
@@ -756,13 +760,13 @@ export default function ExpenseTracker() {
                         setForm({ ...form, amount: e.target.value })
                       }
                       placeholder="0.00"
-                      className="w-full pl-7 pr-3 py-2.5 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream placeholder:text-ink-500 focus:outline-none focus:border-brand/50 transition-colors tabular-nums"
+                      className="w-full pl-7 pr-3 py-2 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream placeholder:text-ink-500 focus:outline-none focus:border-brand/50 transition-colors tabular-nums"
                       required
                     />
                   </div>
                 </label>
                 <label className="block">
-                  <span className="text-xs text-mist uppercase tracking-wider">
+                  <span className="text-[11px] text-mist uppercase tracking-wider">
                     Category *
                   </span>
                   <select
@@ -770,7 +774,7 @@ export default function ExpenseTracker() {
                     onChange={(e) =>
                       setForm({ ...form, category: e.target.value })
                     }
-                    className="w-full mt-1.5 px-3 py-2.5 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream focus:outline-none focus:border-brand/50 transition-colors"
+                    className="w-full mt-1 px-3 py-2 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream focus:outline-none focus:border-brand/50 transition-colors"
                   >
                     {CATEGORIES.map((cat) => (
                       <option key={cat.value} value={cat.value}>
@@ -781,9 +785,9 @@ export default function ExpenseTracker() {
                 </label>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-xs text-mist uppercase tracking-wider">
+                  <span className="text-[11px] text-mist uppercase tracking-wider">
                     Bill Date *
                   </span>
                   <input
@@ -792,21 +796,21 @@ export default function ExpenseTracker() {
                     onChange={(e) =>
                       setForm({ ...form, bill_date: e.target.value })
                     }
-                    className="w-full mt-1.5 px-3 py-2.5 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream focus:outline-none focus:border-brand/50 transition-colors"
+                    className="w-full mt-1 px-3 py-2 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream focus:outline-none focus:border-brand/50 transition-colors"
                     required
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs text-mist uppercase tracking-wider">
+                  <span className="text-[11px] text-mist uppercase tracking-wider">
                     Payment Method *
                   </span>
-                  <div className="flex gap-2 mt-1.5">
+                  <div className="flex gap-2 mt-1">
                     <button
                       type="button"
                       onClick={() =>
                         setForm({ ...form, payment_method: "cash" })
                       }
-                      className={`flex-1 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                      className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-all ${
                         form.payment_method === "cash"
                           ? "bg-gold/15 text-gold border-gold/30 shadow-[0_0_12px_rgba(245,158,11,.1)]"
                           : "border-white/[.07] text-mist hover:text-cream hover:bg-white/[.04]"
@@ -819,7 +823,7 @@ export default function ExpenseTracker() {
                       onClick={() =>
                         setForm({ ...form, payment_method: "online" })
                       }
-                      className={`flex-1 py-2.5 rounded-lg border text-sm font-medium transition-all ${
+                      className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-all ${
                         form.payment_method === "online"
                           ? "bg-emerald/15 text-emerald border-emerald/30 shadow-[0_0_12px_rgba(52,211,153,.1)]"
                           : "border-white/[.07] text-mist hover:text-cream hover:bg-white/[.04]"
@@ -832,10 +836,10 @@ export default function ExpenseTracker() {
               </div>
 
               <div>
-                <span className="text-xs text-mist uppercase tracking-wider">
-                  Bill Image (Photo / Screenshot)
+                <span className="text-[11px] text-mist uppercase tracking-wider">
+                  Bill Image (Optional)
                 </span>
-                <div className="mt-1.5">
+                <div className="mt-1">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -858,7 +862,7 @@ export default function ExpenseTracker() {
                       <img
                         src={imagePreview || form.image_url}
                         alt="Bill preview"
-                        className="w-full max-h-48 object-contain rounded-lg border border-white/[.1] bg-ink-950"
+                        className="w-full max-h-28 sm:max-h-40 object-contain rounded-lg border border-white/[.1] bg-ink-950"
                       />
                       <div className="absolute inset-0 bg-ink-950/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-3">
                         <button
@@ -894,28 +898,26 @@ export default function ExpenseTracker() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full py-8 rounded-lg border-2 border-dashed border-white/[.1] bg-white/[.02] hover:bg-white/[.04] hover:border-white/[.2] transition-all flex flex-col items-center gap-2 text-mist group"
+                      className="w-full py-4 sm:py-6 rounded-lg border-2 border-dashed border-white/[.1] bg-white/[.02] hover:bg-white/[.04] hover:border-white/[.2] transition-all flex items-center justify-center gap-3 text-mist group"
                     >
-                      <div className="grid h-12 w-12 place-items-center rounded-xl bg-white/[.05] group-hover:bg-white/[.08] transition-colors">
-                        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <div className="grid h-9 w-9 place-items-center rounded-xl bg-white/[.05] group-hover:bg-white/[.08] transition-colors shrink-0">
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                           <circle cx="8.5" cy="8.5" r="1.5" />
                           <polyline points="21 15 16 10 5 21" />
                         </svg>
                       </div>
-                      <span className="text-sm">
-                        Click to upload bill image
-                      </span>
-                      <span className="text-[11px] text-ink-500">
-                        JPG, PNG, or HEIC (max 5MB)
-                      </span>
+                      <div className="text-left">
+                        <span className="text-sm block">Tap to upload bill image</span>
+                        <span className="text-[11px] text-ink-500">JPG, PNG, HEIC (max 5MB)</span>
+                      </div>
                     </button>
                   )}
                 </div>
               </div>
 
               <label className="block">
-                <span className="text-xs text-mist uppercase tracking-wider">
+                <span className="text-[11px] text-mist uppercase tracking-wider">
                   Notes (Optional)
                 </span>
                 <textarea
@@ -923,9 +925,9 @@ export default function ExpenseTracker() {
                   onChange={(e) =>
                     setForm({ ...form, notes: e.target.value })
                   }
-                  rows={2}
-                  placeholder="Additional details about this expense..."
-                  className="w-full mt-1.5 px-3 py-2.5 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream placeholder:text-ink-500 focus:outline-none focus:border-brand/50 resize-none transition-colors"
+                  rows={1}
+                  placeholder="Additional details..."
+                  className="w-full mt-1 px-3 py-2 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream placeholder:text-ink-500 focus:outline-none focus:border-brand/50 resize-none transition-colors"
                 />
               </label>
 
