@@ -312,6 +312,24 @@ export default function ExpenseTracker() {
     };
   }, [loadExpenses]);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showForm) {
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+    };
+  }, [showForm]);
+
   /* ─── Image Upload ─────────────────────────────── */
   const handleImageUpload = async (file) => {
     if (!file) return null;
@@ -678,7 +696,7 @@ export default function ExpenseTracker() {
 
       {/* ═══ Add/Edit Expense Modal ═══════════════════ */}
       {showForm && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center sm:p-4">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4">
           <div
             className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm"
             onClick={() => {
@@ -687,12 +705,8 @@ export default function ExpenseTracker() {
               setImagePreview(null);
             }}
           />
-          <div className="relative card-premium p-4 sm:p-6 w-full sm:max-w-xl space-y-3 sm:space-y-5 animate-rise shadow-lift max-h-[88vh] sm:max-h-[92vh] overflow-y-auto scroll-thin rounded-b-none sm:rounded-2xl">
+          <div className="relative card-premium p-4 sm:p-6 w-full max-w-lg space-y-3 animate-rise shadow-lift max-h-[85vh] overflow-y-auto scroll-thin rounded-2xl">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
-            {/* Drag handle for mobile */}
-            <div className="flex justify-center sm:hidden -mt-1 mb-1">
-              <div className="w-10 h-1 rounded-full bg-white/20" />
-            </div>
 
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-display font-semibold">
