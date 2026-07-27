@@ -3,6 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script>
+      // Clear any registered PWA Service Worker & Cache Storage
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (let registration of registrations) {
+            registration.unregister();
+          }
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (let name of names) {
+            caches.delete(name);
+          }
+        });
+      }
+    </script>
     <title>TAAL Pathak CRM</title>
     <meta name="description" content="TAAL Pathak Operations CRM — Attendance, Dhol Maintenance, Daily Reports & More" />
     <meta name="theme-color" content="#dc2626" />
