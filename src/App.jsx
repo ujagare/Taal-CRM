@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { supabase } from "./lib/supabase";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
@@ -131,6 +131,17 @@ export default function App() {
   const [activePage, setActivePageRaw] = useState(() => getPageFromHash());
   const [mobileMenuOpen, setMobileMenuOpenRaw] = useState(false);
 
+  const isDev = import.meta.env.DEV;
+
+  // Fallback dev session when running locally in development mode
+  const devSession = useMemo(() => ({
+    user: {
+      id: "dev-admin",
+      email: "dev@ddtech.in",
+      user_metadata: { full_name: "Developer (Dev Mode)" },
+    },
+  }), []);
+
   // ── Supabase Auth listener ──
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -227,15 +238,19 @@ export default function App() {
     return <PublicRegistration />;
   }
 
-  if (authLoading) return <LoginSkeleton />;
+  if (authLoading && !isDev) return <LoginSkeleton />;
 
-  if (!session) {
+  // Effective session: real session if logged in, or fallback dev session if in DEV mode
+  const effectiveSession = session || (isDev ? devSession : null);
+
+  // In production mode, require authentic user session. In DEV mode, bypass login screen!
+  if (!effectiveSession) {
     return <LoginPage onLoginSuccess={(s) => setSession(s)} />;
   }
 
   return (
     <AppShell
-      session={session}
+      session={effectiveSession}
       activePage={activePage}
       onNavigate={changePage}
       mobileMenuOpen={mobileMenuOpen}
