@@ -750,19 +750,28 @@ export default function DholPan() {
     else setNewData((prev) => ({ ...prev, [size]: updated }));
     setEditModal(null);
 
-    const { error } = await supabase
-      .from("dhol_pan")
-      .update({
+    // Use UPSERT to insert if not exists, update if exists
+    const { error } = await supabase.from("dhol_pan").upsert(
+      {
+        pane_type: paneType,
+        size: dbSize,
         thapi: counts.thapi,
         dhoom: counts.dhoom,
         arrived_at: now,
         brought_by: broughtBy || null,
         brought_at: broughtAt || null,
-      })
-      .eq("pane_type", paneType)
-      .eq("size", dbSize);
+      },
+      {
+        onConflict: "pane_type,size",
+      },
+    );
 
-    if (error) console.warn("Supabase update failed:", error.message);
+    if (error) {
+      console.error("Supabase upsert failed:", error.message, error);
+      alert(`Data save nahi hua: ${error.message}`);
+    } else {
+      console.log("✅ Pan data successfully saved to Supabase");
+    }
   };
 
   const resetPane = async (paneType, size) => {
@@ -782,19 +791,28 @@ export default function DholPan() {
       setOldData((prev) => ({ ...prev, [size]: cleared }));
     else setNewData((prev) => ({ ...prev, [size]: cleared }));
 
-    const { error } = await supabase
-      .from("dhol_pan")
-      .update({
+    // Use UPSERT for reset as well
+    const { error } = await supabase.from("dhol_pan").upsert(
+      {
+        pane_type: paneType,
+        size: dbSize,
         thapi: 0,
         dhoom: 0,
         arrived_at: now,
         brought_by: null,
         brought_at: null,
-      })
-      .eq("pane_type", paneType)
-      .eq("size", dbSize);
+      },
+      {
+        onConflict: "pane_type,size",
+      },
+    );
 
-    if (error) console.warn("Supabase reset failed:", error.message);
+    if (error) {
+      console.error("Supabase reset failed:", error.message, error);
+      alert(`Reset nahi hua: ${error.message}`);
+    } else {
+      console.log("✅ Pan data successfully reset in Supabase");
+    }
   };
 
   const downloadReport = async () => {
