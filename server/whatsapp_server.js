@@ -138,6 +138,68 @@ app.post('/api/whatsapp/send-bulk', async (req, res) => {
 
 // Start Server & Connect WhatsApp
 const PORT = 5001;
+
+// Daily Report WhatsApp Endpoint — send structured report as formatted message
+app.post('/api/whatsapp/send-report', async (req, res) => {
+  const { phone, reportData } = req.body;
+
+  if (!phone || !reportData) {
+    return res.status(400).json({ error: 'Phone and reportData are required' });
+  }
+
+  if (!isConnected || !waSock) {
+    return res.status(503).json({ error: 'WhatsApp is not connected yet. Please scan the QR code first.' });
+  }
+
+  try {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const formattedJid = cleanPhone.startsWith('91') ? `${cleanPhone}@s.whatsapp.net` : `91${cleanPhone}@s.whatsapp.net`;
+
+    // Build formatted message from report data
+    const d = reportData;
+    const msg = `📊 *TAAL PATHAK — दैनिक अहवाल*
+📅 *Date:* ${d.date || new Date().toLocaleDateString('en-IN')}
+
+━━━━━━━━━━━━━━━━━━━━
+🥁 *DHOL STATUS*
+━━━━━━━━━━━━━━━━━━━━
+✅ Ready: *${d.readyCount || 0}*
+💥 Broken: *${d.brokenCount || 0}*
+🔨 Made: *${d.madeCount || 0}*
+
+━━━━━━━━━━━━━━━━━━━━
+🎯 *PAN STOCK*
+━━━━━━━━━━━━━━━━━━━━
+30": *${d.pan30 || 0}* | 28": *${d.pan28 || 0}* | 26": *${d.pan26 || 0}*
+
+━━━━━━━━━━━━━━━━━━━━
+🧵 *DORI STOCK*
+━━━━━━━━━━━━━━━━━━━━
+30": *${d.dori30 || 0}* | 28": *${d.dori28 || 0}* | 26": *${d.dori26 || 0}*
+
+━━━━━━━━━━━━━━━━━━━━
+🔩 *MAIN STOCK*
+━━━━━━━━━━━━━━━━━━━━
+30": *${d.main30 || 0}* | 28": *${d.main28 || 0}* | 26": *${d.main26 || 0}*
+
+━━━━━━━━━━━━━━━━━━━━
+👥 *ATTENDANCE*
+━━━━━━━━━━━━━━━━━━━━
+Present: *${d.present || 0}* | Absent: *${d.absent || 0}*
+
+${d.lowStockItems?.length > 0 ? `\n🚨 *LOW STOCK ALERT:*\n${d.lowStockItems.map(l => `  ⚠️ ${l}`).join('\n')}\n` : ''}
+━━━━━━━━━━━━━━━━━━━━
+_TAAL Pathak CRM — Auto Report_`;
+
+    await waSock.sendMessage(formattedJid, { text: msg });
+    console.log(`📊 Daily report sent to: ${cleanPhone}`);
+    return res.json({ success: true, message: 'Daily report sent successfully!' });
+  } catch (err) {
+    console.error('Failed to send daily report:', err);
+    return res.status(500).json({ error: err.message || 'Failed to send report' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`\n🚀 TAAL WhatsApp Automation Server running on http://localhost:${PORT}`);
   connectToWhatsApp();

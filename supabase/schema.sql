@@ -360,3 +360,73 @@ create index if not exists idx_auth_activity_logs_event on auth_activity_logs(ev
 -- Note: Storage bucket for expense bills needs to be created separately
 -- In Supabase dashboard: Storage -> New Bucket -> Name: expense-bills -> Public access: Public
 -- Or via Supabase CLI: supabase storage create expense-bills --public
+
+-- =====================================================
+-- ENHANCED DAILY REPORT MODULE TABLES
+-- =====================================================
+
+-- Main (Nail/Hardware) Inventory — size-wise tracking
+create table if not exists main_inventory (
+  id bigint primary key generated always as identity,
+  size text not null unique,
+  current_count integer not null default 0,
+  last_updated_at timestamptz default now(),
+  last_updated_by text,
+  notes text
+);
+
+-- Seed initial main counts (default 0)
+insert into main_inventory (size, current_count, notes) values
+  ('26"', 0, 'Initial stock'),
+  ('28"', 0, 'Initial stock'),
+  ('30"', 0, 'Initial stock')
+on conflict (size) do nothing;
+
+alter table main_inventory disable row level security;
+
+-- Size-wise Dori (Rope) Inventory
+create table if not exists dori_size_inventory (
+  id bigint primary key generated always as identity,
+  size text not null unique,
+  current_count integer not null default 0,
+  last_updated_at timestamptz default now(),
+  last_updated_by text,
+  notes text
+);
+
+-- Seed initial dori counts (split from total 47)
+insert into dori_size_inventory (size, current_count, notes) values
+  ('26"', 10, 'Initial stock — from total 47'),
+  ('28"', 25, 'Initial stock — from total 47'),
+  ('30"', 12, 'Initial stock — from total 47')
+on conflict (size) do nothing;
+
+alter table dori_size_inventory disable row level security;
+
+-- Daily Summary Reports — auto-saved daily snapshots
+create table if not exists daily_summary_reports (
+  id uuid primary key default gen_random_uuid(),
+  report_date date not null unique,
+  ready_dhol_count integer default 0,
+  broken_count integer default 0,
+  made_count integer default 0,
+  pan_26_count integer default 0,
+  pan_28_count integer default 0,
+  pan_30_count integer default 0,
+  dori_26_count integer default 0,
+  dori_28_count integer default 0,
+  dori_30_count integer default 0,
+  main_26_count integer default 0,
+  main_28_count integer default 0,
+  main_30_count integer default 0,
+  dori_total integer default 0,
+  present_count integer default 0,
+  absent_count integer default 0,
+  total_members integer default 0,
+  whatsapp_sent boolean default false,
+  pdf_generated boolean default false,
+  created_at timestamptz default now()
+);
+
+alter table daily_summary_reports disable row level security;
+create index if not exists idx_daily_summary_date on daily_summary_reports(report_date desc);
