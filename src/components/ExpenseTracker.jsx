@@ -22,7 +22,11 @@ const CATEGORY_MAP = CATEGORIES.reduce((acc, c) => {
 
 const PAYMENT_COLORS = {
   cash: { bg: "bg-gold/10", text: "text-gold", border: "border-gold/25" },
-  online: { bg: "bg-emerald/10", text: "text-emerald", border: "border-emerald/25" },
+  online: {
+    bg: "bg-emerald/10",
+    text: "text-emerald",
+    border: "border-emerald/25",
+  },
 };
 
 const emptyForm = {
@@ -46,10 +50,13 @@ const DATE_FILTERS = [
 /* ─── Helpers ──────────────────────────────────────── */
 function formatCurrency(num) {
   if (!num && num !== 0) return "₹0";
-  return "₹" + Number(num).toLocaleString("en-IN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
+  return (
+    "₹" +
+    Number(num).toLocaleString("en-IN", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })
+  );
 }
 
 function formatDateShort(dateStr) {
@@ -76,7 +83,9 @@ function isInDateRange(dateStr, filter) {
     return d >= weekStart;
   }
   if (filter === "month") {
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    return (
+      d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    );
   }
   return true;
 }
@@ -104,10 +113,10 @@ function downloadCSV(expenses) {
     e.image_url || "",
   ]);
 
-  const csvContent =
-    [headers.join(","), ...rows.map((r) => r.map((v) => `"${v}"`).join(","))].join(
-      "\n"
-    );
+  const csvContent = [
+    headers.join(","),
+    ...rows.map((r) => r.map((v) => `"${v}"`).join(",")),
+  ].join("\n");
 
   const blob = new Blob(["\uFEFF" + csvContent], {
     type: "text/csv;charset=utf-8;",
@@ -163,13 +172,16 @@ function Toast({ message, type = "success", onClose }) {
         type === "success"
           ? "bg-emerald/15 text-emerald border border-emerald/25"
           : type === "error"
-          ? "bg-brand/15 text-brand-300 border border-brand/25"
-          : "bg-gold/15 text-gold border border-gold/25"
+            ? "bg-brand/15 text-brand-300 border border-brand/25"
+            : "bg-gold/15 text-gold border border-gold/25"
       }`}
     >
       <span>{type === "success" ? "✓" : type === "error" ? "✕" : "ℹ️"}</span>
       <span>{message}</span>
-      <button onClick={onClose} className="ml-2 opacity-60 hover:opacity-100 transition-opacity">
+      <button
+        onClick={onClose}
+        className="ml-2 opacity-60 hover:opacity-100 transition-opacity"
+      >
         <Icon d={I.x} className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -203,7 +215,15 @@ function ImageViewer({ url, onClose }) {
           rel="noopener noreferrer"
           className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-white/[.06] border border-white/[.08] px-4 py-2.5 text-sm text-mist hover:text-cream hover:bg-white/[.1] transition-all"
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
             <polyline points="15 3 21 3 21 9" />
             <line x1="10" y1="14" x2="21" y2="3" />
@@ -222,12 +242,18 @@ function StatCard({ label, value, prefix, icon, tone, sub }) {
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[.16em] text-mist">{label}</p>
-          <p className={`mt-2.5 font-display text-3xl font-semibold tabular-nums ${tone}`}>
+          <p className="text-[10px] uppercase tracking-[.16em] text-mist">
+            {label}
+          </p>
+          <p
+            className={`mt-2.5 font-display text-3xl font-semibold tabular-nums ${tone}`}
+          >
             <AnimatedValue value={value} prefix={prefix} />
           </p>
         </div>
-        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/[.05] ${tone}`}>
+        <span
+          className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/[.05] ${tone}`}
+        >
           {icon}
         </span>
       </div>
@@ -279,7 +305,9 @@ export default function ExpenseTracker() {
 
     if (!fromRemote) {
       try {
-        const local = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
+        const local = JSON.parse(
+          localStorage.getItem(LOCAL_STORAGE_KEY) || "[]",
+        );
         loadedData = local;
       } catch {
         loadedData = [];
@@ -303,7 +331,7 @@ export default function ExpenseTracker() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "expenses" },
-        loadExpenses
+        loadExpenses,
       )
       .subscribe();
 
@@ -357,7 +385,10 @@ export default function ExpenseTracker() {
             return;
           }
         } catch (err) {
-          console.warn("Supabase storage upload error, fallback to data URL:", err);
+          console.warn(
+            "Supabase storage upload error, fallback to data URL:",
+            err,
+          );
         }
         setUploading(false);
         resolve(localDataUrl);
@@ -372,7 +403,9 @@ export default function ExpenseTracker() {
     setSaving(true);
 
     const expenseData = {
-      id: editingId || `local-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id:
+        editingId ||
+        `local-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       payer_name: form.payer_name.trim(),
       item_description: form.item_description.trim(),
       amount: parseFloat(form.amount) || 0,
@@ -423,7 +456,9 @@ export default function ExpenseTracker() {
     setExpenses((prev) => {
       let updated;
       if (editingId) {
-        updated = prev.map((item) => (item.id === editingId ? expenseData : item));
+        updated = prev.map((item) =>
+          item.id === editingId ? expenseData : item,
+        );
       } else {
         updated = [expenseData, ...prev];
       }
@@ -438,7 +473,7 @@ export default function ExpenseTracker() {
         editingId
           ? "Expense updated locally!"
           : "Expense added locally! (Run schema.sql in Supabase to sync online)",
-        "info"
+        "info",
       );
     }
 
@@ -451,7 +486,8 @@ export default function ExpenseTracker() {
 
   /* ─── Delete Expense ───────────────────────────── */
   const deleteExpense = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this expense?")) return;
+    if (!window.confirm("Are you sure you want to delete this expense?"))
+      return;
     try {
       if (!String(id).startsWith("local-")) {
         await supabase.from("expenses").delete().eq("id", id);
@@ -514,17 +550,25 @@ export default function ExpenseTracker() {
     const todayStr = now.toISOString().split("T")[0];
 
     const todayExpenses = safeExpenses.filter((e) => e.bill_date === todayStr);
-    const todayTotal = todayExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+    const todayTotal = todayExpenses.reduce(
+      (sum, e) => sum + (parseFloat(e.amount) || 0),
+      0,
+    );
 
     const monthExpenses = safeExpenses.filter((e) => {
       const d = new Date(e.bill_date);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      return (
+        d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      );
     });
-    const monthTotal = monthExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+    const monthTotal = monthExpenses.reduce(
+      (sum, e) => sum + (parseFloat(e.amount) || 0),
+      0,
+    );
 
     const filteredTotal = filteredExpenses.reduce(
       (sum, e) => sum + (parseFloat(e.amount) || 0),
-      0
+      0,
     );
 
     const cashTotal = filteredExpenses
@@ -602,7 +646,15 @@ export default function ExpenseTracker() {
             onClick={() => downloadCSV(filteredExpenses)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-white/[.08] bg-white/[.05] text-sm font-medium text-cream hover:bg-white/[.08] transition-all"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
@@ -664,14 +716,18 @@ export default function ExpenseTracker() {
       <div className="card-glass p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-4">
           <div>
-            <p className="text-xs text-mist uppercase tracking-wider">Filtered Total</p>
+            <p className="text-xs text-mist uppercase tracking-wider">
+              Filtered Total
+            </p>
             <p className="text-2xl font-display font-semibold text-cream tabular-nums">
               {formatCurrency(stats.filteredTotal)}
             </p>
           </div>
           <div className="h-10 w-px bg-white/[.08]" />
           <div>
-            <p className="text-xs text-mist uppercase tracking-wider">Entries</p>
+            <p className="text-xs text-mist uppercase tracking-wider">
+              Entries
+            </p>
             <p className="text-2xl font-display font-semibold text-cream tabular-nums">
               {stats.filteredCount}
             </p>
@@ -696,7 +752,7 @@ export default function ExpenseTracker() {
 
       {/* ═══ Add/Edit Expense Modal ═══════════════════ */}
       {showForm && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 z-[70] flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div
             className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm"
             onClick={() => {
@@ -705,7 +761,7 @@ export default function ExpenseTracker() {
               setImagePreview(null);
             }}
           />
-          <div className="relative card-premium p-4 sm:p-6 w-full max-w-lg space-y-3 animate-rise shadow-lift max-h-[85vh] overflow-y-auto scroll-thin rounded-2xl">
+          <div className="relative card-premium p-4 sm:p-6 w-full max-w-lg space-y-3 animate-rise shadow-lift my-auto max-h-[90vh] sm:max-h-[85vh] overflow-y-auto scroll-thin rounded-2xl">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
 
             <div className="flex items-center justify-between">
@@ -915,15 +971,34 @@ export default function ExpenseTracker() {
                       className="w-full py-4 sm:py-6 rounded-lg border-2 border-dashed border-white/[.1] bg-white/[.02] hover:bg-white/[.04] hover:border-white/[.2] transition-all flex items-center justify-center gap-3 text-mist group"
                     >
                       <div className="grid h-9 w-9 place-items-center rounded-xl bg-white/[.05] group-hover:bg-white/[.08] transition-colors shrink-0">
-                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <svg
+                          className="w-5 h-5"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect
+                            x="3"
+                            y="3"
+                            width="18"
+                            height="18"
+                            rx="2"
+                            ry="2"
+                          />
                           <circle cx="8.5" cy="8.5" r="1.5" />
                           <polyline points="21 15 16 10 5 21" />
                         </svg>
                       </div>
                       <div className="text-left">
-                        <span className="text-sm block">Tap to upload bill image</span>
-                        <span className="text-[11px] text-ink-500">JPG, PNG, HEIC (max 5MB)</span>
+                        <span className="text-sm block">
+                          Tap to upload bill image
+                        </span>
+                        <span className="text-[11px] text-ink-500">
+                          JPG, PNG, HEIC (max 5MB)
+                        </span>
                       </div>
                     </button>
                   )}
@@ -936,9 +1011,7 @@ export default function ExpenseTracker() {
                 </span>
                 <textarea
                   value={form.notes}
-                  onChange={(e) =>
-                    setForm({ ...form, notes: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   rows={1}
                   placeholder="Additional details..."
                   className="w-full mt-1 px-3 py-2 rounded-lg bg-ink-950 border border-white/[.07] text-sm text-cream placeholder:text-ink-500 focus:outline-none focus:border-brand/50 resize-none transition-colors"
@@ -1048,10 +1121,7 @@ export default function ExpenseTracker() {
             <tbody>
               {filteredExpenses.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-5 py-16 text-center"
-                  >
+                  <td colSpan={8} className="px-5 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/[.04]">
                         <Icon d={I.dollar} className="w-7 h-7 text-mist" />
@@ -1132,22 +1202,33 @@ export default function ExpenseTracker() {
                       <td className="px-5 py-4 text-center">
                         {expense.image_url ? (
                           <button
-                            onClick={() =>
-                              setViewImage(expense.image_url)
-                            }
+                            onClick={() => setViewImage(expense.image_url)}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] text-sky bg-sky/10 border border-sky/20 hover:bg-sky/20 transition-all"
                           >
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <svg
+                              className="w-3 h-3"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <rect
+                                x="3"
+                                y="3"
+                                width="18"
+                                height="18"
+                                rx="2"
+                                ry="2"
+                              />
                               <circle cx="8.5" cy="8.5" r="1.5" />
                               <polyline points="21 15 16 10 5 21" />
                             </svg>
                             View
                           </button>
                         ) : (
-                          <span className="text-[11px] text-ink-500">
-                            —
-                          </span>
+                          <span className="text-[11px] text-ink-500">—</span>
                         )}
                       </td>
                       <td className="px-5 py-4 text-right whitespace-nowrap">
@@ -1157,22 +1238,25 @@ export default function ExpenseTracker() {
                             className="p-1.5 rounded-lg text-mist hover:text-sky hover:bg-sky/10 transition-all"
                             title="Edit"
                           >
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                              className="w-3.5 h-3.5"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
                               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
                           </button>
                           <button
-                            onClick={() =>
-                              deleteExpense(expense.id)
-                            }
+                            onClick={() => deleteExpense(expense.id)}
                             className="p-1.5 rounded-lg text-mist hover:text-coral hover:bg-coral/10 transition-all"
                             title="Delete"
                           >
-                            <Icon
-                              d={I.trash}
-                              className="w-3.5 h-3.5"
-                            />
+                            <Icon d={I.trash} className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>

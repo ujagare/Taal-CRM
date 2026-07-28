@@ -10,9 +10,9 @@ import { Icon, I } from "./icons";
 const TOTAL_DHOLS = 54;
 const HISTORY_DAYS = 60;
 
-// Size Rule: #1-#25 = 30", #26-#52 = 28", #53-#54 = 26"
+// Size Rule: #1-#10 = 30", #11-#52 = 28", #53-#54 = 26"
 function getDholSize(num) {
-  if (num <= 25) return 30;
+  if (num <= 10) return 30;
   if (num >= 53) return 26;
   return 28;
 }
@@ -75,7 +75,7 @@ function getStatusColor(logs) {
 ───────────────────────────────────────────── */
 function PdfExportModal({ logs, dhols, onClose }) {
   const todayStr = new Date().toISOString().slice(0, 10);
-  
+
   const [rangeType, setRangeType] = useState("today"); // today, week, month, custom
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(todayStr);
@@ -116,13 +116,24 @@ function PdfExportModal({ logs, dhols, onClose }) {
       }
 
       // Dhol Number check
-      if (dholNumFilter !== "all" && String(log.dhol_number) !== dholNumFilter) {
+      if (
+        dholNumFilter !== "all" &&
+        String(log.dhol_number) !== dholNumFilter
+      ) {
         return false;
       }
 
       return true;
     });
-  }, [logs, rangeType, startDate, endDate, sizeFilter, dholNumFilter, todayStr]);
+  }, [
+    logs,
+    rangeType,
+    startDate,
+    endDate,
+    sizeFilter,
+    dholNumFilter,
+    todayStr,
+  ]);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -130,7 +141,8 @@ function PdfExportModal({ logs, dhols, onClose }) {
       let rangeTitle = "Aaj Ka Din (Today)";
       if (rangeType === "week") rangeTitle = "Pichle 7 Din (Week)";
       else if (rangeType === "month") rangeTitle = "Pichle 30 Din (Month)";
-      else if (rangeType === "custom") rangeTitle = `${fmtDate(startDate)} se ${fmtDate(endDate)} tak`;
+      else if (rangeType === "custom")
+        rangeTitle = `${fmtDate(startDate)} se ${fmtDate(endDate)} tak`;
 
       const doc = new jsPDF("p", "mm", "a4");
       const pageW = 210;
@@ -168,7 +180,9 @@ function PdfExportModal({ logs, dhols, onClose }) {
       doc.setFontSize(9);
       doc.setTextColor(180, 140, 60);
       doc.setFont("helvetica", "bold");
-      doc.text("TAAL CRM — INSTRUMENT MAINTENANCE SYSTEM", pageW / 2, 72, { align: "center" });
+      doc.text("TAAL CRM — INSTRUMENT MAINTENANCE SYSTEM", pageW / 2, 72, {
+        align: "center",
+      });
 
       // Main Title
       doc.setFontSize(28);
@@ -197,10 +211,34 @@ function PdfExportModal({ logs, dhols, onClose }) {
       const boxY = 168;
       const boxH = 28;
       const boxes = [
-        { label: "TOTAL RECORDS", value: String(filteredLogs.length), color: [220, 38, 38] },
-        { label: "UNIQUE DHOLS", value: String(new Set(filteredLogs.map(l => l.dhol_number || l.dhol_id)).size), color: [245, 158, 11] },
-        { label: "TEAM MEMBERS", value: String(new Set(filteredLogs.flatMap(l => [l.done_by, l.done_by_2].filter(Boolean))).size), color: [34, 197, 94] },
-        { label: "GENERATED ON", value: fmtDate(todayStr).replace(",", ""), color: [14, 165, 233] },
+        {
+          label: "TOTAL RECORDS",
+          value: String(filteredLogs.length),
+          color: [220, 38, 38],
+        },
+        {
+          label: "UNIQUE DHOLS",
+          value: String(
+            new Set(filteredLogs.map((l) => l.dhol_number || l.dhol_id)).size,
+          ),
+          color: [245, 158, 11],
+        },
+        {
+          label: "TEAM MEMBERS",
+          value: String(
+            new Set(
+              filteredLogs.flatMap((l) =>
+                [l.done_by, l.done_by_2].filter(Boolean),
+              ),
+            ).size,
+          ),
+          color: [34, 197, 94],
+        },
+        {
+          label: "GENERATED ON",
+          value: fmtDate(todayStr).replace(",", ""),
+          color: [14, 165, 233],
+        },
       ];
       const boxW = contentW / 4;
       boxes.forEach((b, i) => {
@@ -222,7 +260,7 @@ function PdfExportModal({ logs, dhols, onClose }) {
       // Maintenance type breakdown
       if (filteredLogs.length > 0) {
         const typeCount = {};
-        filteredLogs.forEach(l => {
+        filteredLogs.forEach((l) => {
           const t = l.description || "Normal Dhol";
           typeCount[t] = (typeCount[t] || 0) + 1;
         });
@@ -240,13 +278,18 @@ function PdfExportModal({ logs, dhols, onClose }) {
         let typeY = 218;
         types.slice(0, 6).forEach(([name, count]) => {
           const pct = Math.round((count / filteredLogs.length) * 100);
-          const barW = Math.max(2, (count / filteredLogs.length) * (contentW - 40));
+          const barW = Math.max(
+            2,
+            (count / filteredLogs.length) * (contentW - 40),
+          );
 
           doc.setFontSize(7.5);
           doc.setTextColor(220, 220, 235);
           doc.setFont("helvetica", "normal");
           doc.text(name.substring(0, 28), margin + 4, typeY);
-          doc.text(`${count} (${pct}%)`, pageW - margin - 4, typeY, { align: "right" });
+          doc.text(`${count} (${pct}%)`, pageW - margin - 4, typeY, {
+            align: "right",
+          });
 
           // Progress bar bg
           doc.setFillColor(30, 40, 65);
@@ -265,7 +308,12 @@ function PdfExportModal({ logs, dhols, onClose }) {
       doc.setFontSize(7);
       doc.setTextColor(100, 115, 140);
       doc.setFont("helvetica", "normal");
-      doc.text("Taal CRM — Dhol Maintenance Management System  |  Confidential & Internal Use Only", pageW / 2, pageH - 8, { align: "center" });
+      doc.text(
+        "Taal CRM — Dhol Maintenance Management System  |  Confidential & Internal Use Only",
+        pageW / 2,
+        pageH - 8,
+        { align: "center" },
+      );
       doc.text(`Page 1 of 2`, pageW - margin, pageH - 8, { align: "right" });
 
       // ── PAGE 2: DETAILED TABLE ──────────────────────────────────────
@@ -292,14 +340,16 @@ function PdfExportModal({ logs, dhols, onClose }) {
       doc.setTextColor(180, 140, 60);
       doc.text(`Period: ${rangeTitle}`, margin, 17);
       doc.setTextColor(120, 135, 160);
-      doc.text(`Total: ${filteredLogs.length} Records`, pageW - margin, 17, { align: "right" });
+      doc.text(`Total: ${filteredLogs.length} Records`, pageW - margin, 17, {
+        align: "right",
+      });
 
       // Column definitions
       const cols = [
-        { label: "#",     x: margin,      w: 8 },
-        { label: "DATE",  x: margin + 8,  w: 26 },
-        { label: "DHOL",  x: margin + 34, w: 16 },
-        { label: "SIZE",  x: margin + 50, w: 14 },
+        { label: "#", x: margin, w: 8 },
+        { label: "DATE", x: margin + 8, w: 26 },
+        { label: "DHOL", x: margin + 34, w: 16 },
+        { label: "SIZE", x: margin + 50, w: 14 },
         { label: "MAINTENANCE TYPE", x: margin + 64, w: 54 },
         { label: "DONE BY", x: margin + 118, w: 50 },
         { label: "NOTES", x: margin + 168, w: contentW - 156 },
@@ -313,7 +363,7 @@ function PdfExportModal({ logs, dhols, onClose }) {
       doc.setFontSize(7);
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
-      cols.forEach(c => doc.text(c.label, c.x, y));
+      cols.forEach((c) => doc.text(c.label, c.x, y));
 
       y += 6;
 
@@ -322,7 +372,12 @@ function PdfExportModal({ logs, dhols, onClose }) {
         doc.rect(4, y, pageW - 4, 20, "F");
         doc.setFontSize(10);
         doc.setTextColor(180, 180, 200);
-        doc.text("Is period mein koi maintenance record nahi mila.", pageW / 2, y + 12, { align: "center" });
+        doc.text(
+          "Is period mein koi maintenance record nahi mila.",
+          pageW / 2,
+          y + 12,
+          { align: "center" },
+        );
       } else {
         filteredLogs.forEach((log, index) => {
           if (y > 278) {
@@ -331,7 +386,12 @@ function PdfExportModal({ logs, dhols, onClose }) {
             doc.rect(0, pageH - 16, pageW, 16, "F");
             doc.setFontSize(7);
             doc.setTextColor(100, 115, 140);
-            doc.text(`Taal CRM — Dhol Maintenance Report  |  ${rangeTitle}`, pageW / 2, pageH - 8, { align: "center" });
+            doc.text(
+              `Taal CRM — Dhol Maintenance Report  |  ${rangeTitle}`,
+              pageW / 2,
+              pageH - 8,
+              { align: "center" },
+            );
 
             doc.addPage();
             // New page dark bg
@@ -347,7 +407,7 @@ function PdfExportModal({ logs, dhols, onClose }) {
             doc.setFontSize(7);
             doc.setTextColor(255, 255, 255);
             doc.setFont("helvetica", "bold");
-            cols.forEach(c => doc.text(c.label, c.x, y));
+            cols.forEach((c) => doc.text(c.label, c.x, y));
             y += 6;
           }
 
@@ -381,7 +441,11 @@ function PdfExportModal({ logs, dhols, onClose }) {
           // Dhol number (highlighted)
           doc.setTextColor(240, 80, 80);
           doc.setFont("helvetica", "bold");
-          doc.text(`#${String(log.dhol_number || log.dhol_id || "—")}`, cols[2].x, y);
+          doc.text(
+            `#${String(log.dhol_number || log.dhol_id || "—")}`,
+            cols[2].x,
+            y,
+          );
 
           // Size
           doc.setTextColor(245, 158, 11);
@@ -428,8 +492,15 @@ function PdfExportModal({ logs, dhols, onClose }) {
       doc.setFontSize(7);
       doc.setTextColor(100, 115, 140);
       doc.setFont("helvetica", "normal");
-      doc.text(`Taal CRM — Dhol Maintenance Report  |  ${rangeTitle}`, pageW / 2, pageH - 8, { align: "center" });
-      doc.text(`Generated: ${fmtDate(todayStr)}`, pageW - margin, pageH - 8, { align: "right" });
+      doc.text(
+        `Taal CRM — Dhol Maintenance Report  |  ${rangeTitle}`,
+        pageW / 2,
+        pageH - 8,
+        { align: "center" },
+      );
+      doc.text(`Generated: ${fmtDate(todayStr)}`, pageW - margin, pageH - 8, {
+        align: "right",
+      });
 
       const fileName = `Dhol_Maintenance_${rangeType}_${todayStr}.pdf`;
       doc.save(fileName);
@@ -450,8 +521,12 @@ function PdfExportModal({ logs, dhols, onClose }) {
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-white/[.08] flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-300">📄 PDF Report Generator</span>
-            <h2 className="text-lg sm:text-xl font-bold text-cream mt-0.5">Download Maintenance PDF</h2>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-300">
+              📄 PDF Report Generator
+            </span>
+            <h2 className="text-lg sm:text-xl font-bold text-cream mt-0.5">
+              Download Maintenance PDF
+            </h2>
           </div>
           <button
             onClick={onClose}
@@ -496,7 +571,9 @@ function PdfExportModal({ logs, dhols, onClose }) {
           {rangeType === "custom" && (
             <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-white/[.03] border border-white/10">
               <div>
-                <label className="block text-[11px] font-semibold text-mist mb-1">📅 From Date</label>
+                <label className="block text-[11px] font-semibold text-mist mb-1">
+                  📅 From Date
+                </label>
                 <input
                   type="date"
                   value={startDate}
@@ -505,7 +582,9 @@ function PdfExportModal({ logs, dhols, onClose }) {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-mist mb-1">📅 To Date</label>
+                <label className="block text-[11px] font-semibold text-mist mb-1">
+                  📅 To Date
+                </label>
                 <input
                   type="date"
                   value={endDate}
@@ -563,8 +642,12 @@ function PdfExportModal({ logs, dhols, onClose }) {
                   <span className="text-lg">🥁</span>
                 </div>
                 <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[.15em] text-gold-300">PDF Preview</p>
-                  <p className="text-xs font-bold text-cream leading-tight">DHOL MAINTENANCE REPORT</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[.15em] text-gold-300">
+                    PDF Preview
+                  </p>
+                  <p className="text-xs font-bold text-cream leading-tight">
+                    DHOL MAINTENANCE REPORT
+                  </p>
                 </div>
                 <div className="ml-auto text-right">
                   <p className="text-[9px] text-mist">2 Pages</p>
@@ -574,48 +657,77 @@ function PdfExportModal({ logs, dhols, onClose }) {
               {/* Stats grid */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-lg bg-brand/15 border border-brand/20 p-2 text-center">
-                  <p className="text-lg font-extrabold text-brand-300 tabular-nums">{filteredLogs.length}</p>
-                  <p className="text-[8px] font-bold text-mist uppercase mt-0.5">Records</p>
+                  <p className="text-lg font-extrabold text-brand-300 tabular-nums">
+                    {filteredLogs.length}
+                  </p>
+                  <p className="text-[8px] font-bold text-mist uppercase mt-0.5">
+                    Records
+                  </p>
                 </div>
                 <div className="rounded-lg bg-gold/15 border border-gold/20 p-2 text-center">
                   <p className="text-lg font-extrabold text-gold-300 tabular-nums">
-                    {new Set(filteredLogs.map(l => l.dhol_number || l.dhol_id)).size}
+                    {
+                      new Set(
+                        filteredLogs.map((l) => l.dhol_number || l.dhol_id),
+                      ).size
+                    }
                   </p>
-                  <p className="text-[8px] font-bold text-mist uppercase mt-0.5">Dhols</p>
+                  <p className="text-[8px] font-bold text-mist uppercase mt-0.5">
+                    Dhols
+                  </p>
                 </div>
                 <div className="rounded-lg bg-emerald/15 border border-emerald/20 p-2 text-center">
                   <p className="text-lg font-extrabold text-emerald tabular-nums">
-                    {new Set(filteredLogs.flatMap(l => [l.done_by, l.done_by_2].filter(Boolean))).size}
+                    {
+                      new Set(
+                        filteredLogs.flatMap((l) =>
+                          [l.done_by, l.done_by_2].filter(Boolean),
+                        ),
+                      ).size
+                    }
                   </p>
-                  <p className="text-[8px] font-bold text-mist uppercase mt-0.5">Members</p>
+                  <p className="text-[8px] font-bold text-mist uppercase mt-0.5">
+                    Members
+                  </p>
                 </div>
               </div>
               {/* PDF Structure preview */}
               <div className="mt-3 flex gap-2">
                 <div className="flex-1 rounded-lg bg-white/[.03] border border-white/[.06] p-2">
-                  <p className="text-[9px] font-bold text-cream mb-1">Page 1: Cover</p>
+                  <p className="text-[9px] font-bold text-cream mb-1">
+                    Page 1: Cover
+                  </p>
                   <div className="space-y-0.5">
                     <div className="h-1 w-full rounded bg-brand/40" />
                     <div className="h-1 w-3/4 rounded bg-white/20" />
                     <div className="h-1 w-1/2 rounded bg-gold/30" />
                     <div className="grid grid-cols-4 gap-0.5 mt-1">
-                      {[...Array(4)].map((_, i) => <div key={i} className="h-2 rounded bg-white/10" />)}
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="h-2 rounded bg-white/10" />
+                      ))}
                     </div>
                   </div>
                 </div>
                 <div className="flex-1 rounded-lg bg-white/[.03] border border-white/[.06] p-2">
-                  <p className="text-[9px] font-bold text-cream mb-1">Page 2: Data Table</p>
+                  <p className="text-[9px] font-bold text-cream mb-1">
+                    Page 2: Data Table
+                  </p>
                   <div className="space-y-0.5">
                     <div className="h-1 w-full rounded bg-brand/40" />
                     {[...Array(5)].map((_, i) => (
-                      <div key={i} className={`h-1 w-full rounded ${i % 2 === 0 ? "bg-white/10" : "bg-white/[.05]"}`} />
+                      <div
+                        key={i}
+                        className={`h-1 w-full rounded ${i % 2 === 0 ? "bg-white/10" : "bg-white/[.05]"}`}
+                      />
                     ))}
                   </div>
                 </div>
               </div>
             </div>
             <div className="px-4 py-2.5 bg-white/[.02] border-t border-white/[.06] flex items-center gap-2">
-              <span className="text-[10px] text-emerald font-semibold">✅ Premium dark-theme PDF • Cover + Table layout</span>
+              <span className="text-[10px] text-emerald font-semibold">
+                ✅ Premium dark-theme PDF • Cover + Table layout
+              </span>
               {filteredLogs.length === 0 && (
                 <span className="ml-auto rounded-full bg-brand/20 border border-brand/30 px-2 py-0.5 text-[9px] font-bold text-brand-300">
                   ⚠️ No Data
@@ -651,7 +763,7 @@ function PdfExportModal({ logs, dhols, onClose }) {
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -702,7 +814,12 @@ function AddMaintenanceModal({ dhol, onSave, onClose }) {
 
     setSaving(false);
     if (err) {
-      console.error("❌ Maintenance save error:", err.message, err.code, err.details);
+      console.error(
+        "❌ Maintenance save error:",
+        err.message,
+        err.code,
+        err.details,
+      );
       setError(`Save nahi hua (${err.code || "error"}): ${err.message}`);
       return;
     }
@@ -772,7 +889,11 @@ function AddMaintenanceModal({ dhol, onSave, onClose }) {
               className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2.5 text-cream font-semibold focus:border-brand focus:outline-none cursor-pointer"
             >
               {MAINTENANCE_OPTIONS.map((opt) => (
-                <option key={opt} value={opt} className="bg-ink-900 text-cream py-1">
+                <option
+                  key={opt}
+                  value={opt}
+                  className="bg-ink-900 text-cream py-1"
+                >
                   {opt}
                 </option>
               ))}
@@ -847,7 +968,7 @@ function AddMaintenanceModal({ dhol, onSave, onClose }) {
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -864,17 +985,32 @@ function DetailDrawer({ dhol, logs, onAdd, onClose }) {
   }, []);
 
   const sorted = useMemo(
-    () => [...logs].sort((a, b) => new Date(b.maintenance_date) - new Date(a.maintenance_date)),
-    [logs]
+    () =>
+      [...logs].sort(
+        (a, b) => new Date(b.maintenance_date) - new Date(a.maintenance_date),
+      ),
+    [logs],
   );
 
   const statusColor = getStatusColor(sorted);
   const statusBadge = {
-    today: { label: "Aaj Kiya ✅", cls: "border-emerald/30 bg-emerald/10 text-emerald" },
-    recent: { label: "Hafte Mein", cls: "border-gold/30 bg-gold/10 text-gold-300" },
+    today: {
+      label: "Aaj Kiya ✅",
+      cls: "border-emerald/30 bg-emerald/10 text-emerald",
+    },
+    recent: {
+      label: "Hafte Mein",
+      cls: "border-gold/30 bg-gold/10 text-gold-300",
+    },
     old: { label: "30 Din Mein", cls: "border-sky/30 bg-sky/10 text-sky" },
-    stale: { label: "60d+ Purana", cls: "border-brand/30 bg-brand/10 text-brand-300" },
-    none: { label: "Kabhi Nahi", cls: "border-white/10 bg-white/[.04] text-mist" },
+    stale: {
+      label: "60d+ Purana",
+      cls: "border-brand/30 bg-brand/10 text-brand-300",
+    },
+    none: {
+      label: "Kabhi Nahi",
+      cls: "border-white/10 bg-white/[.04] text-mist",
+    },
   }[statusColor];
 
   return createPortal(
@@ -889,13 +1025,17 @@ function DetailDrawer({ dhol, logs, onAdd, onClose }) {
               60-Day Maintenance History
             </p>
             <div className="mt-1 flex items-center gap-3">
-              <h2 className="font-display text-3xl font-extrabold text-cream">#{dhol.dhol_number}</h2>
+              <h2 className="font-display text-3xl font-extrabold text-cream">
+                #{dhol.dhol_number}
+              </h2>
               <span className="rounded-full bg-brand/20 border border-brand/30 px-3 py-1 text-xs font-bold text-cream">
                 Size: {dhol.size}"
               </span>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusBadge.cls}`}>
+              <span
+                className={`rounded-full border px-3 py-1 text-xs font-bold ${statusBadge.cls}`}
+              >
                 {statusBadge.label}
               </span>
             </div>
@@ -925,7 +1065,9 @@ function DetailDrawer({ dhol, logs, onAdd, onClose }) {
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="text-6xl mb-4">🥁</div>
               <p className="text-cream text-lg font-bold">Koi Record Nahi</p>
-              <p className="text-mist text-xs mt-1">Is Dhol ki abhi tak koi maintenance log nahi hui hai.</p>
+              <p className="text-mist text-xs mt-1">
+                Is Dhol ki abhi tak koi maintenance log nahi hui hai.
+              </p>
             </div>
           ) : (
             sorted.map((log, idx) => {
@@ -938,8 +1080,8 @@ function DetailDrawer({ dhol, logs, onAdd, onClose }) {
                     isToday
                       ? "border-emerald/40 bg-emerald/[.08] shadow-[0_0_20px_rgba(52,211,153,0.15)]"
                       : idx === 0
-                      ? "border-brand/30 bg-brand/[.06]"
-                      : "border-white/[.08] bg-white/[.03]"
+                        ? "border-brand/30 bg-brand/[.06]"
+                        : "border-white/[.08] bg-white/[.03]"
                   }`}
                 >
                   {isToday && (
@@ -988,7 +1130,7 @@ function DetailDrawer({ dhol, logs, onAdd, onClose }) {
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -999,8 +1141,11 @@ function DholCard({ dhol, logs, onAddClick, onHistoryClick }) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const sorted = useMemo(
-    () => [...logs].sort((a, b) => new Date(b.maintenance_date) - new Date(a.maintenance_date)),
-    [logs]
+    () =>
+      [...logs].sort(
+        (a, b) => new Date(b.maintenance_date) - new Date(a.maintenance_date),
+      ),
+    [logs],
   );
 
   const statusColor = getStatusColor(sorted);
@@ -1008,7 +1153,8 @@ function DholCard({ dhol, logs, onAddClick, onHistoryClick }) {
 
   // Visual Theme Accents based on status
   const cardBorder = {
-    today: "border-emerald/50 bg-ink-900 shadow-[0_0_24px_rgba(52,211,153,0.25)]",
+    today:
+      "border-emerald/50 bg-ink-900 shadow-[0_0_24px_rgba(52,211,153,0.25)]",
     recent: "border-gold/40 bg-ink-900 shadow-[0_0_18px_rgba(245,158,11,0.2)]",
     old: "border-sky/35 bg-ink-900 shadow-[0_0_14px_rgba(14,165,233,0.15)]",
     stale: "border-brand/35 bg-ink-900 shadow-[0_0_12px_rgba(220,38,38,0.15)]",
@@ -1016,10 +1162,19 @@ function DholCard({ dhol, logs, onAddClick, onHistoryClick }) {
   }[statusColor];
 
   const statusBadge = {
-    today: { text: "Aaj Active", cls: "bg-emerald/20 text-emerald border-emerald/40" },
-    recent: { text: "Hafte Mein", cls: "bg-gold/20 text-gold-300 border-gold/40" },
+    today: {
+      text: "Aaj Active",
+      cls: "bg-emerald/20 text-emerald border-emerald/40",
+    },
+    recent: {
+      text: "Hafte Mein",
+      cls: "bg-gold/20 text-gold-300 border-gold/40",
+    },
     old: { text: "30d Purana", cls: "bg-sky/20 text-sky border-sky/40" },
-    stale: { text: "Stale / 60d+", cls: "bg-brand/20 text-brand-300 border-brand/40" },
+    stale: {
+      text: "Stale / 60d+",
+      cls: "bg-brand/20 text-brand-300 border-brand/40",
+    },
     none: { text: "No Log", cls: "bg-white/10 text-mist border-white/15" },
   }[statusColor];
 
@@ -1058,26 +1213,38 @@ function DholCard({ dhol, logs, onAddClick, onHistoryClick }) {
           {/* Middle Body: Status Indicator & Info */}
           <div className="my-auto space-y-1">
             <div className="flex items-center gap-1.5">
-              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusBadge.cls}`}>
-                <span className={`h-1.5 w-1.5 rounded-full ${statusColor === "today" ? "bg-emerald animate-pulse" : "bg-current"}`} />
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusBadge.cls}`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${statusColor === "today" ? "bg-emerald animate-pulse" : "bg-current"}`}
+                />
                 {statusBadge.text}
               </span>
             </div>
 
             {lastLog ? (
               <div className="text-xs text-cream/90 font-medium truncate mt-1">
-                <p className="text-[11px] text-mist/70 truncate">{lastLog.description || "Normal Dhol"}</p>
-                <p className="text-gold-300 text-xs font-semibold truncate">👤 {lastLog.done_by}</p>
+                <p className="text-[11px] text-mist/70 truncate">
+                  {lastLog.description || "Normal Dhol"}
+                </p>
+                <p className="text-gold-300 text-xs font-semibold truncate">
+                  👤 {lastLog.done_by}
+                </p>
               </div>
             ) : (
-              <p className="text-[11px] text-mist/50 italic mt-1">Abhi tak koi log nahi</p>
+              <p className="text-[11px] text-mist/50 italic mt-1">
+                Abhi tak koi log nahi
+              </p>
             )}
           </div>
 
           {/* Bottom Footer: Date & Flip prompt */}
           <div className="flex items-center justify-between border-t border-white/[.08] pt-2 text-[10px] text-mist">
             <span>{lastLog ? fmtDate(lastLog.maintenance_date) : "—"}</span>
-            <span className="font-semibold text-brand-300 group-hover:underline">Hover / Tap 🔄</span>
+            <span className="font-semibold text-brand-300 group-hover:underline">
+              Hover / Tap 🔄
+            </span>
           </div>
         </div>
 
@@ -1091,8 +1258,12 @@ function DholCard({ dhol, logs, onAddClick, onHistoryClick }) {
         >
           {/* Header Back */}
           <div className="flex items-center justify-between border-b border-white/[.08] pb-1.5">
-            <span className="font-display text-lg font-bold text-cream">Dhol #{dhol.dhol_number} ({dhol.size}")</span>
-            <span className="text-[10px] text-gold-300 font-bold uppercase">Details</span>
+            <span className="font-display text-lg font-bold text-cream">
+              Dhol #{dhol.dhol_number} ({dhol.size}")
+            </span>
+            <span className="text-[10px] text-gold-300 font-bold uppercase">
+              Details
+            </span>
           </div>
 
           {/* Last Maintenance Details */}
@@ -1116,18 +1287,22 @@ function DholCard({ dhol, logs, onAddClick, onHistoryClick }) {
                 )}
               </>
             ) : (
-              <p className="text-mist/60 text-xs italic py-2">Is Dhol ki koi maintenance nahi hui hai.</p>
+              <p className="text-mist/60 text-xs italic py-2">
+                Is Dhol ki koi maintenance nahi hui hai.
+              </p>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/[.08]" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/[.08]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => onAddClick(dhol)}
               className="rounded-lg bg-brand px-2 py-2 text-[11px] font-bold text-white shadow-glow hover:bg-brand-300 transition-colors flex items-center justify-center gap-1"
             >
-              <Icon d={I.plus} className="h-3.5 w-3.5" />
-              + Entry
+              <Icon d={I.plus} className="h-3.5 w-3.5" />+ Entry
             </button>
             <button
               onClick={() => onHistoryClick(dhol)}
@@ -1182,7 +1357,7 @@ export default function DholMaintenance() {
         const num = i + 1;
         return { id: num, dhol_number: num, size: getDholSize(num) };
       }),
-    []
+    [],
   );
 
   /* ── Load logs from Supabase ── */
@@ -1222,7 +1397,7 @@ export default function DholMaintenance() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "dhol_maintenance" },
-        () => loadLogs(false) // background refresh, no skeleton
+        () => loadLogs(false), // background refresh, no skeleton
       )
       .subscribe();
 
@@ -1265,15 +1440,19 @@ export default function DholMaintenance() {
       const dLogs = logsByDholId[d.dhol_number] || [];
       return dLogs.some((l) => l.maintenance_date === todayStr);
     }).length;
-    const neverDone = dhols.filter((d) => !(logsByDholId[d.dhol_number]?.length > 0)).length;
+    const neverDone = dhols.filter(
+      (d) => !(logsByDholId[d.dhol_number]?.length > 0),
+    ).length;
     const totalLogs = logs.length;
-    const uniquePeople = new Set(logs.flatMap((l) => [l.done_by, l.done_by_2].filter(Boolean))).size;
+    const uniquePeople = new Set(
+      logs.flatMap((l) => [l.done_by, l.done_by_2].filter(Boolean)),
+    ).size;
     return { doneToday, neverDone, totalLogs, uniquePeople };
   }, [dhols, logsByDholId, logs]);
 
   const selectedLogs = useMemo(
     () => (selectedDhol ? logsByDholId[selectedDhol.dhol_number] || [] : []),
-    [selectedDhol, logsByDholId]
+    [selectedDhol, logsByDholId],
   );
 
   if (loading) return <Skeleton />;
@@ -1284,8 +1463,15 @@ export default function DholMaintenance() {
       {saveError && (
         <div className="flex items-center gap-3 rounded-xl border border-brand/40 bg-brand/10 px-4 py-3">
           <span className="text-brand-300 text-lg">⚠️</span>
-          <p className="flex-1 text-xs font-semibold text-brand-300">{saveError}</p>
-          <button onClick={() => setSaveError("")} className="text-mist hover:text-cream text-xs">✕</button>
+          <p className="flex-1 text-xs font-semibold text-brand-300">
+            {saveError}
+          </p>
+          <button
+            onClick={() => setSaveError("")}
+            className="text-mist hover:text-cream text-xs"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -1321,25 +1507,43 @@ export default function DholMaintenance() {
                 Dhol Maintenance Tracker
               </h1>
               <p className="mt-2 max-w-2xl text-xs sm:text-sm text-mist leading-relaxed">
-                Kul {TOTAL_DHOLS} Dhol: #1-#25 (30"), #26-#52 (28"), #53-#54 (26"). Card par hover ya tap karke last maintenance ki complete jankari dekhein.
+                Kul {TOTAL_DHOLS} Dhol: #1-#25 (30"), #26-#52 (28"), #53-#54
+                (26"). Card par hover ya tap karke last maintenance ki complete
+                jankari dekhein.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-emerald/30 bg-emerald/10 p-3 text-center">
-                <p className="font-display text-3xl font-extrabold text-emerald tabular-nums">{stats.doneToday}</p>
-                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">Aaj Kiye ✅</p>
+                <p className="font-display text-3xl font-extrabold text-emerald tabular-nums">
+                  {stats.doneToday}
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">
+                  Aaj Kiye ✅
+                </p>
               </div>
               <div className="rounded-xl border border-brand/30 bg-brand/10 p-3 text-center">
-                <p className="font-display text-3xl font-extrabold text-brand-300 tabular-nums">{stats.neverDone}</p>
-                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">Never Logged</p>
+                <p className="font-display text-3xl font-extrabold text-brand-300 tabular-nums">
+                  {stats.neverDone}
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">
+                  Never Logged
+                </p>
               </div>
               <div className="rounded-xl border border-gold/30 bg-gold/10 p-3 text-center">
-                <p className="font-display text-3xl font-extrabold text-gold-300 tabular-nums">{stats.totalLogs}</p>
-                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">60d Entries</p>
+                <p className="font-display text-3xl font-extrabold text-gold-300 tabular-nums">
+                  {stats.totalLogs}
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">
+                  60d Entries
+                </p>
               </div>
               <div className="rounded-xl border border-sky/30 bg-sky/10 p-3 text-center">
-                <p className="font-display text-3xl font-extrabold text-sky tabular-nums">{stats.uniquePeople}</p>
-                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">Members</p>
+                <p className="font-display text-3xl font-extrabold text-sky tabular-nums">
+                  {stats.uniquePeople}
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">
+                  Members
+                </p>
               </div>
             </div>
           </div>
@@ -1349,7 +1553,9 @@ export default function DholMaintenance() {
       {/* ═══ LEGEND & STATUS BAR ═══ */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-1">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[11px] uppercase tracking-wider text-mist font-bold">Status Legend:</span>
+          <span className="text-[11px] uppercase tracking-wider text-mist font-bold">
+            Status Legend:
+          </span>
           {[
             { color: "bg-emerald", label: "Aaj Kiya ✅" },
             { color: "bg-gold-300", label: "Is Hafte" },
@@ -1357,7 +1563,10 @@ export default function DholMaintenance() {
             { color: "bg-brand", label: "Stale / 60d+" },
             { color: "bg-white/20", label: "No Record" },
           ].map(({ color, label }) => (
-            <span key={label} className="inline-flex items-center gap-1.5 text-xs text-cream font-medium">
+            <span
+              key={label}
+              className="inline-flex items-center gap-1.5 text-xs text-cream font-medium"
+            >
               <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
               {label}
             </span>
@@ -1368,7 +1577,10 @@ export default function DholMaintenance() {
       {/* ═══ FILTERS & SEARCH ═══ */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Icon d={I.target} className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-mist" />
+          <Icon
+            d={I.target}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-mist"
+          />
           <input
             type="number"
             value={searchNum}
@@ -1435,7 +1647,9 @@ export default function DholMaintenance() {
       <section className="rounded-2xl border border-white/10 bg-ink-850/60 p-3.5 sm:p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-[.2em] text-brand-300 font-bold">Grid View</p>
+            <p className="text-[10px] uppercase tracking-[.2em] text-brand-300 font-bold">
+              Grid View
+            </p>
             <h2 className="mt-0.5 font-display text-xl font-bold text-cream">
               54 Dhol Cards (Mobile: 2 Cards / Line)
             </h2>
@@ -1467,8 +1681,12 @@ export default function DholMaintenance() {
       <section className="rounded-2xl border border-white/10 bg-ink-850/80 p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-[.2em] text-gold-300 font-bold">Recent Maintenance Logs</p>
-            <h2 className="mt-0.5 font-display text-xl font-bold text-cream">Hal hi mein kiye gaye maintenance</h2>
+            <p className="text-[10px] uppercase tracking-[.2em] text-gold-300 font-bold">
+              Recent Maintenance Logs
+            </p>
+            <h2 className="mt-0.5 font-display text-xl font-bold text-cream">
+              Hal hi mein kiye gaye maintenance
+            </h2>
           </div>
           <span className="rounded-full border border-white/10 bg-white/[.05] px-3 py-1 text-xs font-semibold text-mist">
             All Time Records
@@ -1481,7 +1699,9 @@ export default function DholMaintenance() {
               key={log.id || i}
               className="flex items-start gap-3 rounded-xl border border-white/[.08] bg-white/[.02] p-3 hover:bg-white/[.05] cursor-pointer transition-colors"
               onClick={() => {
-                const dhol = dhols.find((d) => d.dhol_number === (log.dhol_number || log.dhol_id));
+                const dhol = dhols.find(
+                  (d) => d.dhol_number === (log.dhol_number || log.dhol_id),
+                );
                 if (dhol) setSelectedDhol(dhol);
               }}
             >
@@ -1490,7 +1710,9 @@ export default function DholMaintenance() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-bold text-cream">{log.description || "Normal Dhol"}</span>
+                  <span className="text-sm font-bold text-cream">
+                    {log.description || "Normal Dhol"}
+                  </span>
                   {log.dhol_size && (
                     <span className="text-[10px] font-bold text-mist bg-white/10 rounded-full px-2 py-0.5">
                       {log.dhol_size}"
@@ -1499,23 +1721,32 @@ export default function DholMaintenance() {
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   {log.done_by && (
-                    <span className="text-xs text-gold-300 font-semibold">👤 {log.done_by}</span>
+                    <span className="text-xs text-gold-300 font-semibold">
+                      👤 {log.done_by}
+                    </span>
                   )}
                   {log.done_by_2 && (
-                    <span className="text-xs text-sky font-semibold">👤 {log.done_by_2}</span>
+                    <span className="text-xs text-sky font-semibold">
+                      👤 {log.done_by_2}
+                    </span>
                   )}
                   {log.notes && (
-                    <span className="text-xs text-mist italic truncate max-w-xs">📝 {log.notes}</span>
+                    <span className="text-xs text-mist italic truncate max-w-xs">
+                      📝 {log.notes}
+                    </span>
                   )}
                 </div>
               </div>
-              <span className="text-xs text-mist font-medium shrink-0">📅 {fmtDate(log.maintenance_date)}</span>
+              <span className="text-xs text-mist font-medium shrink-0">
+                📅 {fmtDate(log.maintenance_date)}
+              </span>
             </div>
           ))}
 
           {logs.length === 0 && (
             <div className="py-12 text-center text-mist text-sm">
-              Abhi tak koi bhi maintenance log nahi hai. Pehla entry add karo! 🥁
+              Abhi tak koi bhi maintenance log nahi hai. Pehla entry add karo!
+              🥁
             </div>
           )}
         </div>
