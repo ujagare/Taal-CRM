@@ -172,13 +172,13 @@ function EditModal({ size, paneType, current, onSave, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <button
         className="absolute inset-0 bg-black/75 backdrop-blur-md"
         onClick={onClose}
         aria-label="Close"
       />
-      <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-white/[.08] bg-ink-900 shadow-[0_24px_80px_rgba(0,0,0,.5)] animate-rise">
+      <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-white/[.08] bg-ink-900 shadow-[0_24px_80px_rgba(0,0,0,.5)] animate-rise max-h-[90vh] overflow-y-auto">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/70 to-transparent" />
         <div className="p-5 sm:p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
