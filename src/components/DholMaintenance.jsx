@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import jsPDF from "jspdf";
 import { supabase } from "../lib/supabase";
@@ -514,8 +514,8 @@ function PdfExportModal({ logs, dhols, onClose }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-ink-900 shadow-2xl animate-rise">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/55 p-4 animate-fade-in">
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto scroll-thin rounded-2xl border border-white/10 bg-ink-900 shadow-2xl animate-rise">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand via-gold to-emerald" />
 
         {/* Header */}
@@ -829,142 +829,144 @@ function AddMaintenanceModal({ dhol, onSave, onClose }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md">
-      <div className="relative w-full max-w-md overflow-hidden rounded-t-2xl sm:rounded-2xl border border-white/10 bg-ink-900 shadow-2xl animate-rise max-h-[85vh] sm:max-h-[90vh] flex flex-col">
-        {/* Glowing top line */}
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand via-gold to-emerald" />
+    <div className="fixed inset-0 z-[999999] overflow-y-auto bg-slate-950/65">
+      <div className="min-h-screen px-4 py-6 flex items-center justify-center">
+        <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-ink-900 shadow-2xl animate-rise flex flex-col my-auto">
+          {/* Glowing top line */}
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand via-gold to-emerald" />
 
-        {/* Header (Compact) */}
-        <div className="p-3.5 sm:p-4 border-b border-white/[.08] flex items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-brand/20 border border-brand/40 px-2 py-0.5 text-[11px] font-bold text-brand-300">
-                Dhol #{dhol.dhol_number}
-              </span>
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-mist">
-                Size: {dhol.size}"
-              </span>
+          {/* Header (Compact) */}
+          <div className="p-3.5 sm:p-4 border-b border-white/[.08] flex items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-brand/20 border border-brand/40 px-2 py-0.5 text-[11px] font-bold text-brand-300">
+                  Dhol #{dhol.dhol_number}
+                </span>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-mist">
+                  Size: {dhol.size}"
+                </span>
+              </div>
+              <h2 className="mt-1 font-display text-lg sm:text-xl font-bold text-cream">
+                Maintenance Add Karo
+              </h2>
             </div>
-            <h2 className="mt-1 font-display text-lg sm:text-xl font-bold text-cream">
-              Maintenance Add Karo
-            </h2>
+            <button
+              onClick={onClose}
+              className="grid h-8 w-8 place-items-center rounded-xl border border-white/10 bg-white/[.05] text-mist hover:text-cream transition-colors"
+            >
+              <Icon d={I.x} className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-xl border border-white/10 bg-white/[.05] text-mist hover:text-cream transition-colors"
-          >
-            <Icon d={I.x} className="h-4 w-4" />
-          </button>
-        </div>
 
-        {/* Body Form (Compact) */}
-        <div className="p-3.5 sm:p-4 space-y-3 overflow-y-auto flex-1 text-xs">
-          {/* Date Picker Section */}
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-mist mb-1">
-              📅 Maintenance Date (Aaj Ki Date)
-            </label>
-            <input
-              type="date"
-              value={maintenanceDate}
-              onChange={(e) => setMaintenanceDate(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-cream font-semibold focus:border-brand focus:outline-none cursor-pointer"
-            />
-            {maintenanceDate === todayStr && (
-              <p className="mt-1 text-[10px] text-emerald font-medium flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald animate-pulse" />
-                Aaj ki date selected hai ({fmtDate(todayStr)})
+          {/* Body Form (Compact) */}
+          <div className="p-3.5 sm:p-4 space-y-3 overflow-y-auto flex-1 text-xs">
+            {/* Date Picker Section */}
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-mist mb-1">
+                📅 Maintenance Date (Aaj Ki Date)
+              </label>
+              <input
+                type="date"
+                value={maintenanceDate}
+                onChange={(e) => setMaintenanceDate(e.target.value)}
+                className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-cream font-semibold focus:border-brand focus:outline-none cursor-pointer"
+              />
+              {maintenanceDate === todayStr && (
+                <p className="mt-1 text-[10px] text-emerald font-medium flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald animate-pulse" />
+                  Aaj ki date selected hai ({fmtDate(todayStr)})
+                </p>
+              )}
+            </div>
+
+            {/* Description Dropdown */}
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-mist mb-1">
+                🔧 Maintenance Type / Description
+              </label>
+              <select
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2.5 text-cream font-semibold focus:border-brand focus:outline-none cursor-pointer"
+              >
+                {MAINTENANCE_OPTIONS.map((opt) => (
+                  <option
+                    key={opt}
+                    value={opt}
+                    className="bg-ink-900 text-cream py-1"
+                  >
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Kisne Kiya (1 & 2) */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-mist mb-1">
+                  👤 Kisne Kiya (1)*
+                </label>
+                <input
+                  type="text"
+                  value={doneBy}
+                  onChange={(e) => setDoneBy(e.target.value)}
+                  placeholder="Pehla naam"
+                  className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-cream placeholder:text-mist/40 focus:border-brand focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-mist mb-1">
+                  👤 Kisne Kiya (2)
+                </label>
+                <input
+                  type="text"
+                  value={doneBy2}
+                  onChange={(e) => setDoneBy2(e.target.value)}
+                  placeholder="Doosra naam"
+                  className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-cream placeholder:text-mist/40 focus:border-brand focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-mist mb-1">
+                📝 Notes
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Extra note ya problem ki jankari..."
+                rows={2}
+                className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-cream placeholder:text-mist/40 focus:border-brand focus:outline-none resize-none"
+              />
+            </div>
+
+            {error && (
+              <p className="p-2.5 rounded-xl bg-brand/10 border border-brand/30 text-xs font-bold text-brand-300">
+                ⚠️ {error}
               </p>
             )}
           </div>
 
-          {/* Description Dropdown */}
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-mist mb-1">
-              🔧 Maintenance Type / Description
-            </label>
-            <select
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2.5 text-cream font-semibold focus:border-brand focus:outline-none cursor-pointer"
+          {/* Footer (Compact) */}
+          <div className="p-3 sm:p-4 border-t border-white/[.08] bg-ink-950/60 flex items-center justify-end gap-2.5">
+            <button
+              onClick={onClose}
+              className="rounded-xl px-3.5 py-2 text-xs font-semibold text-mist hover:text-cream"
             >
-              {MAINTENANCE_OPTIONS.map((opt) => (
-                <option
-                  key={opt}
-                  value={opt}
-                  className="bg-ink-900 text-cream py-1"
-                >
-                  {opt}
-                </option>
-              ))}
-            </select>
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-5 py-2 text-xs font-bold text-white shadow-glow transition-all hover:bg-brand-300 disabled:opacity-50"
+            >
+              <Icon d={I.check} className="h-4 w-4" />
+              {saving ? "Saving..." : "Save Entry"}
+            </button>
           </div>
-
-          {/* Kisne Kiya (1 & 2) */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-mist mb-1">
-                👤 Kisne Kiya (1)*
-              </label>
-              <input
-                type="text"
-                value={doneBy}
-                onChange={(e) => setDoneBy(e.target.value)}
-                placeholder="Pehla naam"
-                className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-cream placeholder:text-mist/40 focus:border-brand focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-mist mb-1">
-                👤 Kisne Kiya (2)
-              </label>
-              <input
-                type="text"
-                value={doneBy2}
-                onChange={(e) => setDoneBy2(e.target.value)}
-                placeholder="Doosra naam"
-                className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-cream placeholder:text-mist/40 focus:border-brand focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-mist mb-1">
-              📝 Notes
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Extra note ya problem ki jankari..."
-              rows={2}
-              className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-cream placeholder:text-mist/40 focus:border-brand focus:outline-none resize-none"
-            />
-          </div>
-
-          {error && (
-            <p className="p-2.5 rounded-xl bg-brand/10 border border-brand/30 text-xs font-bold text-brand-300">
-              ⚠️ {error}
-            </p>
-          )}
-        </div>
-
-        {/* Footer (Compact) */}
-        <div className="p-3 sm:p-4 border-t border-white/[.08] bg-ink-950/60 flex items-center justify-end gap-2.5">
-          <button
-            onClick={onClose}
-            className="rounded-xl px-3.5 py-2 text-xs font-semibold text-mist hover:text-cream"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-5 py-2 text-xs font-bold text-white shadow-glow transition-all hover:bg-brand-300 disabled:opacity-50"
-          >
-            <Icon d={I.check} className="h-4 w-4" />
-            {saving ? "Saving..." : "Save Entry"}
-          </button>
         </div>
       </div>
     </div>,
@@ -1014,7 +1016,7 @@ function DetailDrawer({ dhol, logs, onAdd, onClose }) {
   }[statusColor];
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex justify-end bg-black/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-[999999] flex justify-end bg-slate-950/55">
       <div className="relative z-10 h-full w-full max-w-lg flex flex-col border-l border-white/[.1] bg-ink-950 shadow-[-24px_0_80px_rgba(0,0,0,.9)]">
         <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-brand via-gold to-emerald" />
 
@@ -1052,7 +1054,7 @@ function DetailDrawer({ dhol, logs, onAdd, onClose }) {
         <div className="p-4 border-b border-white/[.08]">
           <button
             onClick={onAdd}
-            className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl bg-brand px-4 py-3.5 text-sm font-bold text-white shadow-glow transition-all hover:bg-brand-300 active:scale-98"
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-brand to-brand-300 px-5 py-3 text-sm font-bold text-white shadow-[0_2px_10px_rgba(227,27,35,.28)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(227,27,35,.38)] hover:brightness-105 active:scale-[.98]"
           >
             <Icon d={I.plus} className="h-5 w-5" />
             Nayi Maintenance Entry Add Karo
@@ -1317,9 +1319,7 @@ function DholCard({ dhol, logs, onAddClick, onHistoryClick }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   SKELETON LOADER
-───────────────────────────────────────────── */
+
 function Skeleton() {
   return (
     <div className="space-y-6 animate-rise">
@@ -1390,6 +1390,29 @@ export default function DholMaintenance() {
     loadLogs(true); // initial load with skeleton
   }, [loadLogs, dholList]);
 
+  /* ── Realtime subscription — shared minimise/expand state ── */
+  useEffect(() => {
+    const prefsChannel = supabase
+      .channel("date-group-preferences-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "date_group_preferences" },
+        (payload) => {
+          if (payload.new?.date_key !== undefined) {
+            setExpandedDates((p) => ({
+              ...p,
+              [payload.new.date_key]: payload.new.is_expanded,
+            }));
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(prefsChannel);
+    };
+  }, []);
+
   /* ── Realtime subscription — silent refresh (no skeleton flash) ── */
   useEffect(() => {
     const channel = supabase
@@ -1455,6 +1478,58 @@ export default function DholMaintenance() {
     [selectedDhol, logsByDholId],
   );
 
+  /* ── Group logs by maintenance date, sorted newest first ── */
+  const groupedLogs = useMemo(() => {
+    const map = new Map();
+    for (const log of logs) {
+      const key = log.maintenance_date || "unknown";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(log);
+    }
+    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [logs]);
+
+  /* ── Load expanded/minimised state from Supabase (shared across devices) ── */
+  const [expandedDates, setExpandedDates] = useState({});
+  const prefsLoaded = useRef(false);
+
+  const loadPreferences = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from("date_group_preferences")
+        .select("date_key, is_expanded");
+      if (data && data.length > 0) {
+        const prefMap = {};
+        for (const row of data) prefMap[row.date_key] = row.is_expanded;
+        setExpandedDates(prefMap);
+      }
+    } catch (err) {
+      // Table not created yet — use empty defaults
+      console.log("Preferences table not ready:", err.message);
+    } finally {
+      prefsLoaded.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPreferences();
+  }, [loadPreferences]);
+
+  /* ── Toggle + save to Supabase immediately ── */
+  const toggleDate = async (d) => {
+    const next = !expandedDates[d];
+    setExpandedDates((p) => ({ ...p, [d]: next }));
+
+    try {
+      await supabase
+        .from("date_group_preferences")
+        .upsert({ date_key: d, is_expanded: next }, { onConflict: "date_key" });
+    } catch (err) {
+      // Table not created yet — value stays in local state only
+      console.log("Preferences save skipped:", err.message);
+    }
+  };
+
   if (loading) return <Skeleton />;
 
   return (
@@ -1484,64 +1559,65 @@ export default function DholMaintenance() {
       )}
 
       {/* ═══ HERO HEADER ═══ */}
-      <section className="dashboard-hero overflow-hidden rounded-2xl border border-white/10 bg-ink-850 shadow-premium">
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_16px_40px_-8px_rgba(15,23,42,.1)]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_0%_0%,rgba(227,27,35,.08),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_70%_at_100%_100%,rgba(200,135,25,.08),transparent_55%)]" />
         <div className="relative p-5 sm:p-7">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_0%_0%,rgba(220,38,38,.15),transparent_60%)]" />
           <div className="relative grid gap-6 lg:grid-cols-[1.5fr_.5fr] lg:items-center">
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1.5 text-xs font-bold text-brand-300">
+                <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/[.07] px-3.5 py-1.5 text-xs font-bold text-brand">
                   <span className="h-2 w-2 rounded-full bg-brand animate-pulseDot" />
                   Live Supabase Realtime Sync
                 </span>
                 <button
                   onClick={() => setShowPdfModal(true)}
-                  className="inline-flex items-center gap-2 rounded-full border border-emerald/40 bg-emerald/20 px-4 py-1.5 text-xs font-extrabold text-emerald hover:bg-emerald/30 shadow-glow transition-all cursor-pointer"
+                  className="inline-flex min-h-[36px] items-center gap-2 rounded-full border border-emerald/40 bg-emerald/[.08] px-4 py-1.5 text-xs font-extrabold text-emerald hover:bg-emerald/15 transition-all cursor-pointer"
                 >
                   <Icon d={I.download} className="h-4 w-4" />
                   📄 PDF Report Download
                 </button>
               </div>
 
-              <h1 className="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-4xl text-cream">
-                Dhol Maintenance Tracker
+              <h1 className="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-4xl text-slate-900">
+                Dhol <span className="bg-gradient-to-r from-brand via-brand-300 to-gold bg-clip-text text-transparent">Maintenance</span> Tracker
               </h1>
-              <p className="mt-2 max-w-2xl text-xs sm:text-sm text-mist leading-relaxed">
+              <p className="mt-2 max-w-2xl text-xs sm:text-sm text-slate-600 leading-relaxed">
                 Kul {TOTAL_DHOLS} Dhol: #1-#25 (30"), #26-#52 (28"), #53-#54
                 (26"). Card par hover ya tap karke last maintenance ki complete
                 jankari dekhein.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-emerald/30 bg-emerald/10 p-3 text-center">
+              <div className="rounded-xl border border-emerald/25 bg-emerald/[.06] p-3 text-center shadow-[0_1px_2px_rgba(15,23,42,.04)]">
                 <p className="font-display text-3xl font-extrabold text-emerald tabular-nums">
                   {stats.doneToday}
                 </p>
-                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-0.5">
                   Aaj Kiye ✅
                 </p>
               </div>
-              <div className="rounded-xl border border-brand/30 bg-brand/10 p-3 text-center">
-                <p className="font-display text-3xl font-extrabold text-brand-300 tabular-nums">
+              <div className="rounded-xl border border-brand/25 bg-brand/[.05] p-3 text-center shadow-[0_1px_2px_rgba(15,23,42,.04)]">
+                <p className="font-display text-3xl font-extrabold text-brand tabular-nums">
                   {stats.neverDone}
                 </p>
-                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-0.5">
                   Never Logged
                 </p>
               </div>
-              <div className="rounded-xl border border-gold/30 bg-gold/10 p-3 text-center">
-                <p className="font-display text-3xl font-extrabold text-gold-300 tabular-nums">
+              <div className="rounded-xl border border-gold/30 bg-gold/[.07] p-3 text-center shadow-[0_1px_2px_rgba(15,23,42,.04)]">
+                <p className="font-display text-3xl font-extrabold text-gold-600 tabular-nums">
                   {stats.totalLogs}
                 </p>
-                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-0.5">
                   60d Entries
                 </p>
               </div>
-              <div className="rounded-xl border border-sky/30 bg-sky/10 p-3 text-center">
+              <div className="rounded-xl border border-sky/25 bg-sky/[.06] p-3 text-center shadow-[0_1px_2px_rgba(15,23,42,.04)]">
                 <p className="font-display text-3xl font-extrabold text-sky tabular-nums">
                   {stats.uniquePeople}
                 </p>
-                <p className="text-[10px] uppercase tracking-wider text-mist font-bold mt-0.5">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-0.5">
                   Members
                 </p>
               </div>
@@ -1551,21 +1627,21 @@ export default function DholMaintenance() {
       </section>
 
       {/* ═══ LEGEND & STATUS BAR ═══ */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/90 bg-white/95 px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,.04)]">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[11px] uppercase tracking-wider text-mist font-bold">
+          <span className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">
             Status Legend:
           </span>
           {[
             { color: "bg-emerald", label: "Aaj Kiya ✅" },
-            { color: "bg-gold-300", label: "Is Hafte" },
+            { color: "bg-gold", label: "Is Hafte" },
             { color: "bg-sky", label: "30 Din Mein" },
             { color: "bg-brand", label: "Stale / 60d+" },
-            { color: "bg-white/20", label: "No Record" },
+            { color: "bg-slate-300", label: "No Record" },
           ].map(({ color, label }) => (
             <span
               key={label}
-              className="inline-flex items-center gap-1.5 text-xs text-cream font-medium"
+              className="inline-flex items-center gap-1.5 text-xs text-slate-700 font-medium"
             >
               <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
               {label}
@@ -1579,27 +1655,27 @@ export default function DholMaintenance() {
         <div className="relative flex-1 min-w-[180px] max-w-xs">
           <Icon
             d={I.target}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-mist"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
           />
           <input
             type="number"
             value={searchNum}
             onChange={(e) => setSearchNum(e.target.value)}
             placeholder="Search Dhol # (e.g. 5, 25)..."
-            className="w-full rounded-xl border border-white/10 bg-ink-900 pl-10 pr-3 py-2.5 text-sm text-cream placeholder:text-mist/50 focus:border-brand focus:outline-none"
+            className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 shadow-sm"
           />
         </div>
 
         {/* Size Filter */}
-        <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-ink-900 p-1">
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
           {["all", "30", "28", "26"].map((s) => (
             <button
               key={s}
               onClick={() => setFilterSize(s)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+              className={`rounded-lg min-h-[36px] px-3 py-1.5 text-xs font-bold transition-all ${
                 filterSize === s
-                  ? "bg-brand text-white shadow-glow"
-                  : "text-mist hover:text-cream"
+                  ? "bg-gradient-to-r from-brand to-brand-300 text-white shadow-[0_2px_10px_rgba(227,27,35,.28)]"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               {s === "all" ? "Sab Sizes" : `${s}"`}
@@ -1608,7 +1684,7 @@ export default function DholMaintenance() {
         </div>
 
         {/* Status Filter */}
-        <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-ink-900 p-1">
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
           {[
             { key: "all", label: "Sab" },
             { key: "today", label: "Aaj" },
@@ -1618,10 +1694,10 @@ export default function DholMaintenance() {
             <button
               key={key}
               onClick={() => setFilterStatus(key)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+              className={`rounded-lg min-h-[36px] px-3 py-1.5 text-xs font-bold transition-all ${
                 filterStatus === key
-                  ? "bg-brand text-white shadow-glow"
-                  : "text-mist hover:text-cream"
+                  ? "bg-gradient-to-r from-brand to-brand-300 text-white shadow-[0_2px_10px_rgba(227,27,35,.28)]"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               {label}
@@ -1632,26 +1708,26 @@ export default function DholMaintenance() {
         {/* Download PDF Trigger Button */}
         <button
           onClick={() => setShowPdfModal(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald/20 border border-emerald/40 px-3.5 py-2 text-xs font-bold text-emerald hover:bg-emerald/30 transition-all cursor-pointer ml-auto sm:ml-0"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-emerald/40 bg-emerald/[.07] px-4 py-2 text-xs font-bold text-emerald hover:bg-emerald/[.14] transition-all cursor-pointer ml-auto sm:ml-0"
         >
           <Icon d={I.download} className="h-4 w-4" />
           PDF Report
         </button>
 
-        <span className="ml-auto text-xs font-bold text-mist">
+        <span className="ml-auto text-xs font-bold text-slate-500">
           Showing {filteredDhols.length} / {dhols.length} Dhols
         </span>
       </div>
 
       {/* ═══ DHOL GRID (2 Cols Mobile, 6 Cols Desktop) ═══ */}
-      <section className="rounded-2xl border border-white/10 bg-ink-850/60 p-3.5 sm:p-5">
+      <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-3.5 sm:p-5 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)]">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-[.2em] text-brand-300 font-bold">
+            <p className="text-[10px] uppercase tracking-[.2em] text-brand font-bold">
               Grid View
             </p>
-            <h2 className="mt-0.5 font-display text-xl font-bold text-cream">
-              54 Dhol Cards (Mobile: 2 Cards / Line)
+            <h2 className="mt-0.5 font-display text-xl font-bold text-slate-900">
+              54 Dhol Cards (Compact Grid)
             </h2>
           </div>
         </div>
@@ -1678,75 +1754,112 @@ export default function DholMaintenance() {
       </section>
 
       {/* ═══ RECENT ACTIVITY LIST ═══ */}
-      <section className="rounded-2xl border border-white/10 bg-ink-850/80 p-4 sm:p-5">
+      <section className="rounded-2xl border border-slate-200/90 bg-white/95 p-4 sm:p-5 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)]">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-[.2em] text-gold-300 font-bold">
+            <p className="text-[10px] uppercase tracking-[.2em] text-gold font-bold">
               Recent Maintenance Logs
             </p>
-            <h2 className="mt-0.5 font-display text-xl font-bold text-cream">
+            <h2 className="mt-0.5 font-display text-xl font-bold text-slate-900">
               Hal hi mein kiye gaye maintenance
             </h2>
           </div>
-          <span className="rounded-full border border-white/10 bg-white/[.05] px-3 py-1 text-xs font-semibold text-mist">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
             All Time Records
           </span>
         </div>
 
-        <div className="space-y-2.5">
-          {logs.slice(0, 15).map((log, i) => (
-            <div
-              key={log.id || i}
-              className="flex items-start gap-3 rounded-xl border border-white/[.08] bg-white/[.02] p-3 hover:bg-white/[.05] cursor-pointer transition-colors"
-              onClick={() => {
-                const dhol = dhols.find(
-                  (d) => d.dhol_number === (log.dhol_number || log.dhol_id),
-                );
-                if (dhol) setSelectedDhol(dhol);
-              }}
-            >
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/20 border border-brand/30 font-bold text-brand-300 text-sm">
-                #{log.dhol_number || log.dhol_id || "—"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-bold text-cream">
-                    {log.description || "Normal Dhol"}
+        <div className="space-y-3">
+          {groupedLogs.map(([dateKey, dLogs]) => {
+            const open = Boolean(expandedDates[dateKey]);
+            return (
+              <div
+                key={dateKey}
+                className="overflow-hidden rounded-xl border border-slate-200/80 bg-white"
+              >
+                <button
+                  onClick={() => toggleDate(dateKey)}
+                  className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-brand/[.04]"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className="grid h-8 w-8 place-items-center rounded-lg border border-brand/25 bg-brand/[.08] text-xs font-bold text-brand">
+                      {dLogs.length}
+                    </span>
+                    <span>
+                      <span className="block text-sm font-bold text-slate-900">
+                        {fmtDate(dateKey)}
+                      </span>
+                      <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                        {dLogs.length} entries
+                      </span>
+                    </span>
                   </span>
-                  {log.dhol_size && (
-                    <span className="text-[10px] font-bold text-mist bg-white/10 rounded-full px-2 py-0.5">
-                      {log.dhol_size}"
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  {log.done_by && (
-                    <span className="text-xs text-gold-300 font-semibold">
-                      👤 {log.done_by}
-                    </span>
-                  )}
-                  {log.done_by_2 && (
-                    <span className="text-xs text-sky font-semibold">
-                      👤 {log.done_by_2}
-                    </span>
-                  )}
-                  {log.notes && (
-                    <span className="text-xs text-mist italic truncate max-w-xs">
-                      📝 {log.notes}
-                    </span>
-                  )}
-                </div>
+                  <span
+                    className={`inline-block text-lg font-bold text-brand transition-transform duration-200 ${
+                      open ? "rotate-90" : ""
+                    }`}
+                  >
+                    ›
+                  </span>
+                </button>
+
+                {open && (
+                  <div className="space-y-2 border-t border-slate-100 p-2.5">
+                    {dLogs.map((log, i) => (
+                      <div
+                        key={log.id || i}
+                        className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200/70 bg-white p-2.5 transition-all hover:border-brand/30 hover:bg-brand/[.04]"
+                        onClick={() => {
+                          const dhol = dhols.find(
+                            (d) =>
+                              d.dhol_number === (log.dhol_number || log.dhol_id),
+                          );
+                          if (dhol) setSelectedDhol(dhol);
+                        }}
+                      >
+                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-brand/25 bg-brand/[.08] text-sm font-bold text-slate-900">
+                          #{log.dhol_number || log.dhol_id || "-"}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-bold text-slate-900">
+                              {log.description || "Normal Dhol"}
+                            </span>
+                            {log.dhol_size && (
+                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                                {log.dhol_size}"
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            {log.done_by && (
+                              <span className="text-xs font-semibold text-gold-600">
+                                {log.done_by}
+                              </span>
+                            )}
+                            {log.done_by_2 && (
+                              <span className="text-xs font-semibold text-sky">
+                                {log.done_by_2}
+                              </span>
+                            )}
+                            {log.notes && (
+                              <span className="text-xs italic text-slate-500">
+                                {log.notes}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <span className="text-xs text-mist font-medium shrink-0">
-                📅 {fmtDate(log.maintenance_date)}
-              </span>
-            </div>
-          ))}
+            );
+          })}
 
           {logs.length === 0 && (
-            <div className="py-12 text-center text-mist text-sm">
-              Abhi tak koi bhi maintenance log nahi hai. Pehla entry add karo!
-              🥁
+            <div className="py-12 text-center text-sm text-mist">
+              Abhi tak koi bhi maintenance log nahi hai.
             </div>
           )}
         </div>

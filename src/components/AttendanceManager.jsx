@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../lib/supabase";
 import { Icon, I } from "./icons";
 
@@ -590,26 +591,32 @@ export default function AttendanceManager() {
     <div className="space-y-6 animate-rise">
 
       {/* ═══════ HERO HEADER ═══════ */}
-      <section className="dashboard-hero overflow-hidden rounded-2xl border border-white/[.08] bg-ink-900/90 shadow-premium-xl">
-        <div className="p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_16px_40px_-8px_rgba(15,23,42,.1)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_0%_0%,rgba(227,27,35,.08),transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_70%_at_100%_100%,rgba(200,135,25,.08),transparent_55%)]" />
+        <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-brand/50 to-transparent" />
+        <div className="relative p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/10 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[.16em] text-brand-300">
-                <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-gradient-to-r from-brand/10 to-brand/5 px-3.5 py-1.5 text-xs font-bold text-brand shadow-[0_1px_6px_rgba(227,27,35,.12)]">
+                <span className="h-2 w-2 rounded-full bg-brand animate-pulseDot" />
                 Biometric Direct Auto-Connect
               </span>
               <span
                 onClick={() => setShowDeviceSetupModal(true)}
-                className="rounded-full border border-emerald/25 bg-emerald/10 px-3.5 py-1 text-xs text-emerald font-medium cursor-pointer hover:bg-emerald/20 transition-all flex items-center gap-1.5"
+                className="inline-flex items-center gap-1.5 rounded-full border border-emerald/25 bg-emerald/10 px-3.5 py-1.5 text-xs font-bold text-emerald cursor-pointer transition-all duration-200 hover:bg-emerald/20 shadow-sm"
               >
                 <span className="h-2 w-2 rounded-full bg-emerald animate-ping" />
                 {autoConnectListener ? "🔒 Biometric Data Tamper-Proof & Locked" : "Listener Paused"}
               </span>
             </div>
-            <h1 className="font-display text-3xl sm:text-4xl font-semibold text-cream">
-              अटेंडन्स मॅनेजमेंट — Attendance Control
+            <h1 className="mt-4 font-display text-3xl sm:text-4xl lg:text-[2.6rem] font-semibold tracking-tight text-cream">
+              अटेंडन्स मॅनेजमेंट —{" "}
+              <span className="bg-gradient-to-r from-brand via-brand-300 to-gold bg-clip-text text-transparent">
+                Attendance Control
+              </span>
             </h1>
-            <p className="mt-2 text-sm text-mist max-w-xl">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-mist sm:text-base">
               Biometric tamper-proof attendance, isolated batch-wise reports (2010 – 2026), and working hours leaderboard.
             </p>
           </div>
@@ -619,7 +626,7 @@ export default function AttendanceManager() {
             <button
               onClick={triggerBiometricSync}
               disabled={syncing}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand/30 bg-brand/10 text-brand-300 text-sm font-semibold hover:bg-brand/20 transition-all disabled:opacity-50"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-mist shadow-sm transition-all duration-200 hover:border-brand/40 hover:text-brand hover:bg-brand/[.04] active:scale-[.98] disabled:opacity-50 disabled:shadow-none"
             >
               <Icon d={I.bolt} className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
               {syncing ? "Syncing..." : "Sync Biometric"}
@@ -627,7 +634,7 @@ export default function AttendanceManager() {
 
             <button
               onClick={() => setShowAddBatchModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gold/30 bg-gold/10 text-gold-300 text-sm font-semibold hover:bg-gold/20 transition-all"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-sm font-bold text-gold shadow-sm transition-all duration-200 hover:bg-gold/20 hover:shadow-[0_2px_10px_rgba(200,135,25,.18)] active:scale-[.98]"
             >
               <Icon d={I.plus} className="w-4 h-4" />
               Add New Batch
@@ -635,7 +642,7 @@ export default function AttendanceManager() {
 
             <button
               onClick={() => setShowAddStudentModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[.1] bg-white/[.05] text-cream text-sm font-semibold hover:bg-white/[.08] transition-all"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-cream shadow-sm transition-all duration-200 hover:border-brand/40 hover:text-brand hover:bg-brand/[.04] active:scale-[.98]"
             >
               <Icon d={I.users} className="w-4 h-4" />
               Add Student
@@ -643,7 +650,7 @@ export default function AttendanceManager() {
 
             <button
               onClick={() => downloadAttendancePDF(filteredAttendance, batchFilter, dateRangeTextLabel)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand to-brand-300 text-white text-sm font-semibold hover:shadow-[0_0_24px_rgba(220,38,38,.35)] transition-all hover:-translate-y-0.5"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-gradient-to-r from-brand to-brand-300 px-5 py-2.5 text-sm font-bold text-white shadow-[0_2px_10px_rgba(227,27,35,.28)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(227,27,35,.38)] hover:brightness-105 active:scale-[.98]"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -657,7 +664,7 @@ export default function AttendanceManager() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-t border-white/[.08] bg-white/[.02] overflow-x-auto scroll-thin">
+        <div className="relative flex border-t border-slate-200/80 bg-slate-50/60 overflow-x-auto scroll-thin">
           {[
             { id: "dashboard", label: "📊 Dashboard", badge: stats.total },
             { id: "batches", label: "📚 Batches Management", badge: `${batches.length} Batches` },
@@ -669,15 +676,15 @@ export default function AttendanceManager() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`px-5 py-3.5 text-xs font-semibold uppercase tracking-wider whitespace-nowrap border-b-2 transition-all flex items-center gap-2 ${
+              className={`px-5 py-3.5 min-h-[44px] text-xs font-bold uppercase tracking-wider whitespace-nowrap border-b-2 transition-all duration-200 flex items-center gap-2 ${
                 activeTab === t.id
-                  ? "border-brand text-cream bg-white/[.04]"
-                  : "border-transparent text-mist hover:text-cream hover:bg-white/[.02]"
+                  ? "border-brand text-cream bg-white"
+                  : "border-transparent text-mist hover:text-cream hover:bg-white/60"
               }`}
             >
               {t.label}
               {t.badge && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] bg-brand/15 text-brand-300 font-bold border border-brand/25">
+                <span className="inline-flex items-center rounded-full border border-brand/25 bg-brand/[.08] px-2.5 py-0.5 text-[10px] font-bold text-brand shadow-sm">
                   {t.badge}
                 </span>
               )}
@@ -687,7 +694,7 @@ export default function AttendanceManager() {
       </section>
 
       {/* ═══════ ADVANCED FILTER BAR (Batch, Status, Date-wise, Custom Range) ═══════ */}
-      <div className="card-glass p-4 space-y-3">
+      <div className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] p-4 space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Row 1: Batch & Status */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -786,7 +793,7 @@ export default function AttendanceManager() {
       {activeTab === "dashboard" && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="card-premium relative min-h-[120px] p-5 overflow-hidden">
+            <div className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] relative min-h-[120px] p-5 overflow-hidden">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-[10px] uppercase tracking-[.16em] text-mist">Present Records</p>
@@ -799,7 +806,7 @@ export default function AttendanceManager() {
               <p className="mt-2 text-xs text-mist font-medium">Filter: {dateRangeTextLabel}</p>
             </div>
 
-            <div className="card-premium relative min-h-[120px] p-5 overflow-hidden">
+            <div className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] relative min-h-[120px] p-5 overflow-hidden">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-[10px] uppercase tracking-[.16em] text-mist">Late Entries</p>
@@ -812,7 +819,7 @@ export default function AttendanceManager() {
               <p className="mt-2 text-xs text-mist font-medium">Checked in late</p>
             </div>
 
-            <div className="card-premium relative min-h-[120px] p-5 overflow-hidden">
+            <div className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] relative min-h-[120px] p-5 overflow-hidden">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-[10px] uppercase tracking-[.16em] text-mist">Absent Count</p>
@@ -825,7 +832,7 @@ export default function AttendanceManager() {
               <p className="mt-2 text-xs text-mist font-medium">No Check In recorded</p>
             </div>
 
-            <div className="card-premium relative min-h-[120px] p-5 overflow-hidden">
+            <div className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] relative min-h-[120px] p-5 overflow-hidden">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-[10px] uppercase tracking-[.16em] text-mist">Total Working Hours</p>
@@ -839,7 +846,7 @@ export default function AttendanceManager() {
             </div>
           </div>
 
-          <div className="card-premium p-5 space-y-4">
+          <div className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-5 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <h3 className="font-display text-lg font-semibold text-cream">Attendance Records ({dateRangeTextLabel})</h3>
@@ -858,7 +865,7 @@ export default function AttendanceManager() {
             <div className="overflow-x-auto -mx-2">
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="border-b border-white/[.08] text-mist font-semibold uppercase tracking-wider">
+                  <tr className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/60 text-mist font-semibold uppercase tracking-wider">
                     <th className="py-3 px-3">Student Name</th>
                     <th className="py-3 px-3">Roll No</th>
                     <th className="py-3 px-3">Batch</th>
@@ -872,7 +879,7 @@ export default function AttendanceManager() {
                 </thead>
                 <tbody>
                   {filteredAttendance.map(r => (
-                    <tr key={r.id} className="border-b border-white/[.04] hover:bg-white/[.02] transition-colors">
+                    <tr key={r.id} className="border-b border-slate-100 hover:bg-brand/[.04] transition-colors">
                       <td className="py-3 px-3 font-semibold text-cream">{r.student_name}</td>
                       <td className="py-3 px-3 font-mono text-mist">{r.roll_number || "—"}</td>
                       <td className="py-3 px-3 text-cream">{r.batch_name}</td>
@@ -934,7 +941,7 @@ export default function AttendanceManager() {
               const batchMins = batchAtt.reduce((sum, a) => sum + (a.total_minutes || 0), 0);
 
               return (
-                <div key={b.id || b.name} className="card-premium p-5 space-y-4 relative overflow-hidden group hover:-translate-y-1 transition-all">
+                <div key={b.id || b.name} className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-5 space-y-4 relative overflow-hidden group hover:-translate-y-1 transition-all">
                   <div className="flex items-start justify-between">
                     <div>
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand/15 text-brand-300 border border-brand/25">
@@ -995,7 +1002,7 @@ export default function AttendanceManager() {
                 "border-coral/40 bg-coral/[.05]"
               ];
               return (
-                <div key={std.id} className={`card-premium p-6 text-center space-y-3 relative overflow-hidden ${borderColors[idx]}`}>
+                <div key={std.id} className={`rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-6 text-center space-y-3 relative overflow-hidden ${borderColors[idx]}`}>
                   <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-white/[.08] text-cream border border-white/[.1]">
                     {medals[idx]}
                   </span>
@@ -1022,7 +1029,7 @@ export default function AttendanceManager() {
             })}
           </div>
 
-          <div className="card-premium p-5 space-y-4">
+          <div className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-display text-lg font-semibold text-cream">Full Leaderboard Rankings</h3>
@@ -1036,7 +1043,7 @@ export default function AttendanceManager() {
             <div className="overflow-x-auto -mx-2">
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="border-b border-white/[.08] text-mist font-semibold uppercase tracking-wider">
+                  <tr className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/60 text-mist font-semibold uppercase tracking-wider">
                     <th className="py-3 px-3">Rank</th>
                     <th className="py-3 px-3">Student Name</th>
                     <th className="py-3 px-3">Roll Number</th>
@@ -1049,7 +1056,7 @@ export default function AttendanceManager() {
                 </thead>
                 <tbody>
                   {studentRankings.map((s, idx) => (
-                    <tr key={s.id} className="border-b border-white/[.04] hover:bg-white/[.02] transition-colors">
+                    <tr key={s.id} className="border-b border-slate-100 hover:bg-brand/[.04] transition-colors">
                       <td className="py-3 px-3 font-display font-bold text-sm text-cream">
                         {idx === 0 ? "🥇 #1" : idx === 1 ? "🥈 #2" : idx === 2 ? "🥉 #3" : `#${idx + 1}`}
                       </td>
@@ -1085,7 +1092,7 @@ export default function AttendanceManager() {
       {activeTab === "timeline" && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="card-premium p-5 space-y-3">
+            <div className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-5 space-y-3">
               <h3 className="font-display text-base font-semibold text-cream">Select Student</h3>
               <div className="space-y-2 max-h-96 overflow-y-auto scroll-thin pr-1">
                 {students.map(s => (
@@ -1108,7 +1115,7 @@ export default function AttendanceManager() {
               </div>
             </div>
 
-            <div className="md:col-span-2 card-premium p-6 space-y-5">
+            <div className="md:col-span-2 rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-6 space-y-5">
               {selectedStudent ? (
                 <>
                   <div className="flex items-center justify-between border-b border-white/[.08] pb-4">
@@ -1167,7 +1174,7 @@ export default function AttendanceManager() {
           TAB 5: CUSTOM RANGE REPORTS & DOWNLOADS
          ═══════════════════════════════════════════════════ */}
       {activeTab === "reports" && (
-        <div className="card-premium p-6 space-y-5">
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-6 space-y-5">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-display text-lg font-semibold text-cream">Date-wise & Custom Range Reports</h3>
@@ -1210,7 +1217,7 @@ export default function AttendanceManager() {
          ═══════════════════════════════════════════════════ */}
       {activeTab === "devices" && (
         <div className="space-y-6">
-          <div className="card-premium p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="w-10 h-10 rounded-xl bg-emerald/15 border border-emerald/30 text-emerald grid place-items-center">
                 <Icon d={I.bolt} className="w-5 h-5 animate-pulse" />
@@ -1232,7 +1239,7 @@ export default function AttendanceManager() {
             {devices.map(dev => {
               const isSecureye = dev.brand === "Secureye" || dev.model === "S-FB5K";
               return (
-                <div key={dev.id} className={`card-premium p-5 space-y-3 relative overflow-hidden ${isSecureye ? "border-brand/50 bg-brand/5 ring-1 ring-brand/30" : ""}`}>
+                <div key={dev.id} className={`rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-5 space-y-3 relative overflow-hidden ${isSecureye ? "border-brand/50 bg-brand/5 ring-1 ring-brand/30" : ""}`}>
                   {isSecureye && (
                     <div className="absolute top-0 right-0 bg-brand text-white text-[9px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider shadow">
                       ⭐ Your Machine (S-FB5K)
@@ -1263,10 +1270,9 @@ export default function AttendanceManager() {
 
       {/* ═══════ MODALS ═══════ */}
       {/* 1. Mark Attendance Modal */}
-      {showMarkModal && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm" onClick={() => setShowMarkModal(false)} />
-          <div className="relative card-premium p-6 w-full max-w-md space-y-4 animate-rise shadow-lift">
+      {showMarkModal && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/55 p-4" onClick={() => setShowMarkModal(false)}>
+          <div className="relative rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-6 w-full max-w-md space-y-4 animate-rise shadow-lift max-h-[90vh] overflow-y-auto scroll-thin" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-display font-semibold text-cream">Mark Attendance (Manual)</h2>
               <button onClick={() => setShowMarkModal(false)} className="text-mist hover:text-cream">
@@ -1329,14 +1335,14 @@ export default function AttendanceManager() {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 2. Add New Batch Modal */}
-      {showAddBatchModal && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm" onClick={() => setShowAddBatchModal(false)} />
-          <div className="relative card-premium p-6 w-full max-w-md space-y-4 animate-rise shadow-lift">
+      {showAddBatchModal && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/55 p-4" onClick={() => setShowAddBatchModal(false)}>
+          <div className="relative rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-6 w-full max-w-md space-y-4 animate-rise shadow-lift max-h-[90vh] overflow-y-auto scroll-thin" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-display font-semibold text-cream">📚 Create New Batch</h2>
               <button onClick={() => setShowAddBatchModal(false)} className="text-mist hover:text-cream">
@@ -1396,14 +1402,14 @@ export default function AttendanceManager() {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 3. Add New Student Modal */}
-      {showAddStudentModal && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm" onClick={() => setShowAddStudentModal(false)} />
-          <div className="relative card-premium p-6 w-full max-w-md space-y-4 animate-rise shadow-lift">
+      {showAddStudentModal && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/55 p-4" onClick={() => setShowAddStudentModal(false)}>
+          <div className="relative rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-6 w-full max-w-md space-y-4 animate-rise shadow-lift max-h-[90vh] overflow-y-auto scroll-thin" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-display font-semibold text-cream">👤 Add Student to Batch</h2>
               <button onClick={() => setShowAddStudentModal(false)} className="text-mist hover:text-cream">
@@ -1464,14 +1470,14 @@ export default function AttendanceManager() {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 4. Machine Setup Modal */}
-      {showDeviceSetupModal && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm" onClick={() => setShowDeviceSetupModal(false)} />
-          <div className="relative card-premium p-6 w-full max-w-lg space-y-4 animate-rise shadow-lift max-h-[90vh] overflow-y-auto">
+      {showDeviceSetupModal && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/55 p-4" onClick={() => setShowDeviceSetupModal(false)}>
+          <div className="relative rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)] p-6 w-full max-w-lg space-y-4 animate-rise shadow-lift max-h-[90vh] overflow-y-auto scroll-thin" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h2 className="text-lg font-display font-semibold text-cream">📟 Secureye Biometric Setup Guide</h2>
@@ -1520,7 +1526,8 @@ export default function AttendanceManager() {
               Done / Close Setup Guide
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

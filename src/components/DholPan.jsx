@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../lib/supabase";
 import { sendWhatsApp } from "../utils/whatsapp";
 import { Icon, I } from "./icons";
@@ -70,45 +71,45 @@ function getStatus(total) {
   if (total >= 80)
     return {
       label: "High Stock",
-      className: "border-emerald/25 bg-emerald/10 text-emerald",
+      className: "border-emerald/30 bg-emerald/10 text-emerald shadow-[0_1px_6px_rgba(5,150,105,.15)]",
+      dot: "bg-emerald",
     };
   if (total >= 35)
     return {
       label: "Balanced",
-      className: "border-gold/25 bg-gold/10 text-gold-300",
+      className: "border-gold/30 bg-gold/10 text-gold shadow-[0_1px_6px_rgba(200,135,25,.15)]",
+      dot: "bg-gold",
     };
   return {
     label: "Low Stock",
-    className: "border-brand/30 bg-brand/10 text-brand-300",
+    className: "border-brand/35 bg-brand/10 text-brand shadow-[0_1px_6px_rgba(227,27,35,.15)]",
+    dot: "bg-brand animate-pulseDot",
   };
 }
 
 function MetricCard({ label, value, sub, tone = "brand", icon }) {
-  const toneClass = {
-    brand: "from-brand/22 text-brand-300 ring-brand/20",
-    gold: "from-gold/20 text-gold-300 ring-gold/20",
-    sky: "from-sky/18 text-sky ring-sky/20",
-    emerald: "from-emerald/18 text-emerald ring-emerald/20",
+  const tones = {
+    brand:   { grad: "from-brand/[.14]",   icon: "bg-brand/10 text-brand ring-brand/20",       bar: "from-brand-300 to-brand" },
+    gold:    { grad: "from-gold/[.14]",    icon: "bg-gold/10 text-gold-300 ring-gold/25",      bar: "from-gold to-gold-300" },
+    sky:     { grad: "from-sky/[.14]",     icon: "bg-sky/10 text-sky ring-sky/20",             bar: "from-sky to-sky/70" },
+    emerald: { grad: "from-emerald/[.14]", icon: "bg-emerald/10 text-emerald ring-emerald/20", bar: "from-emerald to-emerald/70" },
   }[tone];
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-white/[.07] bg-ink-850/90 p-4 shadow-card">
-      <div
-        className={`absolute inset-0 bg-gradient-to-br ${toneClass.split(" ")[0]} to-transparent`}
-      />
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-5 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_24px_48px_-12px_rgba(15,23,42,.14)]">
+      <div className={`absolute inset-0 bg-gradient-to-br ${tones.grad} via-transparent to-transparent`} />
+      <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-current to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 ${tones.icon.split(" ")[1]}`} />
       <div className="relative flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-[.18em] text-mist/75">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[.18em] text-mist/80">
             {label}
           </p>
-          <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-cream">
+          <p className="mt-2.5 font-display text-[2rem] leading-none font-semibold tabular-nums text-cream">
             {value}
           </p>
-          <p className="mt-1 text-xs text-mist">{sub}</p>
+          <p className="mt-1.5 truncate text-xs text-mist">{sub}</p>
         </div>
-        <div
-          className={`grid h-10 w-10 place-items-center rounded-lg bg-white/[.05] ring-1 ${toneClass.split(" ").slice(1).join(" ")}`}
-        >
+        <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 shadow-sm transition-transform duration-300 group-hover:scale-110 ${tones.icon}`}>
           <Icon d={icon} className="h-5 w-5" />
         </div>
       </div>
@@ -119,22 +120,22 @@ function MetricCard({ label, value, sub, tone = "brand", icon }) {
 function MiniBar({ label, value, max, tone }) {
   const width = Math.min(100, max ? (value / max) * 100 : 0);
   const color = {
-    thapi: "from-brand/75 to-brand",
-    dhoom: "from-sky/75 to-sky",
-    new: "from-gold/75 to-gold",
+    thapi: "from-brand/80 to-brand",
+    dhoom: "from-sky/80 to-sky",
+    new: "from-gold/80 to-gold",
   }[tone];
 
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-        <span className="font-medium text-cream">{label}</span>
-        <span className="font-mono font-semibold tabular-nums text-cream">
+      <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+        <span className="font-semibold text-cream/90">{label}</span>
+        <span className="rounded-md bg-slate-100/80 px-2 py-0.5 font-mono text-sm font-bold tabular-nums text-cream">
           {value}
         </span>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-ink-950/80 ring-1 ring-white/[.05]">
+      <div className="h-2 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/60">
         <div
-          className={`h-full rounded-full bg-gradient-to-r ${color} transition-all duration-700`}
+          className={`h-full rounded-full bg-gradient-to-r ${color} shadow-[0_1px_4px_rgba(15,23,42,.15)] transition-all duration-700 ease-out`}
           style={{ width: `${width}%` }}
         />
       </div>
@@ -155,6 +156,22 @@ function EditModal({ size, paneType, current, onSave, onClose }) {
   const [saving, setSaving] = useState(false);
   const label = paneType === "old" ? "Old Pane Stock" : "New Pane Stock";
 
+  // Lock body scroll when modal opens
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    const originalPosition = document.body.style.position;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.position = originalPosition;
+      document.body.style.width = "";
+    };
+  }, []);
+
   const handleSave = async () => {
     setSaving(true);
     const broughtAtISO = broughtAt ? new Date(broughtAt).toISOString() : null;
@@ -171,28 +188,29 @@ function EditModal({ size, paneType, current, onSave, onClose }) {
     setSaving(false);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
-      <button
-        className="absolute inset-0 bg-black/75 backdrop-blur-md"
-        onClick={onClose}
-        aria-label="Close"
-      />
-      <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-white/[.08] bg-ink-900 shadow-[0_24px_80px_rgba(0,0,0,.5)] animate-rise max-h-[90vh] overflow-y-auto">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/70 to-transparent" />
-        <div className="p-5 sm:p-6">
-          <div className="mb-5 flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[.2em] text-mist">
-                Update Inventory
-              </p>
-              <h2 className="mt-1 font-display text-2xl font-semibold">
-                {size} {label}
-              </h2>
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/55 p-4">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 animate-rise max-h-[90vh] overflow-y-auto scroll-thin">
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-brand to-transparent" />
+        <div className="p-5 sm:p-7">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand/10 text-brand ring-1 ring-brand/25 shadow-sm">
+                <Icon d={I.sliders} className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[.2em] text-brand">
+                  Update Inventory
+                </p>
+                <h2 className="mt-0.5 font-display text-2xl font-semibold text-cream">
+                  {size} {label}
+                </h2>
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="grid h-9 w-9 place-items-center rounded-lg border border-white/[.07] bg-white/[.04] text-mist hover:text-cream"
+              type="button"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-mist shadow-sm transition-all duration-200 hover:border-brand/40 hover:bg-rose-50 hover:text-brand active:scale-95"
               aria-label="Close modal"
             >
               <Icon d={I.x} className="h-4 w-4" />
@@ -203,45 +221,45 @@ function EditModal({ size, paneType, current, onSave, onClose }) {
             {paneType === "old" ? (
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-xs font-medium uppercase tracking-wider text-mist">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-mist">
                     Thapi
                   </span>
                   <input
                     type="number"
                     value={thapi}
                     onChange={(event) => setThapi(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-white/[.08] bg-ink-950 px-3 py-3 font-mono text-lg text-cream focus:border-brand/50 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-3 font-mono text-lg font-semibold text-cream shadow-inner-sm transition-all duration-200 focus:border-brand focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand/15"
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium uppercase tracking-wider text-mist">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-mist">
                     Dhoom
                   </span>
                   <input
                     type="number"
                     value={dhoom}
                     onChange={(event) => setDhoom(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-white/[.08] bg-ink-950 px-3 py-3 font-mono text-lg text-cream focus:border-brand/50 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-3 font-mono text-lg font-semibold text-cream shadow-inner-sm transition-all duration-200 focus:border-brand focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand/15"
                   />
                 </label>
               </div>
             ) : (
               <label className="block">
-                <span className="text-xs font-medium uppercase tracking-wider text-mist">
+                <span className="text-xs font-semibold uppercase tracking-wider text-mist">
                   New Pane Count
                 </span>
                 <input
                   type="number"
                   value={count}
                   onChange={(event) => setCount(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/[.08] bg-ink-950 px-3 py-3 font-mono text-lg text-cream focus:border-brand/50 focus:outline-none"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-3 font-mono text-lg font-semibold text-cream shadow-inner-sm transition-all duration-200 focus:border-brand focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand/15"
                 />
               </label>
             )}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block">
-                <span className="text-xs font-medium uppercase tracking-wider text-mist">
+                <span className="text-xs font-semibold uppercase tracking-wider text-mist">
                   Brought By
                 </span>
                 <input
@@ -249,34 +267,36 @@ function EditModal({ size, paneType, current, onSave, onClose }) {
                   value={broughtBy}
                   onChange={(event) => setBroughtBy(event.target.value)}
                   placeholder="Name"
-                  className="mt-1 w-full rounded-lg border border-white/[.08] bg-ink-950 px-3 py-3 text-cream placeholder:text-ink-500 focus:border-brand/50 focus:outline-none"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-3 text-cream placeholder:text-slate-400 shadow-inner-sm transition-all duration-200 focus:border-brand focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand/15"
                 />
               </label>
               <label className="block">
-                <span className="text-xs font-medium uppercase tracking-wider text-mist">
+                <span className="text-xs font-semibold uppercase tracking-wider text-mist">
                   Brought Date
                 </span>
                 <input
                   type="date"
                   value={broughtAt}
                   onChange={(event) => setBroughtAt(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/[.08] bg-ink-950 px-3 py-3 text-cream focus:border-brand/50 focus:outline-none"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-3 text-cream shadow-inner-sm transition-all duration-200 focus:border-brand focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand/15"
                 />
               </label>
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="mt-7 flex justify-end gap-3 border-t border-slate-100 pt-5">
             <button
               onClick={onClose}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-mist hover:text-cream"
+              type="button"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-mist shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-cream active:scale-[.98]"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2 text-sm font-bold text-white shadow-glow transition-all hover:bg-brand-300 disabled:opacity-50"
+              type="button"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand to-brand-300 px-6 py-2.5 text-sm font-bold text-white shadow-[0_2px_10px_rgba(227,27,35,.3)] transition-all duration-200 hover:shadow-[0_4px_18px_rgba(227,27,35,.4)] hover:brightness-105 active:scale-[.98] disabled:opacity-50 disabled:shadow-none"
             >
               <Icon d={I.check} className="h-4 w-4" />
               {saving ? "Saving..." : "Save Update"}
@@ -284,46 +304,51 @@ function EditModal({ size, paneType, current, onSave, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
-const Skeleton = () => (
-  <div className="space-y-6 animate-rise">
-    <div className="h-48 rounded-xl bg-ink-850 shimmer" />
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-      {[1, 2, 3, 4].map((item) => (
-        <div key={item} className="h-28 rounded-xl bg-ink-850 shimmer" />
-      ))}
+function Skeleton() {
+  return (
+    <div className="space-y-6 animate-rise">
+      <div className="h-48 rounded-xl bg-ink-850 shimmer" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        {[1, 2, 3, 4].map((item) => (
+          <div key={item} className="h-28 rounded-xl bg-ink-850 shimmer" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        {[1, 2, 3].map((item) => (
+          <div key={item} className="h-72 rounded-xl bg-ink-850 shimmer" />
+        ))}
+      </div>
     </div>
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-      {[1, 2, 3].map((item) => (
-        <div key={item} className="h-72 rounded-xl bg-ink-850 shimmer" />
-      ))}
-    </div>
-  </div>
-);
+  );
+}
 
 function PaneCard({ size, paneType, item, max, onEdit, onReset }) {
   const total = (Number(item.thapi) || 0) + (Number(item.dhoom) || 0);
   const status = getStatus(total);
 
   return (
-    <article className="group relative overflow-hidden rounded-xl border border-white/[.07] bg-ink-850/90 shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-white/[.12] hover:shadow-lift">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_100%_0%,rgba(220,38,38,.14),transparent_55%)] opacity-70" />
+    <article className="group relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] transition-all duration-300 hover:-translate-y-1 hover:border-brand/25 hover:shadow-[0_2px_6px_rgba(15,23,42,.06),0_28px_56px_-12px_rgba(15,23,42,.14)]">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_100%_0%,rgba(227,27,35,.07),transparent_55%)]" />
+      <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-brand/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <div className="relative p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] uppercase tracking-[.2em] text-mist">
+            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-mist/80">
               Dhol Pane Size
             </p>
-            <h3 className="mt-1 font-display text-4xl font-semibold tracking-tight">
+            <h3 className="mt-1 font-display text-4xl font-semibold tracking-tight text-cream">
               {size}
             </h3>
           </div>
           <span
-            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${status.className}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${status.className}`}
           >
+            <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
             {status.label}
           </span>
         </div>
@@ -354,23 +379,23 @@ function PaneCard({ size, paneType, item, max, onEdit, onReset }) {
           )}
         </div>
 
-        <div className="mt-5 rounded-lg border border-white/[.06] bg-ink-950/55 p-3">
+        <div className="mt-5 rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50/80 to-slate-100/50 p-3.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-mist">Total Stock</span>
-            <span className="font-display text-2xl font-semibold tabular-nums">
+            <span className="text-xs font-semibold uppercase tracking-wider text-mist/80">Total Stock</span>
+            <span className="font-display text-2xl font-semibold tabular-nums text-cream">
               {total}
             </span>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 text-[11px] text-mist">
+          <div className="mt-3 grid grid-cols-2 gap-3 border-t border-slate-200/70 pt-3 text-[11px] text-mist">
             <div>
-              <p className="uppercase tracking-[.14em] text-mist/60">Updated</p>
-              <p className="mt-1 text-cream/85">{fmtDate(item.arrived)}</p>
+              <p className="uppercase tracking-[.14em] text-mist/70">Updated</p>
+              <p className="mt-1 font-medium text-cream/90">{fmtDate(item.arrived)}</p>
             </div>
             <div>
-              <p className="uppercase tracking-[.14em] text-mist/60">
+              <p className="uppercase tracking-[.14em] text-mist/70">
                 Brought By
               </p>
-              <p className="mt-1 truncate text-cream/85">
+              <p className="mt-1 truncate font-medium text-cream/90">
                 {item.broughtBy || "-"}
               </p>
             </div>
@@ -380,7 +405,7 @@ function PaneCard({ size, paneType, item, max, onEdit, onReset }) {
         <div className="mt-5 flex gap-2">
           <button
             onClick={() => onEdit(paneType, size)}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-white/[.06] px-3 py-2.5 text-sm font-semibold text-cream transition-colors hover:bg-white/[.1]"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand to-brand-300 px-3 py-2.5 text-sm font-bold text-white shadow-[0_2px_10px_rgba(227,27,35,.28)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(227,27,35,.38)] hover:brightness-105 active:scale-[.98]"
           >
             <Icon d={I.sliders} className="h-4 w-4" />
             Update
@@ -388,7 +413,7 @@ function PaneCard({ size, paneType, item, max, onEdit, onReset }) {
           {paneType === "new" && (
             <button
               onClick={() => onReset(paneType, size)}
-              className="grid h-10 w-10 place-items-center rounded-lg border border-brand/25 bg-brand/10 text-brand-300 transition-colors hover:bg-brand/20"
+              className="grid h-10 w-10 place-items-center rounded-xl border border-brand/30 bg-brand/10 text-brand shadow-sm transition-all duration-200 hover:bg-brand/20 hover:shadow-[0_2px_8px_rgba(227,27,35,.2)] active:scale-95"
               aria-label={`Remove ${size} new pane stock`}
             >
               <Icon d={I.trash} className="h-4 w-4" />
@@ -430,10 +455,10 @@ function PaneSection({ title, subtitle, paneType, data, onEdit, onReset }) {
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[10px] uppercase tracking-[.2em] text-brand-300">
+          <p className={`text-[10px] font-bold uppercase tracking-[.2em] ${paneType === "old" ? "text-brand" : "text-gold"}`}>
             {paneType === "old" ? "Existing Stock" : "Fresh Stock"}
           </p>
-          <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">
+          <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-cream">
             {title}
           </h2>
           <p className="mt-1 text-sm text-mist">{subtitle}</p>
@@ -441,15 +466,17 @@ function PaneSection({ title, subtitle, paneType, data, onEdit, onReset }) {
         <div className="flex flex-wrap gap-2 text-xs">
           {paneType === "old" && (
             <>
-              <span className="rounded-full border border-brand/25 bg-brand/10 px-3 py-1.5 font-semibold text-brand-300">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand/[.08] px-3.5 py-1.5 font-bold text-brand shadow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
                 Thapi {thapiTotal}
               </span>
-              <span className="rounded-full border border-sky/25 bg-sky/10 px-3 py-1.5 font-semibold text-sky">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-sky/25 bg-sky/[.08] px-3.5 py-1.5 font-bold text-sky shadow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-sky" />
                 Dhoom {dhoomTotal}
               </span>
             </>
           )}
-          <span className="rounded-full border border-white/[.08] bg-white/[.045] px-3 py-1.5 font-semibold text-cream">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 font-bold text-cream shadow-sm">
             Total {sectionTotal}
           </span>
         </div>
@@ -469,30 +496,30 @@ function PaneSection({ title, subtitle, paneType, data, onEdit, onReset }) {
         ))}
       </div>
 
-      <div className="hidden overflow-hidden rounded-xl border border-white/[.07] bg-ink-850/80 shadow-card md:block">
+      <div className="hidden overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] md:block">
         <div className="overflow-x-auto scroll-thin">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[.07] bg-ink-950/55">
-                <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-[.18em] text-mist">
+              <tr className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/60">
+                <th className="px-5 py-3.5 text-left text-[10px] font-bold uppercase tracking-[.18em] text-mist">
                   Size
                 </th>
-                <th className="px-5 py-3 text-center text-[10px] font-semibold uppercase tracking-[.18em] text-mist">
+                <th className="px-5 py-3.5 text-center text-[10px] font-bold uppercase tracking-[.18em] text-mist">
                   Thapi
                 </th>
-                <th className="px-5 py-3 text-center text-[10px] font-semibold uppercase tracking-[.18em] text-mist">
+                <th className="px-5 py-3.5 text-center text-[10px] font-bold uppercase tracking-[.18em] text-mist">
                   Dhoom
                 </th>
-                <th className="px-5 py-3 text-center text-[10px] font-semibold uppercase tracking-[.18em] text-mist">
+                <th className="px-5 py-3.5 text-center text-[10px] font-bold uppercase tracking-[.18em] text-mist">
                   Total
                 </th>
-                <th className="px-5 py-3 text-center text-[10px] font-semibold uppercase tracking-[.18em] text-mist">
+                <th className="px-5 py-3.5 text-center text-[10px] font-bold uppercase tracking-[.18em] text-mist">
                   Updated
                 </th>
-                <th className="px-5 py-3 text-center text-[10px] font-semibold uppercase tracking-[.18em] text-mist">
+                <th className="px-5 py-3.5 text-center text-[10px] font-bold uppercase tracking-[.18em] text-mist">
                   Brought By
                 </th>
-                <th className="px-5 py-3 text-center text-[10px] font-semibold uppercase tracking-[.18em] text-mist">
+                <th className="px-5 py-3.5 text-center text-[10px] font-bold uppercase tracking-[.18em] text-mist">
                   Status
                 </th>
               </tr>
@@ -507,30 +534,31 @@ function PaneSection({ title, subtitle, paneType, data, onEdit, onReset }) {
                   <tr
                     key={size}
                     onClick={() => onEdit(paneType, size)}
-                    className="cursor-pointer border-b border-white/[.05] transition-colors hover:bg-white/[.035]"
+                    className="cursor-pointer border-b border-slate-100 transition-all duration-200 last:border-0 hover:bg-brand/[.04]"
                   >
-                    <td className="px-5 py-4 font-display text-lg font-semibold">
+                    <td className="px-5 py-4 font-display text-lg font-semibold text-cream">
                       {size}
                     </td>
-                    <td className="px-5 py-4 text-center font-mono tabular-nums">
+                    <td className="px-5 py-4 text-center font-mono tabular-nums text-cream/90">
                       {item.thapi}
                     </td>
-                    <td className="px-5 py-4 text-center font-mono tabular-nums">
+                    <td className="px-5 py-4 text-center font-mono tabular-nums text-cream/90">
                       {item.dhoom}
                     </td>
-                    <td className="px-5 py-4 text-center font-mono font-bold tabular-nums">
+                    <td className="px-5 py-4 text-center font-mono font-bold tabular-nums text-cream">
                       {total}
                     </td>
                     <td className="px-5 py-4 text-center text-xs text-mist">
                       {fmtDate(item.arrived)}
                     </td>
-                    <td className="px-5 py-4 text-center text-xs text-cream/85">
+                    <td className="px-5 py-4 text-center text-xs font-medium text-cream/85">
                       {item.broughtBy || "-"}
                     </td>
                     <td className="px-5 py-4 text-center">
                       <span
-                        className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${status.className}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${status.className}`}
                       >
+                        <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
                         {status.label}
                       </span>
                     </td>
@@ -591,26 +619,33 @@ export default function DholPan() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const { data: rows, error } = await supabase.from("dhol_pan").select("*");
-
-    if (error || !rows || rows.length === 0) {
-      if (!error && rows && rows.length === 0) {
-        const seed = [
-          ...Object.entries(INITIAL_OLD).map(([size, item]) =>
-            toRow("old", size, item),
-          ),
-          ...Object.entries(INITIAL_NEW).map(([size, item]) =>
-            toRow("new", size, item),
-          ),
-        ];
-        await supabase.from("dhol_pan").insert(seed);
+    let fromRemote = false;
+    try {
+      const { data: rows, error } = await supabase.from("dhol_pan").select("*");
+      if (!error && rows && rows.length > 0) {
+        const { old, new: nextNew } = fromRows(rows);
+        setOldData(old);
+        setNewData(nextNew);
+        localStorage.setItem("dhol_pan_cache", JSON.stringify({ old, new: nextNew }));
+        fromRemote = true;
       }
-      setOldData(INITIAL_OLD);
-      setNewData(INITIAL_NEW);
-    } else {
-      const { old, new: nextNew } = fromRows(rows);
-      setOldData(old);
-      setNewData(nextNew);
+    } catch { /* fall through to cache */ }
+
+    if (!fromRemote) {
+      const cached = localStorage.getItem("dhol_pan_cache");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setOldData(parsed.old || INITIAL_OLD);
+          setNewData(parsed.new || INITIAL_NEW);
+        } catch {
+          setOldData(INITIAL_OLD);
+          setNewData(INITIAL_NEW);
+        }
+      } else {
+        setOldData(INITIAL_OLD);
+        setNewData(INITIAL_NEW);
+      }
     }
 
     setLoading(false);
@@ -983,7 +1018,9 @@ export default function DholPan() {
     doc.save(`Dhol-Pane-Report-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
-  const openEdit = (paneType, size) => setEditModal({ paneType, size });
+  const openEdit = (paneType, size) => {
+    setEditModal({ paneType, size });
+  };
 
   const oldTotal = grandTotal(oldData);
   const newTotal = grandTotal(newData);
@@ -998,45 +1035,51 @@ export default function DholPan() {
 
   return (
     <div className="space-y-7 animate-rise">
-      <section className="dashboard-hero overflow-hidden rounded-xl border border-white/[.07] bg-ink-850 shadow-premium">
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-[0_1px_2px_rgba(15,23,42,.05),0_16px_40px_-8px_rgba(15,23,42,.1)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_0%_0%,rgba(227,27,35,.08),transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_70%_at_100%_100%,rgba(200,135,25,.08),transparent_55%)]" />
+        <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-brand/50 to-transparent" />
         <div className="relative p-5 sm:p-7 lg:p-8">
           <div className="grid gap-6 lg:grid-cols-[1.3fr_.7fr] lg:items-end">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand-300">
+              <div className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-gradient-to-r from-brand/10 to-brand/5 px-3.5 py-1.5 text-xs font-bold text-brand shadow-[0_1px_6px_rgba(227,27,35,.12)]">
                 <span className="h-2 w-2 rounded-full bg-brand animate-pulseDot" />
                 Live Dhol Pane Inventory
               </div>
-              <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-                Dhol Pane Control Room
+              <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight text-cream sm:text-4xl lg:text-[2.6rem]">
+                Dhol Pane{" "}
+                <span className="bg-gradient-to-r from-brand via-brand-300 to-gold bg-clip-text text-transparent">
+                  Control Room
+                </span>
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-mist sm:text-base">
                 Old pane, new pane, thapi, dhoom, brought by aur updated date ka
-                premium inventory view.
+                premium inventory view — sab kuch ek jagah.
               </p>
             </div>
 
-            <div className="rounded-xl border border-white/[.07] bg-ink-950/45 p-4">
-              <p className="text-[10px] uppercase tracking-[.2em] text-mist">
+            <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50/90 to-white p-5 shadow-inner">
+              <p className="text-[10px] font-bold uppercase tracking-[.2em] text-mist/80">
                 Grand Inventory
               </p>
-              <div className="mt-3 flex items-end justify-between gap-4">
-                <span className="font-display text-5xl font-semibold tabular-nums">
+              <div className="mt-2 flex items-end justify-between gap-4">
+                <span className="font-display text-5xl font-semibold tabular-nums text-cream">
                   {oldTotal + newTotal}
                 </span>
                 <button
                   onClick={downloadReport}
-                  className="inline-flex items-center gap-2 rounded-lg bg-cream px-4 py-2 text-sm font-bold text-ink-950 transition-colors hover:bg-white"
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-cream shadow-sm transition-all duration-200 hover:border-brand/40 hover:text-brand hover:shadow-[0_2px_12px_rgba(227,27,35,.15)] active:scale-[.98]"
                 >
                   <Icon d={I.inbox} className="h-4 w-4" />
                   PDF
                 </button>
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-mist">
-                <span className="rounded-lg bg-white/[.04] px-3 py-2">
-                  Old: <b className="text-cream">{oldTotal}</b>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                <span className="rounded-lg border border-brand/15 bg-brand/[.07] px-3 py-2 font-semibold text-brand-300">
+                  Old <b className="text-brand">{oldTotal}</b>
                 </span>
-                <span className="rounded-lg bg-white/[.04] px-3 py-2">
-                  New: <b className="text-cream">{newTotal}</b>
+                <span className="rounded-lg border border-gold/20 bg-gold/[.08] px-3 py-2 font-semibold text-gold-300">
+                  New <b className="text-gold">{newTotal}</b>
                 </span>
               </div>
             </div>
@@ -1101,13 +1144,13 @@ export default function DholPan() {
       />
 
       {/* ═══════ DORI INVENTORY SECTION ═══════ */}
-      <section className="rounded-xl border border-white/[.07] bg-ink-850/80 p-5 shadow-card sm:p-6">
+      <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-5 shadow-[0_1px_2px_rgba(15,23,42,.05),0_12px_32px_-8px_rgba(15,23,42,.08)] sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-[.2em] text-gold-300">
+            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-gold">
               Rope Inventory
             </p>
-            <h2 className="mt-1 font-display text-2xl font-semibold">
+            <h2 className="mt-1 font-display text-2xl font-semibold text-cream">
               ढोलाची दोरी (Dori)
             </h2>
             <p className="mt-1 text-sm text-mist">
@@ -1115,7 +1158,7 @@ export default function DholPan() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="font-display text-5xl font-semibold tabular-nums text-gold-300">
+            <span className="font-display text-5xl font-semibold tabular-nums text-gold">
               {doriCount}
             </span>
             <span className="text-sm text-mist">रस्सी</span>
@@ -1127,7 +1170,7 @@ export default function DholPan() {
             <>
               <button
                 onClick={() => setDoriEditMode(true)}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald/10 border border-emerald/25 px-4 py-2.5 text-sm font-semibold text-emerald transition-colors hover:bg-emerald/20"
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald/30 bg-emerald/10 px-4 py-2.5 text-sm font-bold text-emerald shadow-sm transition-all duration-200 hover:bg-emerald/20 hover:shadow-[0_2px_10px_rgba(5,150,105,.2)] active:scale-[.98]"
               >
                 <Icon d={I.plus} className="h-4 w-4" />
                 Add Dori
@@ -1135,7 +1178,7 @@ export default function DholPan() {
               <button
                 onClick={() => handleDoriUpdate(-1)}
                 disabled={doriLoading || doriCount <= 0}
-                className="inline-flex items-center gap-2 rounded-lg bg-brand/10 border border-brand/25 px-4 py-2.5 text-sm font-semibold text-brand-300 transition-colors hover:bg-brand/20 disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-xl border border-brand/30 bg-brand/10 px-4 py-2.5 text-sm font-bold text-brand shadow-sm transition-all duration-200 hover:bg-brand/20 hover:shadow-[0_2px_10px_rgba(227,27,35,.2)] active:scale-[.98] disabled:opacity-40"
               >
                 <Icon d={I.trash} className="h-4 w-4" />
                 Remove 1
@@ -1152,7 +1195,7 @@ export default function DholPan() {
                   value={doriAddCount}
                   onChange={(e) => setDoriAddCount(e.target.value)}
                   placeholder="e.g. 10"
-                  className="mt-1 w-28 rounded-lg border border-white/[.08] bg-ink-950 px-3 py-2.5 font-mono text-lg text-cream focus:border-brand/50 focus:outline-none"
+                  className="mt-1.5 w-28 rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2.5 font-mono text-lg font-semibold text-cream shadow-inner-sm transition-all duration-200 focus:border-gold focus:bg-white focus:outline-none focus:ring-4 focus:ring-gold/15"
                 />
               </label>
               <label className="block">
@@ -1164,7 +1207,7 @@ export default function DholPan() {
                   value={doriAddedBy}
                   onChange={(e) => setDoriAddedBy(e.target.value)}
                   placeholder="Name"
-                  className="mt-1 w-40 rounded-lg border border-white/[.08] bg-ink-950 px-3 py-2.5 text-cream placeholder:text-ink-500 focus:border-brand/50 focus:outline-none"
+                  className="mt-1.5 w-40 rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2.5 text-cream placeholder:text-slate-400 shadow-inner-sm transition-all duration-200 focus:border-gold focus:bg-white focus:outline-none focus:ring-4 focus:ring-gold/15"
                 />
               </label>
               <button
@@ -1175,7 +1218,7 @@ export default function DholPan() {
                 disabled={
                   doriLoading || !doriAddCount || Number(doriAddCount) <= 0
                 }
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald px-5 py-2.5 text-sm font-bold text-white shadow-glow transition-all hover:bg-emerald/80 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald to-emerald/80 px-5 py-2.5 text-sm font-bold text-white shadow-[0_2px_10px_rgba(5,150,105,.3)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(5,150,105,.4)] hover:brightness-105 active:scale-[.98] disabled:opacity-50"
               >
                 <Icon d={I.check} className="h-4 w-4" />
                 {doriLoading ? "Saving..." : "Add"}
@@ -1186,7 +1229,7 @@ export default function DholPan() {
                   setDoriAddCount("");
                   setDoriAddedBy("");
                 }}
-                className="rounded-lg px-4 py-2.5 text-sm font-semibold text-mist hover:text-cream"
+                className="rounded-xl px-4 py-2.5 text-sm font-semibold text-mist transition-colors hover:bg-slate-100 hover:text-cream"
               >
                 Cancel
               </button>
@@ -1201,11 +1244,11 @@ export default function DholPan() {
             <p className="text-[10px] uppercase tracking-[.2em] text-mist">
               Size Wise Total
             </p>
-            <h2 className="mt-1 font-display text-2xl font-semibold">
+            <h2 className="mt-1 font-display text-2xl font-semibold text-cream">
               Combined Pane Summary
             </h2>
           </div>
-          <span className="rounded-full border border-white/[.08] bg-white/[.05] px-4 py-2 text-sm font-semibold">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-cream shadow-sm">
             Grand Total {oldTotal + newTotal}
           </span>
         </div>
@@ -1222,21 +1265,21 @@ export default function DholPan() {
             return (
               <div
                 key={size}
-                className="rounded-xl border border-white/[.07] bg-ink-950/45 p-4"
+                className="group rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50/90 to-white p-4 shadow-inner transition-all duration-200 hover:border-brand/25 hover:shadow-[0_4px_16px_rgba(15,23,42,.08)]"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-display text-3xl font-semibold">
+                  <span className="font-display text-3xl font-semibold text-cream">
                     {size}
                   </span>
                   <span className="font-display text-3xl font-semibold tabular-nums text-gradient">
                     {combined}
                   </span>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <span className="rounded-lg bg-brand/10 px-3 py-2 text-brand-300">
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-semibold">
+                  <span className="rounded-lg border border-brand/15 bg-brand/[.07] px-3 py-2 text-brand-300">
                     Old {oldSizeTotal}
                   </span>
-                  <span className="rounded-lg bg-gold/10 px-3 py-2 text-gold-300">
+                  <span className="rounded-lg border border-gold/20 bg-gold/[.08] px-3 py-2 text-gold-300">
                     New {newSizeTotal}
                   </span>
                 </div>
@@ -1258,3 +1301,4 @@ export default function DholPan() {
     </div>
   );
 }
+

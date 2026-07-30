@@ -49,7 +49,7 @@ function PageLoader() {
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="flex flex-col items-center gap-4">
         <div className="w-10 h-10 rounded-full border-2 border-brand border-t-transparent animate-spin" />
-        <span className="text-cream/50 text-sm font-medium">Loading…</span>
+        <span className="text-mist text-sm font-medium">Loading...</span>
       </div>
     </div>
   );
@@ -59,8 +59,8 @@ function LoginSkeleton() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-ink-950">
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-brand/20 via-gold/20 to-brand/20 rounded-xl blur-2xl animate-breathe" />
-        <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-brand to-brand-300 animate-pulse shadow-lg shadow-brand/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand/16 via-gold/16 to-brand/16 rounded-xl blur-2xl animate-pulse" />
+        <div className="relative w-14 h-14 rounded-xl bg-white border border-slate-200 animate-pulse shadow-lg shadow-brand/15" />
       </div>
     </div>
   );
@@ -70,13 +70,14 @@ function AppShell({ session, activePage, onNavigate, mobileMenuOpen, setMobileMe
   return (
     <div className="min-h-screen">
       <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(220,38,38,.08),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_100%,rgba(245,158,11,.06),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_45%_at_50%_-10%,rgba(227,27,35,.10),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_38%_at_88%_96%,rgba(200,135,25,.10),transparent)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#fff7f7_0%,#f8fafc_30%,#f7f8fa_100%)]" />
         <div
-          className="absolute inset-0 opacity-[.03]"
+          className="absolute inset-0 opacity-[.28]"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px)",
+              "linear-gradient(rgba(148,163,184,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.18) 1px,transparent 1px)",
             backgroundSize: "64px 64px",
           }}
         />
@@ -107,9 +108,9 @@ function AppShell({ session, activePage, onNavigate, mobileMenuOpen, setMobileMe
             : (
               // Bug fix: proper 404 fallback instead of random Shifting1
               <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <div className="text-6xl">🔍</div>
+                <div className="text-6xl">?</div>
                 <h2 className="text-xl font-bold text-cream">Page Not Found</h2>
-                <p className="text-cream/50 text-sm">The page you are looking for does not exist.</p>
+                <p className="text-mist text-sm">The page you are looking for does not exist.</p>
                 <button
                   onClick={() => onNavigate("Dashboard")}
                   className="px-4 py-2 rounded-lg bg-brand text-white text-sm font-semibold hover:bg-brand/80"

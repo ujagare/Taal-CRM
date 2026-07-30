@@ -340,9 +340,8 @@ function DetailModal({ member, onClose, onExamUpdate }) {
   }, [onClose]);
 
   return createPortal(
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-2 sm:p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto bg-[#18181c] border border-white/20 rounded-2xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.95)] flex flex-col my-auto text-white">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/55 p-2 sm:p-4">
+      <div className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto scroll-thin bg-white border border-slate-200 rounded-2xl sm:rounded-3xl shadow-2xl shadow-slate-900/20 flex flex-col my-auto text-cream">
 
         {/* Drag handle (mobile) */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
@@ -420,8 +419,8 @@ function DetailModal({ member, onClose, onExamUpdate }) {
               <div>
                 <label className="block text-[10px] text-white/60 uppercase tracking-wider mb-1.5 font-semibold">Exam Status</label>
                 <select value={examStatus} onChange={e => setExamStatus(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-white/20 text-sm text-white focus:outline-none focus:border-red-500 transition-all cursor-pointer font-medium"
-                  style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}>
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer font-medium"
+                  style={{ backgroundColor: '#ffffff', color: '#111827', colorScheme: 'light' }}>
                   <option value="pending" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>⏳ Pending</option>
                   <option value="passed" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>✅ Passed</option>
                   <option value="failed" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>❌ Failed</option>
@@ -436,10 +435,10 @@ function DetailModal({ member, onClose, onExamUpdate }) {
                   <select
                     value={examRhythm}
                     onChange={e => setExamRhythm(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
-                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer font-medium"
+                    style={{ backgroundColor: '#ffffff', color: '#111827', colorScheme: 'light' }}
                   >
-                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
+                    <option value="" style={{ backgroundColor: '#ffffff', color: '#64748b' }}>-- Select --</option>
                     <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
                     <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
                     <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
@@ -453,10 +452,10 @@ function DetailModal({ member, onClose, onExamUpdate }) {
                   <select
                     value={examPhysical}
                     onChange={e => setExamPhysical(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
-                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer font-medium"
+                    style={{ backgroundColor: '#ffffff', color: '#111827', colorScheme: 'light' }}
                   >
-                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
+                    <option value="" style={{ backgroundColor: '#ffffff', color: '#64748b' }}>-- Select --</option>
                     <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
                     <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
                     <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
@@ -470,10 +469,10 @@ function DetailModal({ member, onClose, onExamUpdate }) {
                   <select
                     value={examAttitude}
                     onChange={e => setExamAttitude(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
-                    style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer font-medium"
+                    style={{ backgroundColor: '#ffffff', color: '#111827', colorScheme: 'light' }}
                   >
-                    <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select --</option>
+                    <option value="" style={{ backgroundColor: '#ffffff', color: '#64748b' }}>-- Select --</option>
                     <option value="Not Good" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>Not Good (खराब)</option>
                     <option value="Normal" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>Normal (नॉर्मल)</option>
                     <option value="Good" style={{ backgroundColor: '#1c1c20', color: '#60a5fa' }}>Good (छान)</option>
@@ -488,12 +487,12 @@ function DetailModal({ member, onClose, onExamUpdate }) {
                 <select
                   value={examScore}
                   onChange={e => setExamScore(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500/50 transition-all cursor-pointer font-medium"
-                  style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer font-medium"
+                  style={{ backgroundColor: '#ffffff', color: '#111827', colorScheme: 'light' }}
                 >
-                  <option value="" style={{ backgroundColor: '#1c1c20', color: '#888' }}>-- Select Score (1 to 10) --</option>
+                  <option value="" style={{ backgroundColor: '#ffffff', color: '#64748b' }}>-- Select Score (1 to 10) --</option>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                    <option key={num} value={String(num)} style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>
+                    <option key={num} value={String(num)} style={{ backgroundColor: '#ffffff', color: '#111827' }}>
                       {num} / 10 {num >= 8 ? '⭐ Excellent' : num >= 6 ? '👍 Good' : num >= 4 ? '😐 Average' : '⚠️ Needs Practice'}
                     </option>
                   ))}
@@ -508,8 +507,8 @@ function DetailModal({ member, onClose, onExamUpdate }) {
                   onChange={e => setExamNotes(e.target.value)}
                   placeholder="Write remarks about this candidate's performance, attitude, special notes..."
                   rows={4}
-                  className="w-full px-3 py-2.5 rounded-xl border border-white/15 text-xs sm:text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-red-500/50 transition-all resize-none shadow-inner"
-                  style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all resize-none shadow-sm"
+                  style={{ backgroundColor: '#ffffff', color: '#111827' }}
                 />
               </div>
 
@@ -596,7 +595,7 @@ function DetailModal({ member, onClose, onExamUpdate }) {
         </div>
 
         {/* ── Bottom Action Bar (Fixed & Fully Responsive) ── */}
-        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-white/10 shrink-0 space-y-2.5 bg-[#141418]">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-white/10 shrink-0 space-y-2.5 bg-slate-50">
           {/* WhatsApp Status Banner */}
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-medium ${
             waServerOk === true ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
@@ -737,9 +736,8 @@ function AddMemberModal({ onClose, onAddSuccess }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-xl max-h-[90vh] overflow-y-auto bg-[#18181c] border border-white/20 rounded-2xl p-5 sm:p-6 shadow-2xl text-white space-y-4 my-auto">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/55 p-3 sm:p-4">
+      <div className="relative z-10 w-full max-w-xl max-h-[90vh] overflow-y-auto scroll-thin bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-2xl shadow-slate-900/20 text-cream space-y-4 my-auto">
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div>
             <h3 className="text-base sm:text-lg font-bold text-white">➕ Add New Candidate / Member</h3>
@@ -771,7 +769,7 @@ function AddMemberModal({ onClose, onAddSuccess }) {
             <div>
               <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Gender</label>
               <select value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500">
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10">
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
@@ -787,13 +785,13 @@ function AddMemberModal({ onClose, onAddSuccess }) {
             <div>
               <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Date of Birth</label>
               <input type="date" value={formData.dob} onChange={e => setFormData({ ...formData, dob: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500" />
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10" />
             </div>
 
             <div>
               <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Instrument</label>
               <select value={formData.instruments_played} onChange={e => setFormData({ ...formData, instruments_played: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500">
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10">
                 {INSTRUMENTS.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
             </div>
@@ -801,7 +799,7 @@ function AddMemberModal({ onClose, onAddSuccess }) {
             <div>
               <label className="block text-[11px] font-semibold text-white/70 uppercase mb-1">Experience</label>
               <select value={formData.experience} onChange={e => setFormData({ ...formData, experience: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500">
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10">
                 {EXPERIENCE_LEVELS.map(exp => <option key={exp} value={exp}>{exp}</option>)}
               </select>
             </div>
@@ -1073,7 +1071,7 @@ export default function NewMemberExam() {
           </svg>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search by name, phone, instrument, reference, profession..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-white/10 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-red-500/50 transition-all" style={{ background: '#1c1c20' }} />
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all" style={{ background: '#ffffff' }} />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white text-xs">✕</button>
           )}
@@ -1083,27 +1081,27 @@ export default function NewMemberExam() {
         <div className="flex flex-wrap gap-2">
           {/* Instrument */}
           <select value={filterInst} onChange={e => setFilterInst(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-white/20 text-xs text-white font-semibold focus:outline-none focus:border-red-500 transition-all cursor-pointer shadow-sm"
-            style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}>
-            <option value="all" style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>🎵 All Instruments</option>
-            <option value="ढोल" style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>🥁 ढोल</option>
-            <option value="ताशा" style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>🎵 ताशा</option>
-            <option value="कोणतेच नाही" style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>🆕 None</option>
+            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs text-cream font-semibold focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer shadow-sm"
+            style={{ backgroundColor: '#ffffff', color: '#111827', colorScheme: 'light' }}>
+            <option value="all" style={{ backgroundColor: '#ffffff', color: '#111827' }}>🎵 All Instruments</option>
+            <option value="ढोल" style={{ backgroundColor: '#ffffff', color: '#111827' }}>🥁 ढोल</option>
+            <option value="ताशा" style={{ backgroundColor: '#ffffff', color: '#111827' }}>🎵 ताशा</option>
+            <option value="कोणतेच नाही" style={{ backgroundColor: '#ffffff', color: '#111827' }}>🆕 None</option>
           </select>
 
           {/* Experience */}
           <select value={filterExp} onChange={e => setFilterExp(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-white/20 text-xs text-white font-semibold focus:outline-none focus:border-red-500 transition-all cursor-pointer shadow-sm"
-            style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}>
-            <option value="all" style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>⏱ All Experience</option>
-            {EXPERIENCE_LEVELS.map(l => <option key={l} value={l} style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>{l}</option>)}
+            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs text-cream font-semibold focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer shadow-sm"
+            style={{ backgroundColor: '#ffffff', color: '#111827', colorScheme: 'light' }}>
+            <option value="all" style={{ backgroundColor: '#ffffff', color: '#111827' }}>⏱ All Experience</option>
+            {EXPERIENCE_LEVELS.map(l => <option key={l} value={l} style={{ backgroundColor: '#ffffff', color: '#111827' }}>{l}</option>)}
           </select>
 
           {/* Exam Status */}
           <select value={filterExam} onChange={e => setFilterExam(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-white/20 text-xs text-white font-semibold focus:outline-none focus:border-red-500 transition-all cursor-pointer shadow-sm"
-            style={{ backgroundColor: '#1c1c20', color: '#ffffff', colorScheme: 'dark' }}>
-            <option value="all" style={{ backgroundColor: '#1c1c20', color: '#ffffff' }}>📝 All Exam Status</option>
+            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs text-cream font-semibold focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer shadow-sm"
+            style={{ backgroundColor: '#ffffff', color: '#111827', colorScheme: 'light' }}>
+            <option value="all" style={{ backgroundColor: '#ffffff', color: '#111827' }}>📝 All Exam Status</option>
             <option value="pending" style={{ backgroundColor: '#1c1c20', color: '#fbbf24' }}>⏳ Pending</option>
             <option value="passed" style={{ backgroundColor: '#1c1c20', color: '#34d399' }}>✅ Passed</option>
             <option value="failed" style={{ backgroundColor: '#1c1c20', color: '#f87171' }}>❌ Failed</option>

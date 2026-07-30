@@ -5,17 +5,17 @@ export default {
     extend: {
       colors: {
         ink: {
-          950:'#070707',
-          900:'#111113',
-          850:'#19191D',
-          800:'#202026',
-          700:'#2D2E36',
-          600:'#3F414B',
-          500:'#70737F',
+          950:'#F7F8FA',
+          900:'#FFFFFF',
+          850:'#FFFFFF',
+          800:'#F1F5F9',
+          700:'#E2E8F0',
+          600:'#CBD5E1',
+          500:'#64748B',
         },
-        brand: {DEFAULT:'#DC2626',300:'#F87171'},
-        gold: {DEFAULT:'#F59E0B',300:'#FBBF24'},
-        coral:'#EF4444', sky:'#38BDF8', emerald:'#34D399', mist:'#A1A1AA', cream:'#F8FAFC',
+        brand: {DEFAULT:'#E31B23',300:'#F04444'},
+        gold: {DEFAULT:'#C88719',300:'#EAB308'},
+        coral:'#EF4444', sky:'#0284C7', emerald:'#059669', mist:'#64748B', cream:'#111827',
       },
       fontFamily: {
         display: ['Fraunces','serif'],

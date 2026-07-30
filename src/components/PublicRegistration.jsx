@@ -95,17 +95,17 @@ export default function PublicRegistration() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-[#0a0a0d] text-white flex items-center justify-center p-4 font-['Outfit',sans-serif]">
-        <div className="max-w-md w-full bg-[#141419] border border-emerald-500/30 rounded-3xl p-8 text-center space-y-5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-rise">
+      <div className="min-h-screen bg-ink-950 text-cream flex items-center justify-center p-4 font-['Outfit',sans-serif]">
+        <div className="max-w-md w-full bg-white border border-emerald-200 rounded-3xl p-8 text-center space-y-5 shadow-lift animate-rise">
           <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-4xl mx-auto border border-emerald-500/40 animate-bounce">
             ✅
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">अर्ज यशस्वीरीत्या नोंदवला गेला!</h2>
+            <h2 className="text-2xl font-bold text-cream">अर्ज यशस्वीरीत्या नोंदवला गेला!</h2>
             <p className="text-sm text-emerald-400 font-semibold mt-1">Registration Successful</p>
           </div>
-          <p className="text-xs text-white/60 leading-relaxed">
-            जय गणेश! 🙏 <strong className="text-white">{formData.full_name}</strong>,<br />
+          <p className="text-xs text-mist leading-relaxed">
+            जय गणेश! 🙏 <strong className="text-cream">{formData.full_name}</strong>,<br />
             ताल वाद्यपथक - गणेशोत्सव २०२६ सदस्य नोंदणीसाठी धन्यवाद. लवकरच आमची टीम तुमच्याशी संपर्क साधेल.
           </p>
           <button
@@ -130,7 +130,7 @@ export default function PublicRegistration() {
                 reference: "",
               });
             }}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-sm shadow-lg shadow-red-950/40 transition-all"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-sm shadow-lg shadow-brand/20 transition-all"
           >
             अजून एक नोंदणी करा (New Form)
           </button>
@@ -140,17 +140,14 @@ export default function PublicRegistration() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0d] text-white py-8 px-4 sm:px-6 lg:px-8 font-['Outfit',sans-serif] relative overflow-hidden">
+    <div className="min-h-screen bg-ink-950 text-cream py-8 px-4 sm:px-6 lg:px-8 font-['Outfit',sans-serif] relative overflow-hidden">
       {/* Background glow effects */}
-      <div className="fixed inset-0 pointer-events-none -z-10">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-red-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-amber-500/8 rounded-full blur-[100px]" />
-      </div>
+      <div className="fixed inset-0 pointer-events-none -z-10 bg-[linear-gradient(180deg,#fff7f7_0%,#f8fafc_42%,#f7f8fa_100%)]" />
 
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-[#141419] border border-white/10 rounded-3xl p-6 text-center space-y-3 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 text-center space-y-3 relative overflow-hidden shadow-lift">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-brand/45 to-transparent pointer-events-none" />
           <img
             src="/taal-pathak-logo-red.png"
             alt="TAAL Pathak"
@@ -158,13 +155,13 @@ export default function PublicRegistration() {
             onError={(e) => { e.target.style.display = 'none'; }}
           />
           <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-cream">
               ताल वाद्यपथक, पुणे
             </h1>
-            <p className="text-xs sm:text-sm font-semibold text-red-400 mt-0.5">
+            <p className="text-xs sm:text-sm font-semibold text-brand mt-0.5">
               गणेशोत्सव २०२६ — नवीन सदस्य नोंदणी अर्ज
             </p>
-            <p className="text-[11px] text-white/50 mt-1">
+            <p className="text-[11px] text-mist mt-1">
               New Member Candidate Registration Form
             </p>
           </div>
@@ -172,22 +169,22 @@ export default function PublicRegistration() {
 
         {/* Error Alert */}
         {errorMsg && (
-          <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs sm:text-sm font-medium flex items-center gap-3 animate-shake">
+          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm font-medium flex items-center gap-3 animate-shake">
             <span className="text-lg">⚠️</span>
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-[#141419] border border-white/10 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-lift">
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-red-400 uppercase tracking-widest border-b border-white/10 pb-2">
+            <h3 className="text-xs font-bold text-brand uppercase tracking-widest border-b border-slate-200 pb-2">
               १. वैयक्तिक माहिती (Personal Information)
             </h3>
 
             {/* Full Name */}
             <div>
-              <label className="block text-xs font-medium text-white/80 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 संपूर्ण नाव (Full Name) <span className="text-red-400">*</span>
               </label>
               <input
@@ -197,14 +194,14 @@ export default function PublicRegistration() {
                 value={formData.full_name}
                 onChange={handleChange}
                 placeholder="उदा. अमित गजानन केळकर"
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-red-500 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all"
               />
             </div>
 
             {/* WhatsApp & Gender */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   व्हॉट्सॲप नंबर (WhatsApp No.) <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -214,19 +211,19 @@ export default function PublicRegistration() {
                   value={formData.whatsapp}
                   onChange={handleChange}
                   placeholder="उदा. 9822000000"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-red-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   लिंग (Gender)
                 </label>
                 <select
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500 transition-all cursor-pointer"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer"
                 >
                   <option value="Male">Male (पुरुष)</option>
                   <option value="Female">Female (स्त्री)</option>
@@ -238,7 +235,7 @@ export default function PublicRegistration() {
             {/* Email & DOB */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   ईमेल (Email Address)
                 </label>
                 <input
@@ -247,12 +244,12 @@ export default function PublicRegistration() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="myname@gmail.com"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-red-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   जन्मतारीख (Date of Birth)
                 </label>
                 <input
@@ -260,7 +257,7 @@ export default function PublicRegistration() {
                   name="dob"
                   value={formData.dob}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all"
                 />
               </div>
             </div>
@@ -268,7 +265,7 @@ export default function PublicRegistration() {
             {/* Parent Contact & Profession */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   पालकांचा संपर्क क्र. (Parent Contact)
                 </label>
                 <input
@@ -277,12 +274,12 @@ export default function PublicRegistration() {
                   value={formData.parent_contact}
                   onChange={handleChange}
                   placeholder="पालकांचा मोबाईल नंबर"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-red-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   व्यवसाय / शिक्षण (Profession / Student)
                 </label>
                 <input
@@ -291,14 +288,14 @@ export default function PublicRegistration() {
                   value={formData.profession}
                   onChange={handleChange}
                   placeholder="उदा. Student / Service / Business"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-red-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all"
                 />
               </div>
             </div>
 
             {/* Address */}
             <div>
-              <label className="block text-xs font-medium text-white/80 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 संपूर्ण पत्ता (Full Address)
               </label>
               <textarea
@@ -307,27 +304,27 @@ export default function PublicRegistration() {
                 value={formData.address}
                 onChange={handleChange}
                 placeholder="तुमचा राहण्याचा पत्ता (पुणे)"
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-red-500 transition-all resize-none"
+                className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all resize-none"
               />
             </div>
           </div>
 
           <div className="space-y-4 pt-2">
-            <h3 className="text-xs font-bold text-red-400 uppercase tracking-widest border-b border-white/10 pb-2">
+            <h3 className="text-xs font-bold text-brand uppercase tracking-widest border-b border-slate-200 pb-2">
               २. वाद्य व अनुभव माहिती (Instrument & Experience)
             </h3>
 
             {/* Instrument & Experience */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   कोणते वाद्य वाजवता? (Instrument Choice)
                 </label>
                 <select
                   name="instruments_played"
                   value={formData.instruments_played}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500 transition-all cursor-pointer"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer"
                 >
                   {INSTRUMENTS.map((inst) => (
                     <option key={inst} value={inst}>
@@ -338,14 +335,14 @@ export default function PublicRegistration() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   अनुभव (Experience Level)
                 </label>
                 <select
                   name="experience"
                   value={formData.experience}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500 transition-all cursor-pointer"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer"
                 >
                   {EXPERIENCE_LEVELS.map((exp) => (
                     <option key={exp} value={exp}>
@@ -359,7 +356,7 @@ export default function PublicRegistration() {
             {/* Previous Pathak & Flag Dancing */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   मागील वाद्यपथकाचे नाव (Previous Pathak)
                 </label>
                 <input
@@ -368,19 +365,19 @@ export default function PublicRegistration() {
                   value={formData.previous_pathak}
                   onChange={handleChange}
                   placeholder="नसल्यास 'No' लिहा"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-red-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   ध्वज सादरीकरण अनुभव (Flag Dancing)
                 </label>
                 <select
                   name="flag_dancing"
                   value={formData.flag_dancing}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-[#1c1c22] border border-white/15 text-sm text-white focus:outline-none focus:border-red-500 transition-all cursor-pointer"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all cursor-pointer"
                 >
                   <option value="नाही">नाही (No)</option>
                   <option value="हो">हो (Yes)</option>
@@ -391,7 +388,7 @@ export default function PublicRegistration() {
             {/* Other Instruments & Hobbies */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   इतर कोणती वाद्ये (Other Instruments)
                 </label>
                 <input
@@ -400,12 +397,12 @@ export default function PublicRegistration() {
                   value={formData.other_instruments}
                   onChange={handleChange}
                   placeholder="उदा. झांज, तबला, कॅजोन, No"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-red-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/80 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   संदर्भ / Referred By
                 </label>
                 <input
@@ -414,7 +411,7 @@ export default function PublicRegistration() {
                   value={formData.reference}
                   onChange={handleChange}
                   placeholder="कोणाच्या संदर्भाने आलात?"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-red-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-cream placeholder:text-slate-400 focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all"
                 />
               </div>
             </div>
@@ -423,7 +420,7 @@ export default function PublicRegistration() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-base shadow-xl shadow-red-950/50 transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-base shadow-xl shadow-brand/20 transition-all active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
           >
             {submitting ? (
               <span>⏳ नोंदणी जतन होत आहे... (Saving...)</span>

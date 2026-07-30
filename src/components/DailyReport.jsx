@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Icon, I } from "./icons";
 import { supabase } from "../lib/supabase";
 import { sendWhatsApp } from "../utils/whatsapp";
@@ -127,9 +128,9 @@ function StatCard({ icon, label, value, suffix = "", tone = "brand", alert = fal
 /* ═══════════════════════════════════════════════
    INVENTORY ROW CARD
    ═══════════════════════════════════════════════ */
-function InventorySection({ title, icon, data, onEdit, editLabel = "Update" }) {
-  const totalCount = Object.values(data).reduce((s, v) => s + (Number(v) || 0), 0);
-  const hasLowStock = Object.values(data).some(v => (Number(v) || 0) < LOW_STOCK_THRESHOLD);
+function InventorySection({ title, icon, data, onEdit, editLabel = "Update", single = false }) {
+  const totalCount = single ? (Number(data.count) || 0) : Object.values(data).reduce((s, v) => s + (Number(v) || 0), 0);
+  const hasLowStock = single ? totalCount < LOW_STOCK_THRESHOLD : Object.values(data).some(v => (Number(v) || 0) < LOW_STOCK_THRESHOLD);
 
   return (
     <div className={`card-premium p-5 space-y-4 ${hasLowStock ? "ring-1 ring-brand/30" : ""}`}>
@@ -151,27 +152,41 @@ function InventorySection({ title, icon, data, onEdit, editLabel = "Update" }) {
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        {SIZES.map(s => {
-          const key = `${s}"`;
-          const count = Number(data[key]) || 0;
-          const isLow = count < LOW_STOCK_THRESHOLD;
-          return (
-            <div key={s} className={`relative rounded-xl border p-4 text-center transition-all ${isLow ? "border-brand/40 bg-brand/[.08] shadow-[0_0_20px_rgba(220,38,38,.15)]" : "border-white/[.08] bg-white/[.02]"}`}>
-              {isLow && (
-                <div className="absolute top-2 right-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-brand animate-pulse inline-block shadow-[0_0_10px_rgba(220,38,38,.8)]" />
-                </div>
-              )}
-              <p className="text-xs text-mist font-semibold mb-1">{SIZE_LABELS[s]}</p>
-              <p className={`font-display text-2xl font-bold ${isLow ? "text-brand-300" : "text-cream"}`}>
-                <AnimatedCount value={count} />
-              </p>
-              {isLow && <p className="text-[9px] text-brand-300 font-bold uppercase mt-1 tracking-wider">⚠️ Low</p>}
+      {single ? (
+        <div className={`relative rounded-xl border p-4 text-center transition-all ${hasLowStock ? "border-brand/40 bg-brand/[.08] shadow-[0_0_20px_rgba(220,38,38,.15)]" : "border-white/[.08] bg-white/[.02]"}`}>
+          {hasLowStock && (
+            <div className="absolute top-2 right-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-brand animate-pulse inline-block shadow-[0_0_10px_rgba(220,38,38,.8)]" />
             </div>
-          );
-        })}
-      </div>
+          )}
+          <p className={`font-display text-3xl font-bold ${hasLowStock ? "text-brand-300" : "text-cream"}`}>
+            <AnimatedCount value={totalCount} />
+          </p>
+          {hasLowStock && <p className="text-[9px] text-brand-300 font-bold uppercase mt-1 tracking-wider">⚠️ Low</p>}
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-3">
+          {SIZES.map(s => {
+            const key = `${s}"`;
+            const count = Number(data[key]) || 0;
+            const isLow = count < LOW_STOCK_THRESHOLD;
+            return (
+              <div key={s} className={`relative rounded-xl border p-4 text-center transition-all ${isLow ? "border-brand/40 bg-brand/[.08] shadow-[0_0_20px_rgba(220,38,38,.15)]" : "border-white/[.08] bg-white/[.02]"}`}>
+                {isLow && (
+                  <div className="absolute top-2 right-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-brand animate-pulse inline-block shadow-[0_0_10px_rgba(220,38,38,.8)]" />
+                  </div>
+                )}
+                <p className="text-xs text-mist font-semibold mb-1">{SIZE_LABELS[s]}</p>
+                <p className={`font-display text-2xl font-bold ${isLow ? "text-brand-300" : "text-cream"}`}>
+                  <AnimatedCount value={count} />
+                </p>
+                {isLow && <p className="text-[9px] text-brand-300 font-bold uppercase mt-1 tracking-wider">⚠️ Low</p>}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -210,7 +225,7 @@ function LowStockBanner({ alerts }) {
 /* ═══════════════════════════════════════════════
    INVENTORY UPDATE MODAL
    ═══════════════════════════════════════════════ */
-function InventoryModal({ title, icon, currentData, onSave, onClose }) {
+function InventoryModal({ title, icon, currentData, onSave, onClose, single = false }) {
   const [values, setValues] = useState({ ...currentData });
   const [updatedBy, setUpdatedBy] = useState("");
   const [saving, setSaving] = useState(false);
@@ -225,30 +240,42 @@ function InventoryModal({ title, icon, currentData, onSave, onClose }) {
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative card-premium p-6 w-full max-w-sm space-y-5 animate-rise shadow-lift">
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] flex items-end justify-center bg-slate-950/55 p-0 sm:items-center sm:p-4">
+      <div className="relative card-premium max-h-[92vh] w-full max-w-sm space-y-5 overflow-y-auto scroll-thin rounded-b-none p-5 shadow-lift animate-rise sm:rounded-2xl sm:p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-display font-semibold text-cream">{icon} {title}</h2>
           <button onClick={onClose} className="text-mist hover:text-cream"><Icon d={I.x} className="w-4 h-4" /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {SIZES.map(s => {
-            const key = `${s}"`;
-            return (
-              <label key={s} className="block">
-                <span className="text-xs text-mist uppercase tracking-wider font-medium">{SIZE_LABELS[s]} Count</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={values[key] ?? 0}
-                  onChange={e => setValues(v => ({ ...v, [key]: Number(e.target.value) || 0 }))}
-                  className="w-full mt-1.5 px-3 py-2.5 rounded-xl bg-ink-950 border border-white/[.08] text-sm font-mono text-cream focus:outline-none focus:border-brand/50"
-                />
-              </label>
-            );
-          })}
+          {single ? (
+            <label className="block">
+              <span className="text-xs text-mist uppercase tracking-wider font-medium">Total Count</span>
+              <input
+                type="number"
+                min="0"
+                value={values.count ?? 0}
+                onChange={e => setValues(v => ({ ...v, count: Number(e.target.value) || 0 }))}
+                className="w-full mt-1.5 px-3 py-2.5 rounded-xl bg-ink-950 border border-white/[.08] text-sm font-mono text-cream focus:outline-none focus:border-brand/50"
+              />
+            </label>
+          ) : (
+            SIZES.map(s => {
+              const key = `${s}"`;
+              return (
+                <label key={s} className="block">
+                  <span className="text-xs text-mist uppercase tracking-wider font-medium">{SIZE_LABELS[s]} Count</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={values[key] ?? 0}
+                    onChange={e => setValues(v => ({ ...v, [key]: Number(e.target.value) || 0 }))}
+                    className="w-full mt-1.5 px-3 py-2.5 rounded-xl bg-ink-950 border border-white/[.08] text-sm font-mono text-cream focus:outline-none focus:border-brand/50"
+                  />
+                </label>
+              );
+            })
+          )}
           <label className="block">
             <span className="text-xs text-mist uppercase tracking-wider font-medium">Updated By (Name)</span>
             <input
@@ -268,7 +295,8 @@ function InventoryModal({ title, icon, currentData, onSave, onClose }) {
           </button>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -328,21 +356,19 @@ async function generateDailyPDF(stats, panData, doriData, mainData, dateReports,
         </div>
         <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;">
           <div style="font-size:11px;font-weight:700;color:#6B7280;margin-bottom:8px;text-transform:uppercase;">🧵 Dori Stock</div>
-          ${SIZES.map(s => {
-            const key = `${s}"`;
-            const val = doriData[key] || 0;
+          ${(() => {
+            const val = Number(doriData.count) || 0;
             const low = val < LOW_STOCK_THRESHOLD;
-            return `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;"><span style="color:#374151;">${SIZE_LABELS[s]}</span><span style="font-weight:700;color:${low ? '#DC2626' : '#111827'};">${val} ${low ? '⚠️' : ''}</span></div>`;
-          }).join("")}
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;"><span style="color:#374151;">Total</span><span style="font-weight:700;font-size:22px;color:${low ? '#DC2626' : '#111827'};">${val} ${low ? '⚠️' : ''}</span></div>`;
+          })()}
         </div>
         <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;">
           <div style="font-size:11px;font-weight:700;color:#6B7280;margin-bottom:8px;text-transform:uppercase;">🔩 Main Stock</div>
-          ${SIZES.map(s => {
-            const key = `${s}"`;
-            const val = mainData[key] || 0;
+          ${(() => {
+            const val = Number(mainData.count) || 0;
             const low = val < LOW_STOCK_THRESHOLD;
-            return `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;"><span style="color:#374151;">${SIZE_LABELS[s]}</span><span style="font-weight:700;color:${low ? '#DC2626' : '#111827'};">${val} ${low ? '⚠️' : ''}</span></div>`;
-          }).join("")}
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;"><span style="color:#374151;">Total</span><span style="font-weight:700;font-size:22px;color:${low ? '#DC2626' : '#111827'};">${val} ${low ? '⚠️' : ''}</span></div>`;
+          })()}
         </div>
       </div>
 
@@ -443,17 +469,18 @@ function buildWhatsAppReportText(stats, panData, doriData, mainData, attendanceS
     .map(r => `  • Dhol #${r.dholNumber} — ${r.madeBy} (${r.workType})`)
     .join("\n");
 
-  const doriTotal = (Number(doriData['26"']) || 0) + (Number(doriData['28"']) || 0) + (Number(doriData['30"']) || 0);
-  const mainTotal = (Number(mainData['26"']) || 0) + (Number(mainData['28"']) || 0) + (Number(mainData['30"']) || 0);
+  const doriTotal = Number(doriData.count) || 0;
+  const mainTotal = Number(mainData.count) || 0;
   const panTotal = (Number(panData['26"']) || 0) + (Number(panData['28"']) || 0) + (Number(panData['30"']) || 0);
 
   // Check for low stock items
   const lowItems = [];
   SIZES.forEach(s => {
     const key = `${s}"`;
-    if ((Number(doriData[key]) || 0) < LOW_STOCK_THRESHOLD) lowItems.push(`Dori ${SIZE_LABELS[s]}: ${doriData[key] || 0}`);
     if ((Number(panData[key]) || 0) < LOW_STOCK_THRESHOLD) lowItems.push(`Pan ${SIZE_LABELS[s]}: ${panData[key] || 0}`);
   });
+  if (doriTotal < LOW_STOCK_THRESHOLD) lowItems.push(`Dori: ${doriTotal}`);
+  if (mainTotal < LOW_STOCK_THRESHOLD) lowItems.push(`Main: ${mainTotal}`);
 
   return `📊 *TAAL PATHAK — दैनिक अहवाल*
 📅 *Date:* ${dateStr}
@@ -473,18 +500,14 @@ function buildWhatsAppReportText(stats, panData, doriData, mainData, attendanceS
   26": *${panData['26"'] || 0}*
 
 ━━━━━━━━━━━━━━━━━━━━
-🧵 *DORI STOCK* (Total: ${doriTotal})
+🧵 *DORI STOCK*
 ━━━━━━━━━━━━━━━━━━━━
-  30": *${doriData['30"'] || 0}*
-  28": *${doriData['28"'] || 0}*
-  26": *${doriData['26"'] || 0}*
+  Total: *${doriTotal}*
 
 ━━━━━━━━━━━━━━━━━━━━
-🔩 *MAIN STOCK* (Total: ${mainTotal})
+🔩 *MAIN STOCK*
 ━━━━━━━━━━━━━━━━━━━━
-  30": *${mainData['30"'] || 0}*
-  28": *${mainData['28"'] || 0}*
-  26": *${mainData['26"'] || 0}*
+  Total: *${mainTotal}*
 
 ━━━━━━━━━━━━━━━━━━━━
 👥 *ATTENDANCE*
@@ -513,10 +536,10 @@ export default function DailyReport() {
   const [sendingWA, setSendingWA] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
-  // Live inventory state
+  // Live inventory state — pan is per-size, dori & main are single counts
   const [panData, setPanData] = useState({ '26"': 0, '28"': 0, '30"': 0 });
-  const [doriData, setDoriData] = useState({ '26"': 0, '28"': 0, '30"': 0 });
-  const [mainData, setMainData] = useState({ '26"': 0, '28"': 0, '30"': 0 });
+  const [doriData, setDoriData] = useState({ count: 0 });
+  const [mainData, setMainData] = useState({ count: 0 });
 
   // Attendance state
   const [attendanceStats, setAttendanceStats] = useState({ present: 0, absent: 0, late: 0, halfDay: 0, total: 0 });
@@ -532,9 +555,11 @@ export default function DailyReport() {
 
   /* ─── FETCH: Daily Reports from Supabase ─── */
   const loadReports = useCallback(async () => {
+    // Priority: Supabase > localStorage cache (never lose existing data)
+    let fromRemote = false;
     try {
       const { data, error } = await supabase.from("daily_reports").select("*").order("created_at", { ascending: false });
-      if (!error && Array.isArray(data)) {
+      if (!error && Array.isArray(data) && data.length > 0) {
         const mapped = data.map(d => ({
           id: d.id,
           reportDate: d.report_date,
@@ -553,12 +578,22 @@ export default function DailyReport() {
           createdAt: d.created_at,
         }));
         setReports(mapped);
+        localStorage.setItem("dr_cache_reports", JSON.stringify(mapped));
+        fromRemote = true;
       }
     } catch { /* fallback */ }
+
+    if (!fromRemote) {
+      const cached = localStorage.getItem("dr_cache_reports");
+      if (cached) {
+        try { setReports(JSON.parse(cached)); } catch { /* corrupted cache */ }
+      }
+    }
   }, []);
 
   /* ─── FETCH: Pan Inventory from dhol_pan ─── */
   const loadPanData = useCallback(async () => {
+    let fromRemote = false;
     try {
       const { data } = await supabase.from("dhol_pan").select("*").eq("pane_type", "old");
       if (data && data.length > 0) {
@@ -568,46 +603,59 @@ export default function DailyReport() {
           result[size] = (Number(row.thapi) || 0) + (Number(row.dhoom) || 0);
         });
         setPanData(result);
+        localStorage.setItem("dr_cache_pan", JSON.stringify(result));
+        fromRemote = true;
       }
     } catch { /* ignore */ }
+
+    if (!fromRemote) {
+      const cached = localStorage.getItem("dr_cache_pan");
+      if (cached) {
+        try { setPanData(JSON.parse(cached)); } catch { /* corrupted cache */ }
+      }
+    }
   }, []);
 
-  /* ─── FETCH: Dori Size Inventory ─── */
+  /* ─── FETCH: Dori Inventory (single count — dori has no sizes) ─── */
   const loadDoriData = useCallback(async () => {
+    let fromRemote = false;
     try {
-      // Try new size-wise table first
-      const { data, error } = await supabase.from("dori_size_inventory").select("*");
-      if (!error && data && data.length > 0) {
-        const result = { '26"': 0, '28"': 0, '30"': 0 };
-        data.forEach(row => {
-          const size = row.size?.includes("26") ? '26"' : row.size?.includes("28") ? '28"' : '30"';
-          result[size] = Number(row.current_count) || 0;
-        });
-        setDoriData(result);
-      } else {
-        // Fallback to old dori_inventory (single count)
-        const { data: oldData } = await supabase.from("dori_inventory").select("*").limit(1);
-        if (oldData && oldData.length > 0) {
-          const total = Number(oldData[0].current_count) || 0;
-          setDoriData({ '26"': Math.round(total * 0.21), '28"': Math.round(total * 0.53), '30"': Math.round(total * 0.26) });
-        }
+      const { data } = await supabase.from("dori_inventory").select("*").limit(1);
+      if (data && data.length > 0) {
+        const val = Number(data[0].current_count) || 0;
+        setDoriData({ count: val });
+        localStorage.setItem("dr_cache_dori", JSON.stringify({ count: val }));
+        fromRemote = true;
       }
     } catch { /* ignore */ }
+
+    if (!fromRemote) {
+      const cached = localStorage.getItem("dr_cache_dori");
+      if (cached) {
+        try { setDoriData(JSON.parse(cached)); } catch { /* corrupted cache */ }
+      }
+    }
   }, []);
 
-  /* ─── FETCH: Main (Nail) Inventory ─── */
+  /* ─── FETCH: Main (Nail) Inventory (single count — nails have no sizes) ─── */
   const loadMainData = useCallback(async () => {
+    let fromRemote = false;
     try {
       const { data } = await supabase.from("main_inventory").select("*");
       if (data && data.length > 0) {
-        const result = { '26"': 0, '28"': 0, '30"': 0 };
-        data.forEach(row => {
-          const size = row.size?.includes("26") ? '26"' : row.size?.includes("28") ? '28"' : '30"';
-          result[size] = Number(row.current_count) || 0;
-        });
-        setMainData(result);
+        const total = data.reduce((sum, row) => sum + (Number(row.current_count) || 0), 0);
+        setMainData({ count: total });
+        localStorage.setItem("dr_cache_main", JSON.stringify({ count: total }));
+        fromRemote = true;
       }
     } catch { /* ignore */ }
+
+    if (!fromRemote) {
+      const cached = localStorage.getItem("dr_cache_main");
+      if (cached) {
+        try { setMainData(JSON.parse(cached)); } catch { /* corrupted cache */ }
+      }
+    }
   }, []);
 
   /* ─── FETCH: Attendance ─── */
@@ -641,7 +689,7 @@ export default function DailyReport() {
     const channels = [
       supabase.channel("dr-reports").on("postgres_changes", { event: "*", schema: "public", table: "daily_reports" }, () => loadReports()).subscribe(),
       supabase.channel("dr-pan").on("postgres_changes", { event: "*", schema: "public", table: "dhol_pan" }, () => loadPanData()).subscribe(),
-      supabase.channel("dr-dori").on("postgres_changes", { event: "*", schema: "public", table: "dori_size_inventory" }, () => loadDoriData()).subscribe(),
+      supabase.channel("dr-dori").on("postgres_changes", { event: "*", schema: "public", table: "dori_inventory" }, () => loadDoriData()).subscribe(),
       supabase.channel("dr-main").on("postgres_changes", { event: "*", schema: "public", table: "main_inventory" }, () => loadMainData()).subscribe(),
       supabase.channel("dr-attendance").on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => loadAttendance()).subscribe(),
     ];
@@ -666,20 +714,40 @@ export default function DailyReport() {
     return { brokenCount, madeCount, readyCount, totalLogs: dateReports.length };
   }, [dateReports]);
 
+  /* ─── REPORTS GROUPED BY DATE (for archive view) ─── */
+  const reportsByDate = useMemo(() => {
+    const map = {};
+    reports.forEach(r => {
+      if (!r.reportDate) return;
+      if (!map[r.reportDate]) map[r.reportDate] = [];
+      map[r.reportDate].push(r);
+    });
+    return Object.entries(map)
+      .map(([dateName, dateReports]) => {
+        const broken = dateReports.filter(r => r.brokenBy?.trim() || r.reportType === "Dhol Fodne").length;
+        const made = dateReports.filter(r => r.madeBy?.trim() || r.reportType === "Dhol Banane").length;
+        return { date: dateName, reports: dateReports, total: dateReports.length, broken, made };
+      })
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [reports]);
+
   /* ─── LOW STOCK ALERTS ─── */
   const lowStockAlerts = useMemo(() => {
     const alerts = [];
     SIZES.forEach(s => {
       const key = `${s}"`;
-      if ((Number(doriData[key]) || 0) < LOW_STOCK_THRESHOLD) {
-        alerts.push({ item: "Dori", size: SIZE_LABELS[s], count: doriData[key] || 0 });
-      }
       if ((Number(panData[key]) || 0) < LOW_STOCK_THRESHOLD) {
         alerts.push({ item: "Pan", size: SIZE_LABELS[s], count: panData[key] || 0 });
       }
     });
+    if ((Number(doriData.count) || 0) < LOW_STOCK_THRESHOLD) {
+      alerts.push({ item: "Dori", size: "", count: Number(doriData.count) || 0 });
+    }
+    if ((Number(mainData.count) || 0) < LOW_STOCK_THRESHOLD) {
+      alerts.push({ item: "Main", size: "", count: Number(mainData.count) || 0 });
+    }
     return alerts;
-  }, [doriData, panData]);
+  }, [doriData, panData, mainData]);
 
   // Auto-send WhatsApp alert when low stock detected
   useEffect(() => {
@@ -777,23 +845,16 @@ export default function DailyReport() {
         } catch { /* ignore */ }
       }
 
-      // Auto-deduct Dori
+      // Auto-deduct Dori (single count — size ka farak nahi padta)
       if (consumption.dori > 0) {
         try {
-          const sizeKey = `${madeForm.dholSize}"`;
-          const { data: doriRows } = await supabase.from("dori_size_inventory").select("*").eq("size", sizeKey);
-          if (doriRows && doriRows.length > 0) {
-            const newCount = Math.max(0, (Number(doriRows[0].current_count) || 0) - consumption.dori);
-            await supabase.from("dori_size_inventory").update({ current_count: newCount, last_updated_at: new Date().toISOString(), last_updated_by: madeForm.madeBy.trim() }).eq("id", doriRows[0].id);
+          const { data: oldDori } = await supabase.from("dori_inventory").select("*").limit(1);
+          if (oldDori && oldDori.length > 0) {
+            const newCount = Math.max(0, (Number(oldDori[0].current_count) || 0) - consumption.dori);
+            await supabase.from("dori_inventory").update({ current_count: newCount, last_updated_at: new Date().toISOString(), last_updated_by: madeForm.madeBy.trim() }).eq("id", oldDori[0].id);
             deducted.push(`Dori -${consumption.dori}`);
           } else {
-            // Fallback: old single dori_inventory
-            const { data: oldDori } = await supabase.from("dori_inventory").select("*").limit(1);
-            if (oldDori && oldDori.length > 0) {
-              const newCount = Math.max(0, (Number(oldDori[0].current_count) || 0) - consumption.dori);
-              await supabase.from("dori_inventory").update({ current_count: newCount, last_updated_at: new Date().toISOString(), last_updated_by: madeForm.madeBy.trim() }).eq("id", oldDori[0].id);
-              deducted.push(`Dori -${consumption.dori}`);
-            }
+            await supabase.from("dori_inventory").insert({ current_count: 0, last_updated_by: madeForm.madeBy.trim() });
           }
         } catch { /* ignore */ }
       }
@@ -827,49 +888,54 @@ export default function DailyReport() {
 
   /* ─── SAVE: Inventory Updates ─── */
   const handleSaveDori = async (values, updatedBy) => {
-    for (const s of SIZES) {
-      const key = `${s}"`;
-      try {
-        const { data: existing } = await supabase.from("dori_size_inventory").select("*").eq("size", key);
-        if (existing && existing.length > 0) {
-          await supabase.from("dori_size_inventory").update({
-            current_count: values[key] || 0,
-            last_updated_at: new Date().toISOString(),
-            last_updated_by: updatedBy || null,
-          }).eq("id", existing[0].id);
-        } else {
-          await supabase.from("dori_size_inventory").insert({
-            size: key,
-            current_count: values[key] || 0,
-            last_updated_by: updatedBy || null,
-          });
-        }
-      } catch { /* ignore */ }
-    }
+    const count = Number(values.count) || 0;
+    try {
+      const { data: existing } = await supabase.from("dori_inventory").select("*").limit(1);
+      if (existing && existing.length > 0) {
+        await supabase.from("dori_inventory").update({
+          current_count: count,
+          last_updated_at: new Date().toISOString(),
+          last_updated_by: updatedBy || null,
+        }).eq("id", existing[0].id);
+      } else {
+        await supabase.from("dori_inventory").insert({
+          current_count: count,
+          last_updated_by: updatedBy || null,
+        });
+      }
+    } catch { /* ignore */ }
     showToast("✅ Dori inventory updated!");
+    loadDoriData();
   };
 
   const handleSaveMain = async (values, updatedBy) => {
-    for (const s of SIZES) {
-      const key = `${s}"`;
-      try {
-        const { data: existing } = await supabase.from("main_inventory").select("*").eq("size", key);
-        if (existing && existing.length > 0) {
+    const count = Number(values.count) || 0;
+    try {
+      const { data: existing } = await supabase.from("main_inventory").select("*").order("id", { ascending: true });
+      if (existing && existing.length > 0) {
+        // Save the total against the first row and zero out the rest
+        await supabase.from("main_inventory").update({
+          current_count: count,
+          last_updated_at: new Date().toISOString(),
+          last_updated_by: updatedBy || null,
+        }).eq("id", existing[0].id);
+        for (let i = 1; i < existing.length; i++) {
           await supabase.from("main_inventory").update({
-            current_count: values[key] || 0,
+            current_count: 0,
             last_updated_at: new Date().toISOString(),
             last_updated_by: updatedBy || null,
-          }).eq("id", existing[0].id);
-        } else {
-          await supabase.from("main_inventory").insert({
-            size: key,
-            current_count: values[key] || 0,
-            last_updated_by: updatedBy || null,
-          });
+          }).eq("id", existing[i].id);
         }
-      } catch { /* ignore */ }
-    }
+      } else {
+        await supabase.from("main_inventory").insert({
+          size: 'Total',
+          current_count: count,
+          last_updated_by: updatedBy || null,
+        });
+      }
+    } catch { /* ignore */ }
     showToast("✅ Main inventory updated!");
+    loadMainData();
   };
 
   const handleSavePan = async (values, updatedBy) => {
@@ -897,7 +963,7 @@ export default function DailyReport() {
 
   /* ─── SAVE: Daily Summary Snapshot ─── */
   const saveDailySummary = useCallback(async () => {
-    const doriTotal = (Number(doriData['26"']) || 0) + (Number(doriData['28"']) || 0) + (Number(doriData['30"']) || 0);
+    const doriTotal = Number(doriData.count) || 0;
     try {
       await supabase.from("daily_summary_reports").upsert({
         report_date: selectedDate,
@@ -907,12 +973,12 @@ export default function DailyReport() {
         pan_26_count: Number(panData['26"']) || 0,
         pan_28_count: Number(panData['28"']) || 0,
         pan_30_count: Number(panData['30"']) || 0,
-        dori_26_count: Number(doriData['26"']) || 0,
-        dori_28_count: Number(doriData['28"']) || 0,
-        dori_30_count: Number(doriData['30"']) || 0,
-        main_26_count: Number(mainData['26"']) || 0,
-        main_28_count: Number(mainData['28"']) || 0,
-        main_30_count: Number(mainData['30"']) || 0,
+        dori_26_count: 0,
+        dori_28_count: 0,
+        dori_30_count: 0,
+        main_26_count: 0,
+        main_28_count: 0,
+        main_30_count: 0,
         dori_total: doriTotal,
         present_count: attendanceStats.present,
         absent_count: attendanceStats.absent,
@@ -938,6 +1004,48 @@ export default function DailyReport() {
         await supabase.from("daily_summary_reports").update({ pdf_generated: true }).eq("report_date", selectedDate);
       } catch { /* ignore */ }
     }
+    setGeneratingPdf(false);
+  };
+
+  /* ─── PDF for any specific date (from archive) ─── */
+  const handleDownloadPDFForDate = async (dateISO) => {
+    setGeneratingPdf(true);
+    const thatDateReports = reports.filter(r => r.reportDate === dateISO);
+    const thatBrokenCount = thatDateReports.filter(r => r.brokenBy?.trim() || r.reportType === "Dhol Fodne").length;
+    const thatMadeCount = thatDateReports.filter(r => r.madeBy?.trim() || r.reportType === "Dhol Banane").length;
+    const thatReadyCount = thatDateReports.filter(r => r.repairStatus === "Ready").length;
+
+    // Fetch attendance for that specific date
+    let thatAttendance = { present: 0, absent: 0, late: 0, halfDay: 0, total: 0 };
+    try {
+      const { data } = await supabase.from("attendance").select("*").eq("attendance_date", dateISO);
+      if (data) {
+        data.forEach(row => {
+          const s = String(row.status || "").toLowerCase();
+          if (s === "present") thatAttendance.present++;
+          else if (s === "absent") thatAttendance.absent++;
+          else if (s === "late") thatAttendance.late++;
+          else if (s === "half day") thatAttendance.halfDay++;
+          thatAttendance.total++;
+        });
+      }
+    } catch { /* ignore */ }
+
+    const success = await generateDailyPDF(
+      {
+        brokenCount: thatBrokenCount,
+        madeCount: thatMadeCount,
+        readyCount: thatReadyCount,
+        totalLogs: thatDateReports.length,
+      },
+      panData,
+      doriData,
+      mainData,
+      thatDateReports,
+      thatAttendance,
+      dateISO,
+    );
+    if (success) showToast(`📄 ${formatDate(dateISO)} PDF downloaded!`);
     setGeneratingPdf(false);
   };
 
@@ -967,8 +1075,8 @@ export default function DailyReport() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const doriTotal = (Number(doriData['26"']) || 0) + (Number(doriData['28"']) || 0) + (Number(doriData['30"']) || 0);
-  const mainTotal = (Number(mainData['26"']) || 0) + (Number(mainData['28"']) || 0) + (Number(mainData['30"']) || 0);
+  const doriTotal = Number(doriData.count) || 0;
+  const mainTotal = Number(mainData.count) || 0;
   const panTotal = (Number(panData['26"']) || 0) + (Number(panData['28"']) || 0) + (Number(panData['30"']) || 0);
 
   /* ═══════════════════════════════════════════════
@@ -1001,28 +1109,28 @@ export default function DailyReport() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:gap-3 sm:flex-wrap lg:w-auto">
               {/* Date Selector */}
-              <div className="flex items-center gap-2 bg-ink-950 border border-white/[.1] px-3 py-2.5 rounded-xl">
-                <span className="text-xs font-semibold text-mist uppercase">📅</span>
+              <div className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-white/[.1] bg-ink-950 px-3 py-2.5 sm:col-span-1 sm:justify-start">
+                <span className="text-xs font-semibold uppercase text-mist">📅</span>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent text-xs font-bold text-cream focus:outline-none cursor-pointer"
+                  className="cursor-pointer bg-transparent text-xs font-bold text-cream focus:outline-none"
                 />
               </div>
 
               <button
                 onClick={() => setActiveModal("broken")}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand/30 bg-brand/10 text-brand-300 text-sm font-semibold hover:bg-brand/20 transition-all"
+                className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-brand/30 bg-brand/10 px-4 py-2.5 text-sm font-semibold text-brand-300 transition-all hover:bg-brand/20"
               >
                 💥 किसने फोड़ा
               </button>
 
               <button
                 onClick={() => setActiveModal("made")}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-emerald/30 bg-emerald/10 text-emerald text-sm font-semibold hover:bg-emerald/20 transition-all"
+                className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-emerald/30 bg-emerald/10 px-4 py-2.5 text-sm font-semibold text-emerald transition-all hover:bg-emerald/20"
               >
                 🔨 किसने बनाया
               </button>
@@ -1030,13 +1138,13 @@ export default function DailyReport() {
           </div>
 
           {/* Bottom Row: PDF + WhatsApp Actions */}
-          <div className="mt-5 pt-5 border-t border-white/[.06] flex flex-wrap items-center gap-3">
+          <div className="mt-5 grid grid-cols-1 gap-2 border-t border-white/[.06] pt-5 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
             <button
               onClick={handleDownloadPDF}
               disabled={generatingPdf}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand to-brand-300 text-white text-sm font-semibold hover:shadow-[0_0_24px_rgba(220,38,38,.35)] transition-all hover:-translate-y-0.5 disabled:opacity-50"
+              className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand to-brand-300 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(220,38,38,.35)] disabled:opacity-50"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="12" y1="18" x2="12" y2="12" />
@@ -1048,12 +1156,12 @@ export default function DailyReport() {
             <button
               onClick={handleSendWhatsApp}
               disabled={sendingWA}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald to-emerald/70 text-white text-sm font-semibold hover:shadow-[0_0_24px_rgba(52,211,153,.35)] transition-all hover:-translate-y-0.5 disabled:opacity-50"
+              className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald to-emerald/70 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(52,211,153,.35)] disabled:opacity-50"
             >
               📱 {sendingWA ? "Sending..." : "Send WhatsApp Report"}
             </button>
 
-            <span className="text-[10px] text-mist ml-auto hidden sm:inline">
+            <span className="text-center text-[10px] text-mist sm:ml-auto sm:text-left">
               Auto-saves to Supabase • {dateReports.length} entries today
             </span>
           </div>
@@ -1102,20 +1210,20 @@ export default function DailyReport() {
       {/* ═══════ SIZE-WISE INVENTORY CARDS ═══════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <InventorySection title="Pan Inventory" icon="🎯" data={panData} onEdit={() => setActiveModal("pan")} editLabel="Update Pan" />
-        <InventorySection title="Dori Inventory" icon="🧵" data={doriData} onEdit={() => setActiveModal("dori")} editLabel="Update Dori" />
-        <InventorySection title="Main (Nail) Inventory" icon="🔩" data={mainData} onEdit={() => setActiveModal("main")} editLabel="Update Main" />
+        <InventorySection title="Dori Inventory" icon="🧵" data={doriData} onEdit={() => setActiveModal("dori")} editLabel="Update Dori" single />
+        <InventorySection title="Main (Nail) Inventory" icon="🔩" data={mainData} onEdit={() => setActiveModal("main")} editLabel="Update Main" single />
       </div>
 
       {/* ═══════ ATTENDANCE SUMMARY ═══════ */}
       <div className="card-premium p-5">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="mb-4 flex items-center gap-3">
           <span className="text-xl">👥</span>
           <div>
             <h3 className="font-display text-base font-semibold text-cream">Attendance Summary — {formatDate(selectedDate)}</h3>
-            <p className="text-[10px] text-mist uppercase tracking-wider">Data from attendance table</p>
+            <p className="text-[10px] uppercase tracking-wider text-mist">Data from attendance table</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5 sm:gap-3">
           {[
             { label: "Present", value: attendanceStats.present, color: "text-emerald border-emerald/25 bg-emerald/10" },
             { label: "Absent", value: attendanceStats.absent, color: "text-brand-300 border-brand/25 bg-brand/10" },
@@ -1124,18 +1232,18 @@ export default function DailyReport() {
             { label: "Total", value: attendanceStats.total, color: "text-cream border-white/[.12] bg-white/[.04]" },
           ].map(({ label, value, color }) => (
             <div key={label} className={`rounded-xl border p-3 text-center ${color}`}>
-              <p className="text-[10px] uppercase tracking-wider font-semibold mb-1 opacity-80">{label}</p>
-              <p className="font-display text-2xl font-bold"><AnimatedCount value={value} /></p>
+              <p className="mb-1 text-[9px] font-semibold uppercase tracking-wider opacity-80 sm:text-[10px]">{label}</p>
+              <p className="font-display text-xl font-bold sm:text-2xl"><AnimatedCount value={value} /></p>
             </div>
           ))}
         </div>
       </div>
 
       {/* ═══════ SEARCH BAR ═══════ */}
-      <div className="card-glass p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="card-glass p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-cream">Date: <strong className="text-brand-300">{formatDate(selectedDate)}</strong></span>
-          <span className="text-xs text-mist font-medium">({dateReports.length} entries)</span>
+          <span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[11px] font-medium text-mist">({dateReports.length} entries)</span>
         </div>
         <div className="relative w-full sm:w-64">
           <Icon d={I.search} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mist" />
@@ -1144,14 +1252,88 @@ export default function DailyReport() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search #, name, work type..."
-            className="w-full pl-9 pr-8 py-2 rounded-xl bg-ink-950 border border-white/[.08] text-xs text-cream placeholder:text-ink-500 focus:outline-none focus:border-brand/50 transition-colors"
+            className="w-full rounded-xl border border-white/[.08] bg-ink-950 py-2.5 pl-9 pr-8 text-sm text-cream transition-colors placeholder:text-ink-500 focus:border-brand/50 focus:outline-none sm:py-2 sm:text-xs"
           />
           {query && (
-            <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-mist hover:text-cream">
+            <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-mist hover:text-cream">
               <Icon d={I.x} className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
+      </div>
+
+      {/* ═══════ REPORTS BY DATE ARCHIVE ═══════ */}
+      <div className="card-premium p-5 sm:p-6">
+        <div className="flex flex-col gap-2 border-b border-white/[.06] pb-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-brand-300">Archive</p>
+            <h2 className="mt-1 font-display text-xl font-semibold tracking-tight text-cream">Reports by Date</h2>
+            <p className="mt-1 text-xs text-mist">Click any tile to view that day's logs. Download PDF directly for any date.</p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 self-start rounded-full border border-white/[.1] bg-white/[.04] px-3 py-1.5 text-[11px] font-bold text-cream shadow-sm sm:self-auto">
+            {reportsByDate.length} {reportsByDate.length === 1 ? "day" : "days"}
+          </span>
+        </div>
+
+        {reportsByDate.length === 0 ? (
+          <p className="py-8 text-center text-sm text-mist">No reports submitted yet. Use the forms above to add your first log.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
+            {reportsByDate.slice(0, 10).map(({ date, reports: dayReports, total, broken, made }) => {
+              const isSelected = date === selectedDate;
+              return (
+                <div
+                  key={date}
+                  onClick={() => setSelectedDate(date)}
+                  className={`group relative cursor-pointer overflow-hidden rounded-xl border p-3.5 text-left transition-all duration-200 active:scale-[.98] ${
+                    isSelected
+                      ? "border-brand/40 bg-gradient-to-br from-brand/[.1] to-brand/[.03] shadow-[0_2px_14px_rgba(227,27,35,.18)]"
+                      : "border-white/[.08] bg-white/[.03] hover:border-brand/30 hover:bg-white/[.05] hover:shadow-[0_4px_14px_rgba(227,27,35,.1)]"
+                  }`}
+                >
+                  {isSelected && (
+                    <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-brand to-transparent" />
+                  )}
+                  <div className="text-[10px] font-bold uppercase tracking-[.14em] text-mist/70">
+                    {formatDate(date)}
+                  </div>
+                  <div className="mt-1 font-display text-2xl font-semibold tabular-nums text-cream">
+                    {total}
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold">
+                    {broken > 0 && (
+                      <span className="inline-flex items-center gap-0.5 rounded bg-brand/10 px-1.5 py-0.5 text-brand">
+                        <span className="h-1 w-1 rounded-full bg-brand" />{broken}
+                      </span>
+                    )}
+                    {made > 0 && (
+                      <span className="inline-flex items-center gap-0.5 rounded bg-emerald/10 px-1.5 py-0.5 text-emerald">
+                        <span className="h-1 w-1 rounded-full bg-emerald" />{made}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2.5 flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadPDFForDate(date);
+                      }}
+                      disabled={generatingPdf}
+                      className="inline-flex items-center gap-1 rounded-md border border-white/[.12] bg-white/[.06] px-2 py-1 text-[10px] font-bold text-mist transition-all duration-150 hover:border-brand/40 hover:bg-brand/[.08] hover:text-brand-300 active:scale-95 disabled:opacity-50"
+                    >
+                      <Icon d={I.inbox} className="h-3 w-3" />
+                      PDF
+                    </button>
+                    {isSelected && (
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-brand">Viewing</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ═══════ DAILY LOGS TABLE ═══════ */}
@@ -1170,9 +1352,9 @@ export default function DailyReport() {
           </div>
         </div>
       ) : (
-        <div className="card-premium p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-lg font-semibold text-cream">📋 Daily Logs — {formatDate(selectedDate)}</h3>
+        <div className="card-premium p-4 sm:p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-display text-base sm:text-lg font-semibold text-cream">📋 Daily Logs — {formatDate(selectedDate)}</h3>
             <button
               onClick={handleDownloadPDF}
               className="px-3.5 py-1.5 rounded-lg border border-white/[.1] bg-white/[.04] text-xs font-semibold text-cream hover:bg-white/[.08]"
@@ -1181,7 +1363,40 @@ export default function DailyReport() {
             </button>
           </div>
 
-          <div className="overflow-x-auto -mx-2">
+          {/* Mobile: card list (visible on small screens) */}
+          <div className="space-y-2.5 sm:hidden">
+            {filteredReports.map((r, idx) => (
+              <div
+                key={r.id}
+                className={`rounded-xl border border-white/[.08] bg-white/[.03] p-3 space-y-2 ${r.brokenBy?.trim() ? "border-l-[3px] border-l-brand" : r.madeBy?.trim() ? "border-l-[3px] border-l-emerald" : ""}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-sm font-bold text-cream">#{r.dholNumber || "—"}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-mist">{r.dholSize ? r.dholSize + '"' : ""}</span>
+                    <button onClick={() => handleDelete(r.id)} className="p-1 text-mist transition-colors hover:text-brand-300" aria-label="Delete log">
+                      <Icon d={I.trash} className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs font-semibold text-cream">{r.workType || r.brokenPart || "—"}</p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+                  {r.brokenBy?.trim() ? <span className="font-semibold text-brand-300">💥 {r.brokenBy}</span> : null}
+                  {r.madeBy?.trim() ? <span className="font-semibold text-emerald">🔨 {r.madeBy}</span> : null}
+                  <span className={`ml-auto inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
+                    r.repairStatus === "Ready" ? "bg-emerald/15 text-emerald border-emerald/30" :
+                    r.repairStatus === "Pending" ? "bg-gold/15 text-gold-300 border-gold/30" :
+                    "bg-white/[.04] text-mist border-white/[.08]"
+                  }`}>
+                    {r.repairStatus || "Pending"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: table (hidden on small screens) */}
+          <div className="hidden overflow-x-auto -mx-2 sm:block">
             <table className="w-full text-xs text-left">
               <thead>
                 <tr className="border-b border-white/[.08] text-mist font-semibold uppercase tracking-wider">
@@ -1227,10 +1442,9 @@ export default function DailyReport() {
       )}
 
       {/* ═══════ MODAL: BROKEN LOG ═══════ */}
-      {activeModal === "broken" && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm" onClick={() => setActiveModal(null)} />
-          <div className="relative card-premium p-6 w-full max-w-md space-y-4 animate-rise shadow-lift">
+      {activeModal === "broken" && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-end justify-center bg-slate-950/55 p-0 sm:items-center sm:p-4">
+          <div className="relative card-premium max-h-[92vh] w-full max-w-md space-y-4 overflow-y-auto scroll-thin rounded-b-none p-5 shadow-lift animate-rise sm:rounded-2xl sm:p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-display font-semibold text-cream">💥 ढोल किसने फोड़ा</h2>
               <button onClick={() => setActiveModal(null)} className="text-mist hover:text-cream"><Icon d={I.x} className="w-4 h-4" /></button>
@@ -1267,14 +1481,14 @@ export default function DailyReport() {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ═══════ MODAL: MADE LOG ═══════ */}
-      {activeModal === "made" && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm" onClick={() => setActiveModal(null)} />
-          <div className="relative card-premium p-6 w-full max-w-md space-y-4 animate-rise shadow-lift">
+      {activeModal === "made" && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-end justify-center bg-slate-950/55 p-0 sm:items-center sm:p-4">
+          <div className="relative card-premium max-h-[92vh] w-full max-w-md space-y-4 overflow-y-auto scroll-thin rounded-b-none p-5 shadow-lift animate-rise sm:rounded-2xl sm:p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-display font-semibold text-cream">🔨 ढोल किसने बनाया</h2>
               <button onClick={() => setActiveModal(null)} className="text-mist hover:text-cream"><Icon d={I.x} className="w-4 h-4" /></button>
@@ -1340,15 +1554,16 @@ export default function DailyReport() {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ═══════ INVENTORY UPDATE MODALS ═══════ */}
       {activeModal === "dori" && (
-        <InventoryModal title="Dori (Rope) Inventory" icon="🧵" currentData={doriData} onSave={handleSaveDori} onClose={() => setActiveModal(null)} />
+        <InventoryModal title="Dori (Rope) Inventory" icon="🧵" currentData={doriData} onSave={handleSaveDori} onClose={() => setActiveModal(null)} single />
       )}
       {activeModal === "main" && (
-        <InventoryModal title="Main (Nail) Inventory" icon="🔩" currentData={mainData} onSave={handleSaveMain} onClose={() => setActiveModal(null)} />
+        <InventoryModal title="Main (Nail) Inventory" icon="🔩" currentData={mainData} onSave={handleSaveMain} onClose={() => setActiveModal(null)} single />
       )}
       {activeModal === "pan" && (
         <InventoryModal title="Pan Inventory" icon="🎯" currentData={panData} onSave={handleSavePan} onClose={() => setActiveModal(null)} />

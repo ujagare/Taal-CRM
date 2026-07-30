@@ -85,7 +85,7 @@ export default function LoginPage({ onLoginSuccess }) {
           padding: 0;
           overflow: hidden;
           font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-          background: #000000;
+          background: #f7f8fa;
         }
 
         .lp-bg-wrapper {
@@ -103,6 +103,8 @@ export default function LoginPage({ onLoginSuccess }) {
           height: 100%;
           object-fit: cover;
           object-position: center;
+          opacity: 0.12;
+          filter: saturate(1.05) contrast(1.05);
           transform: scale(1.03);
           animation: lpZoom 20s ease-in-out infinite alternate;
         }
@@ -115,10 +117,9 @@ export default function LoginPage({ onLoginSuccess }) {
         .lp-bg-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.65)),
-                      radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.75) 100%);
-          backdrop-filter: blur(2px);
-          -webkit-backdrop-filter: blur(2px);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 247, 247, 0.9) 45%, rgba(248, 250, 252, 0.96));
+          backdrop-filter: blur(0.5px);
+          -webkit-backdrop-filter: blur(0.5px);
         }
 
         .lp-ambient-glow-1 {
@@ -131,6 +132,7 @@ export default function LoginPage({ onLoginSuccess }) {
           background: radial-gradient(circle, rgba(220, 38, 38, 0.25) 0%, transparent 70%);
           pointer-events: none;
           border-radius: 50%;
+          display: none;
         }
 
         .lp-ambient-glow-2 {
@@ -142,6 +144,7 @@ export default function LoginPage({ onLoginSuccess }) {
           background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
           pointer-events: none;
           border-radius: 50%;
+          display: none;
         }
 
         .lp-shell {
@@ -160,15 +163,15 @@ export default function LoginPage({ onLoginSuccess }) {
           width: 100%;
           max-width: 440px;
           margin: auto;
-          background: rgba(10, 10, 15, 0.94);
-          border: 1px solid rgba(255, 255, 255, 0.14);
-          border-radius: 28px;
+          background: rgba(255, 255, 255, 0.94);
+          border: 1px solid rgba(15, 23, 42, 0.1);
+          border-radius: 24px;
           padding: 36px 32px;
-          box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95),
-                      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                      0 0 40px rgba(220, 38, 38, 0.2);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
+          box-shadow: 0 28px 70px rgba(15, 23, 42, 0.14),
+                      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                      0 0 0 1px rgba(227, 27, 35, 0.04);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
           box-sizing: border-box !important;
           animation: lpCardRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
@@ -207,13 +210,13 @@ export default function LoginPage({ onLoginSuccess }) {
           width: 72px;
           height: 72px;
           border-radius: 20px;
-          background: linear-gradient(135deg, rgba(35, 8, 8, 0.9), rgba(15, 4, 4, 0.95));
-          border: 1.5px solid rgba(220, 38, 38, 0.35);
+          background: linear-gradient(135deg, #ffffff, #fff1f2);
+          border: 1.5px solid rgba(227, 27, 35, 0.18);
           display: flex;
           align-items: center;
           justify-content: center;
           margin-bottom: 14px;
-          box-shadow: 0 0 30px rgba(220, 38, 38, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          box-shadow: 0 16px 34px rgba(227, 27, 35, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
         }
 
         .lp-logo-box img {
@@ -226,9 +229,8 @@ export default function LoginPage({ onLoginSuccess }) {
           font-size: 24px;
           font-weight: 800;
           letter-spacing: -0.03em;
-          color: #FFFFFF;
+          color: #111827;
           margin: 0;
-          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
         }
 
         .lp-badge {
@@ -238,9 +240,9 @@ export default function LoginPage({ onLoginSuccess }) {
           margin-top: 6px;
           padding: 4px 12px;
           border-radius: 9999px;
-          background: rgba(220, 38, 38, 0.15);
-          border: 1px solid rgba(220, 38, 38, 0.3);
-          color: #f87171;
+          background: rgba(227, 27, 35, 0.08);
+          border: 1px solid rgba(227, 27, 35, 0.18);
+          color: #b91c1c;
           font-size: 11px;
           font-weight: 700;
           letter-spacing: 0.15em;
@@ -249,7 +251,7 @@ export default function LoginPage({ onLoginSuccess }) {
 
         .lp-subtitle {
           font-size: 13px;
-          color: rgba(255, 255, 255, 0.8);
+          color: #64748b;
           font-weight: 500;
           margin-top: 10px;
           margin-bottom: 10px;
@@ -262,7 +264,7 @@ export default function LoginPage({ onLoginSuccess }) {
 
         .lp-label {
           display: block;
-          color: rgba(255, 255, 255, 0.88);
+          color: #334155;
           font-size: 12.5px;
           font-weight: 600;
           margin-bottom: 6px;
@@ -271,10 +273,10 @@ export default function LoginPage({ onLoginSuccess }) {
         .lp-input {
           display: block;
           width: 100%;
-          background: rgba(0, 0, 0, 0.5);
-          border: 1px solid rgba(255, 255, 255, 0.16);
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
           border-radius: 12px;
-          color: #FFFFFF;
+          color: #111827;
           font-size: 14px;
           height: 44px;
           padding: 0 14px;
@@ -286,7 +288,7 @@ export default function LoginPage({ onLoginSuccess }) {
         .lp-input:focus {
           border-color: rgba(220, 38, 38, 0.75);
           box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.22);
-          background: rgba(0, 0, 0, 0.65);
+          background: #ffffff;
         }
 
         .lp-btn-primary {
@@ -319,10 +321,10 @@ export default function LoginPage({ onLoginSuccess }) {
           justify-content: center;
           gap: 10px;
           width: 100%;
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.16);
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
           border-radius: 12px;
-          color: #F3F4F6;
+          color: #334155;
           height: 44px;
           font-size: 13.5px;
           font-weight: 600;
@@ -332,15 +334,15 @@ export default function LoginPage({ onLoginSuccess }) {
         }
 
         .lp-btn-google:hover {
-          background: rgba(255, 255, 255, 0.14);
-          border-color: rgba(255, 255, 255, 0.28);
+          background: #f8fafc;
+          border-color: rgba(227, 27, 35, 0.22);
         }
 
         .lp-divider {
           display: flex;
           align-items: center;
           margin: 16px 0;
-          color: rgba(255, 255, 255, 0.4);
+          color: #94a3b8;
           font-size: 11px;
           font-weight: 600;
           text-transform: uppercase;
@@ -349,29 +351,29 @@ export default function LoginPage({ onLoginSuccess }) {
           content: "";
           flex: 1;
           height: 1px;
-          background: rgba(255, 255, 255, 0.14);
+          background: #e2e8f0;
         }
         .lp-divider span {
           padding: 0 10px;
         }
 
         .lp-alert {
-          background: rgba(220, 38, 38, 0.18);
-          border: 1px solid rgba(220, 38, 38, 0.4);
+          background: rgba(220, 38, 38, 0.08);
+          border: 1px solid rgba(220, 38, 38, 0.22);
           border-radius: 10px;
           padding: 10px 14px;
-          color: #fca5a5;
+          color: #b91c1c;
           font-size: 12.5px;
           margin-bottom: 14px;
           text-align: left;
         }
 
         .lp-info {
-          background: rgba(52, 211, 153, 0.15);
-          border: 1px solid rgba(52, 211, 153, 0.4);
+          background: rgba(5, 150, 105, 0.08);
+          border: 1px solid rgba(5, 150, 105, 0.22);
           border-radius: 10px;
           padding: 10px 14px;
-          color: #6ee7b7;
+          color: #047857;
           font-size: 12.5px;
           margin-bottom: 14px;
           text-align: left;
@@ -381,11 +383,11 @@ export default function LoginPage({ onLoginSuccess }) {
           margin-top: 18px;
           text-align: center;
           font-size: 13px;
-          color: rgba(255, 255, 255, 0.6);
+          color: #64748b;
         }
 
         .lp-toggle-btn {
-          color: #f87171;
+          color: #b91c1c;
           font-weight: 700;
           cursor: pointer;
           background: none;
@@ -401,7 +403,7 @@ export default function LoginPage({ onLoginSuccess }) {
           margin-top: 20px;
           text-align: center;
           font-size: 11.5px;
-          color: rgba(255, 255, 255, 0.35);
+          color: #64748b;
         }
       `}</style>
 

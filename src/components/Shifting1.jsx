@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../lib/supabase";
 import { Icon, I } from "./icons";
 
@@ -245,13 +246,9 @@ function AssetModal({ mode, initial, onSave, onClose }) {
     setSaving(false);
   };
 
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative card-premium p-6 w-full max-w-lg space-y-4 animate-rise shadow-lift max-h-[92vh] overflow-y-auto scroll-thin">
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/55 p-4" onClick={onClose}>
+      <div className="relative card-premium p-6 w-full max-w-lg space-y-4 animate-rise shadow-lift max-h-[90vh] overflow-y-auto scroll-thin" onClick={(e) => e.stopPropagation()}>
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
 
         <div className="flex items-center justify-between">
@@ -361,20 +358,17 @@ function AssetModal({ mode, initial, onSave, onClose }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
 /* ─── Delete Confirmation Modal ──────────────────────── */
 function DeleteConfirm({ item, onDelete, onClose }) {
   const [deleting, setDeleting] = useState(false);
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative card-premium p-6 w-full max-w-sm space-y-4 animate-rise shadow-lift text-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/55 p-4" onClick={onClose}>
+      <div className="relative card-premium p-6 w-full max-w-sm space-y-4 animate-rise shadow-lift text-center max-h-[90vh] overflow-y-auto scroll-thin" onClick={(e) => e.stopPropagation()}>
         <div className="w-12 h-12 mx-auto rounded-xl bg-coral/10 border border-coral/25 grid place-items-center text-coral text-xl">
           <Icon d={I.trash} className="w-6 h-6" />
         </div>
@@ -405,7 +399,8 @@ function DeleteConfirm({ item, onDelete, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

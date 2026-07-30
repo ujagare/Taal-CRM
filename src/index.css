@@ -10,70 +10,70 @@
   }
 
   select {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   select option {
-    background-color: #18181b !important;
-    color: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #111827 !important;
   }
 
   ::selection {
-    background-color: rgba(220, 38, 38, 0.25);
+    background-color: rgba(227, 27, 35, 0.18);
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-brand/50 ring-offset-2 ring-offset-ink-950 rounded-lg;
+    @apply outline-none ring-2 ring-brand/45 ring-offset-2 ring-offset-white rounded-lg;
   }
 }
 
 @layer utilities {
   .card {
-    @apply bg-ink-850 border border-white/[.07] rounded-xl shadow-card;
+    @apply bg-white border border-slate-200/80 rounded-xl shadow-card;
   }
 
   .card-premium {
-    @apply bg-ink-850 rounded-xl;
-    box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 12px 32px rgba(0,0,0,.12);
+    @apply bg-white rounded-xl;
+    box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 16px 40px rgba(15,23,42,.08);
     border: 1px solid transparent;
-    background-image: linear-gradient(rgba(25,25,29,.94), rgba(17,17,19,.96)), linear-gradient(135deg, rgba(245,158,11,.16), rgba(220,38,38,.12), rgba(56,189,248,.1), rgba(52,211,153,.08));
+    background-image: linear-gradient(rgba(255,255,255,.96), rgba(255,255,255,.98)), linear-gradient(135deg, rgba(227,27,35,.18), rgba(200,135,25,.14), rgba(2,132,199,.1), rgba(5,150,105,.08));
     background-origin: border-box;
     background-clip: padding-box, border-box;
     transition: all .3s ease;
   }
 
   .card-premium:hover {
-    border-color: rgba(245,158,11,.22);
-    box-shadow: 0 2px 4px rgba(0,0,0,.08), 0 24px 56px rgba(0,0,0,.16), 0 0 0 1px rgba(245,158,11,.06);
+    border-color: rgba(227,27,35,.2);
+    box-shadow: 0 2px 6px rgba(15,23,42,.06), 0 24px 56px rgba(15,23,42,.12), 0 0 0 1px rgba(227,27,35,.05);
     transform: translateY(-1px);
   }
 
   .card-glass {
     @apply rounded-xl;
-    background: rgba(25, 25, 29, .55);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, .06);
-    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.04);
+    background: rgba(255, 255, 255, .76);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(15, 23, 42, .08);
+    box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 14px 32px rgba(15,23,42,.07);
   }
 
   .card-glass:hover {
-    border-color: rgba(255, 255, 255, .1);
-    box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 16px 40px rgba(0,0,0,.1);
+    border-color: rgba(227, 27, 35, .18);
+    box-shadow: 0 2px 5px rgba(15,23,42,.06), 0 18px 44px rgba(15,23,42,.1);
   }
 
   .hairline {
-    @apply border-white/[.07];
+    @apply border-slate-200/80;
   }
 
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #F8FAFC, #FBBF24);
+    background-image: linear-gradient(135deg, #111827, #B45309);
   }
 
   .text-gradient-brand {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #F87171, #DC2626);
+    background-image: linear-gradient(135deg, #F04444, #B91C1C);
   }
 
   .scroll-thin::-webkit-scrollbar {
@@ -82,7 +82,7 @@
   }
 
   .scroll-thin::-webkit-scrollbar-thumb {
-    @apply bg-ink-500 rounded-full;
+    @apply bg-slate-300 rounded-full;
   }
 
   .scroll-thin::-webkit-scrollbar-track {
@@ -99,9 +99,9 @@
     inset: 0;
     pointer-events: none;
     background:
-      linear-gradient(120deg, rgba(220, 38, 38, .18), transparent 34%),
-      linear-gradient(240deg, rgba(245, 158, 11, .15), transparent 38%),
-      linear-gradient(180deg, rgba(255, 255, 255, .045), transparent);
+      linear-gradient(120deg, rgba(227, 27, 35, .12), transparent 34%),
+      linear-gradient(240deg, rgba(200, 135, 25, .1), transparent 38%),
+      linear-gradient(180deg, rgba(255, 255, 255, .58), transparent);
   }
 
   .dashboard-hero > * {
@@ -138,10 +138,135 @@
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .06), transparent);
+  background: linear-gradient(90deg, transparent, rgba(227, 27, 35, .08), transparent);
   animation: shimmer 1.6s infinite;
 }
 
 @keyframes shimmer {
   100% { transform: translateX(100%) }
+}
+
+/* Light-theme compatibility for the original dark utility classes. */
+[class~="text-white"],
+[class~="group-hover:text-white"]:hover {
+  color: #111827 !important;
+}
+
+[class~="text-white/90"] { color: rgba(17,24,39,.9) !important; }
+[class~="text-white/80"] { color: rgba(17,24,39,.8) !important; }
+[class~="text-white/70"] { color: rgba(17,24,39,.7) !important; }
+[class~="text-white/60"] { color: rgba(71,85,105,.82) !important; }
+[class~="text-white/50"] { color: rgba(100,116,139,.78) !important; }
+[class~="text-white/40"] { color: rgba(100,116,139,.68) !important; }
+[class~="text-white/30"] { color: rgba(100,116,139,.56) !important; }
+
+[class~="text-brand-300"] { color: #b91c1c !important; }
+[class~="text-red-300"] { color: #b91c1c !important; }
+[class~="text-red-400"] { color: #dc2626 !important; }
+[class~="text-rose-300"] { color: #be123c !important; }
+[class~="text-rose-400"] { color: #be123c !important; }
+[class~="text-amber-300"] { color: #b45309 !important; }
+[class~="text-amber-400"] { color: #b45309 !important; }
+[class~="text-yellow-300"] { color: #a16207 !important; }
+[class~="text-sky-300"] { color: #0369a1 !important; }
+[class~="text-blue-300"] { color: #1d4ed8 !important; }
+[class~="text-emerald-300"] { color: #047857 !important; }
+[class~="text-emerald-400"] { color: #059669 !important; }
+[class~="text-purple-300"] { color: #7e22ce !important; }
+[class~="text-pink-300"] { color: #be185d !important; }
+
+[class~="bg-brand"][class~="text-white"],
+[class~="bg-brand-300"][class~="text-white"],
+[class~="bg-red-500"][class~="text-white"],
+[class~="bg-red-600"][class~="text-white"],
+[class~="bg-rose-500"][class~="text-white"],
+[class~="bg-rose-600"][class~="text-white"],
+[class~="bg-emerald"][class~="text-white"],
+[class~="bg-emerald-500"][class~="text-white"],
+[class~="bg-emerald-600"][class~="text-white"],
+[class~="from-brand"][class~="text-white"],
+[class~="from-red-600"][class~="text-white"],
+[class~="from-rose-600"][class~="text-white"],
+[class~="from-emerald-500"][class~="text-white"],
+[class~="from-emerald-600"][class~="text-white"] {
+  color: #ffffff !important;
+}
+
+[class~="border-white/5"],
+[class~="border-white/8"],
+[class~="border-white/10"],
+[class~="border-white/15"],
+[class~="border-white/20"],
+[class~="border-white/30"],
+[class~="border-white/[.05]"],
+[class~="border-white/[.06]"],
+[class~="border-white/[.07]"],
+[class~="border-white/[.08]"],
+[class~="border-white/[.09]"],
+[class~="border-white/[.1]"],
+[class~="border-white/[.12]"],
+[class~="border-white/[.14]"],
+[class~="border-white/[.15]"],
+[class~="border-white/[.16]"],
+[class~="border-white/[0.05]"],
+[class~="border-white/[0.08]"],
+[class~="border-white/[0.1]"],
+[class~="border-white/[0.10]"] {
+  border-color: rgba(15, 23, 42, .1) !important;
+}
+
+[class~="bg-white/3"],
+[class~="bg-white/5"],
+[class~="bg-white/8"],
+[class~="bg-white/10"],
+[class~="bg-white/[.02]"],
+[class~="bg-white/[.03]"],
+[class~="bg-white/[.035]"],
+[class~="bg-white/[.04]"],
+[class~="bg-white/[.045]"],
+[class~="bg-white/[.05]"],
+[class~="bg-white/[.06]"],
+[class~="bg-white/[.07]"],
+[class~="bg-white/[.08]"],
+[class~="bg-white/[0.02]"],
+[class~="bg-white/[0.03]"],
+[class~="bg-white/[0.035]"],
+[class~="bg-white/[0.04]"],
+[class~="bg-white/[0.05]"],
+[class~="bg-white/[0.06]"],
+[class~="bg-white/[0.07]"] {
+  background-color: rgba(255, 255, 255, .86) !important;
+}
+
+[class~="hover:bg-white/5"]:hover,
+[class~="hover:bg-white/6"]:hover,
+[class~="hover:bg-white/8"]:hover,
+[class~="hover:bg-white/10"]:hover,
+[class~="hover:bg-white/14"]:hover,
+[class~="hover:bg-white/20"]:hover,
+[class~="hover:bg-white/[.04]"]:hover,
+[class~="hover:bg-white/[.05]"]:hover,
+[class~="hover:bg-white/[.06]"]:hover,
+[class~="hover:bg-white/[.07]"]:hover,
+[class~="hover:bg-white/[.08]"]:hover,
+[class~="hover:bg-white/[0.07]"]:hover {
+  background-color: rgba(248, 250, 252, .96) !important;
+}
+
+[class~="bg-black/40"],
+[class~="bg-black/50"] {
+  background-color: rgba(248, 250, 252, .92) !important;
+}
+
+[class~="bg-black/75"],
+[class~="bg-black/80"],
+[class~="bg-black/90"] {
+  background-color: rgba(15, 23, 42, .42) !important;
+}
+
+[class~="placeholder:text-white/30"]::placeholder,
+[class~="placeholder:text-mist/40"]::placeholder,
+[class~="placeholder:text-mist/60"]::placeholder,
+[class~="placeholder:text-ink-500"]::placeholder {
+  color: rgba(100, 116, 139, .65) !important;
 }
