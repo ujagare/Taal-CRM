@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { default as makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import qrcode from 'qrcode-terminal';
+import QRCodeImage from 'qrcode';
 
 const app = express();
 app.use(cors());
@@ -62,6 +63,22 @@ app.get('/api/whatsapp/status', (req, res) => {
     connected: isConnected,
     hasQr: !!qrCodeData,
   });
+});
+
+// QR code viewer page — scan from browser instead of terminal
+app.get('/qr', async (req, res) => {
+  if (isConnected) {
+    return res.send('<html><body style="background:#111;color:#0f0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column"><h1>✅ WhatsApp Already Connected!</h1><p>You can close this page.</p></body></html>');
+  }
+  if (!qrCodeData) {
+    return res.send('<html><head><meta http-equiv="refresh" content="3"></head><body style="background:#111;color:#ff0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh"><h1>⏳ Waiting for QR... auto-refresh</h1></body></html>');
+  }
+  try {
+    const dataUrl = await QRCodeImage.toDataURL(qrCodeData, { width: 400, margin: 2 });
+    res.send(`<html><head><meta http-equiv="refresh" content="20"></head><body style="background:#111;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column"><h1>📱 Scan with WhatsApp</h1><p>WhatsApp → Settings → Linked Devices → Link a Device</p><img src="${dataUrl}" style="border:12px solid #fff;border-radius:12px"/></body></html>`);
+  } catch (e) {
+    res.status(500).send('QR render error');
+  }
 });
 
 // Single Message Endpoint

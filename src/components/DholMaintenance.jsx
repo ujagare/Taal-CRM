@@ -1,14 +1,61 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import jsPDF from "jspdf";
+// jsPDF & jspdf-autotable are dynamically imported inside handleDownload
 import { supabase } from "../lib/supabase";
 import { Icon, I } from "./icons";
 
 /* ─────────────────────────────────────────────
    CONSTANTS & CONFIG
 ───────────────────────────────────────────── */
-const TOTAL_DHOLS = 54;
+const TOTAL_DHOLS = 60;
 const HISTORY_DAYS = 60;
+
+/* ── PDF List Data (27-07-2026) ── */
+const JULY_27_2026_LOGS = [
+  { dhol_number: 5,  dhol_size: "30", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Ashish", done_by_2: null, notes: null },
+  { dhol_number: 6,  dhol_size: "30", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Suyash Gadgil", done_by_2: null, notes: "Earlier surname corrected" },
+  { dhol_number: 10, dhol_size: "30", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Akshay Choudhari", done_by_2: null, notes: null },
+  { dhol_number: 11, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Maheshwar", done_by_2: "Sukhen", notes: "Two names" },
+  { dhol_number: 12, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Saurabh Kanojia", done_by_2: null, notes: null },
+  { dhol_number: 13, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Shubham G", done_by_2: "Pradish S", notes: "Two names" },
+  { dhol_number: 14, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Siddhant Gore", done_by_2: "Ashish", notes: "Two names" },
+  { dhol_number: 15, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Rohan Bramankar", done_by_2: "Tejas M", notes: "Handwritten note" },
+  { dhol_number: 16, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Anand Pawar", done_by_2: "Vivet G", notes: "Two names" },
+  { dhol_number: 17, dhol_size: "30", maintenance_date: "2026-07-27", description: "Dori Work", done_by: "Aryan", done_by_2: null, notes: "30 ki Dori" },
+  { dhol_number: 18, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Girish Jhelane", done_by_2: null, notes: null },
+  { dhol_number: 19, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Ajinkya U", done_by_2: null, notes: null },
+  { dhol_number: 20, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Vikrant Chinchwade", done_by_2: null, notes: null },
+  { dhol_number: 21, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Ajinkya Shewale", done_by_2: null, notes: null },
+  { dhol_number: 22, dhol_size: "30", maintenance_date: "2026-07-27", description: "Dori Work", done_by: "Suyash Gaikwad", done_by_2: null, notes: "30 chi Dori" },
+  { dhol_number: 23, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Nikhil Khaladkar", done_by_2: null, notes: null },
+  { dhol_number: 24, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Shreya Kendale", done_by_2: "Krishna", notes: "Two names" },
+  { dhol_number: 25, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Satil Khandale", done_by_2: "Atul", notes: "Two names" },
+  { dhol_number: 26, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Soham Natekar", done_by_2: null, notes: "Star mark" },
+  { dhol_number: 27, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Atharv Koli", done_by_2: "Vikrant C", notes: "Two names" },
+  { dhol_number: 28, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Harsh S", done_by_2: null, notes: "Star mark" },
+  { dhol_number: 29, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Rupesh", done_by_2: "Ajinkya J", notes: "Two names" },
+  { dhol_number: 30, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Rahul Meher (W)", done_by_2: null, notes: null },
+  { dhol_number: 31, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Akash Alkunte", done_by_2: null, notes: "Double star + note" },
+  { dhol_number: 32, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Amey Atole", done_by_2: null, notes: null },
+  { dhol_number: 33, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Purvesh Khade", done_by_2: null, notes: null },
+  { dhol_number: 34, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Rohit Tamkar", done_by_2: null, notes: null },
+  { dhol_number: 35, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Kunal Pawar", done_by_2: null, notes: null },
+  { dhol_number: 36, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Girish", done_by_2: "Shubham G", notes: "Two names" },
+  { dhol_number: 37, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Mandar G", done_by_2: "Anayd P", notes: "Two names" },
+  { dhol_number: 38, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Amogh", done_by_2: "Shreyas", notes: "Two names" },
+  { dhol_number: 39, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Koradi", done_by_2: "Saksham", notes: "Two names" },
+  { dhol_number: 40, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Vaibhav Suvarnar", done_by_2: null, notes: null },
+  { dhol_number: 41, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Bhushan Devkarle", done_by_2: null, notes: null },
+  { dhol_number: 43, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Yash Kundale", done_by_2: null, notes: null },
+  { dhol_number: 44, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Tejas Morzette", done_by_2: null, notes: null },
+  { dhol_number: 45, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Chaitanya Raccha", done_by_2: null, notes: null },
+  { dhol_number: 46, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Swapnil Kisan", done_by_2: null, notes: null },
+  { dhol_number: 47, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Sunny", done_by_2: null, notes: null },
+  { dhol_number: 48, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Shubham Gadekar", done_by_2: null, notes: null },
+  { dhol_number: 50, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Abhishek Shitole", done_by_2: "Anand Pawar", notes: "Two names" },
+  { dhol_number: 55, dhol_size: "26", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Dnyanesh Gabaal", done_by_2: null, notes: null },
+  { dhol_number: 60, dhol_size: "26", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Yash Dalvi", done_by_2: null, notes: null },
+];
 
 // Size Rule: #1-#10 = 30", #11-#52 = 28", #53-#54 = 26"
 function getDholSize(num) {
@@ -138,372 +185,170 @@ function PdfExportModal({ logs, dhols, onClose }) {
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      let rangeTitle = "Aaj Ka Din (Today)";
-      if (rangeType === "week") rangeTitle = "Pichle 7 Din (Week)";
-      else if (rangeType === "month") rangeTitle = "Pichle 30 Din (Month)";
+      let rangeTitle = "Today";
+      if (rangeType === "week") rangeTitle = "Last 7 Days";
+      else if (rangeType === "month") rangeTitle = "Last 30 Days";
       else if (rangeType === "custom")
-        rangeTitle = `${fmtDate(startDate)} se ${fmtDate(endDate)} tak`;
+        rangeTitle = `${fmtDate(startDate)} to ${fmtDate(endDate)}`;
 
-      const doc = new jsPDF("p", "mm", "a4");
-      const pageW = 210;
-      const pageH = 297;
-      const margin = 12;
-      const contentW = pageW - margin * 2;
-
-      // ── PAGE 1: COVER PAGE ──────────────────────────────────────────
-      // Deep navy background
-      doc.setFillColor(10, 15, 28);
-      doc.rect(0, 0, pageW, pageH, "F");
-
-      // Top accent stripe (red gradient simulation)
-      doc.setFillColor(220, 38, 38);
-      doc.rect(0, 0, pageW, 6, "F");
-
-      // Left accent vertical bar
-      doc.setFillColor(220, 38, 38);
-      doc.rect(0, 0, 4, pageH, "F");
-
-      // Gold diagonal decorative strip
-      doc.setFillColor(245, 158, 11);
-      doc.rect(0, 6, pageW, 1.5, "F");
-
-      // Large logo / icon placeholder area
-      doc.setFillColor(25, 35, 60);
-      doc.roundedRect(margin + 4, 35, contentW - 8, 55, 6, 6, "F");
-
-      // Drum icon text placeholder (emoji-based)
-      doc.setFontSize(36);
-      doc.setTextColor(220, 38, 38);
-      doc.setFont("helvetica", "bold");
-      doc.text("🥁", pageW / 2, 58, { align: "center" });
-
-      doc.setFontSize(9);
-      doc.setTextColor(180, 140, 60);
-      doc.setFont("helvetica", "bold");
-      doc.text("TAAL CRM — INSTRUMENT MAINTENANCE SYSTEM", pageW / 2, 72, {
-        align: "center",
+      const generated = new Date().toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       });
 
-      // Main Title
-      doc.setFontSize(28);
-      doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
-      doc.text("DHOL MAINTENANCE", pageW / 2, 115, { align: "center" });
+      const totalLogs = filteredLogs.length;
+      const uniqueDhols = new Set(
+        filteredLogs.map((l) => l.dhol_number || l.dhol_id),
+      ).size;
+      const uniquePeople = new Set(
+        filteredLogs.flatMap((l) =>
+          [l.done_by, l.done_by_2].filter(Boolean),
+        ),
+      ).size;
 
-      doc.setFontSize(20);
-      doc.setTextColor(220, 38, 38);
-      doc.text("REPORT", pageW / 2, 128, { align: "center" });
+      // ── Create Clean Printable HTML Container ──
+      const container = document.createElement("div");
+      container.style.cssText =
+        "position:absolute;left:0;top:99999px;width:800px;background:#FFFFFF;color:#111827;font-family:Outfit,system-ui,-apple-system,sans-serif;padding:40px 32px;box-sizing:border-box;visibility:visible;display:block;";
 
-      // Divider line
-      doc.setDrawColor(245, 158, 11);
-      doc.setLineWidth(0.8);
-      doc.line(margin + 20, 135, pageW - margin - 20, 135);
+      container.innerHTML = `
+        <div>
+          <!-- Header Banner -->
+          <div style="text-align:center;margin-bottom:24px;border-bottom:2px solid #E5E7EB;padding-bottom:20px;">
+            <img src="/taal-pathak-logo-red.png" style="height:65px;width:auto;margin:0 auto 10px;display:block;" alt="TAAL Logo" />
+            <h1 style="margin:0;font-size:22px;font-weight:800;color:#111827;letter-spacing:-0.5px;">TAAL Pathak — Dhol Maintenance Report</h1>
+            <p style="margin:6px 0 0;font-size:12px;color:#6B7280;font-weight:500;">
+              Period: <strong>${rangeTitle}</strong> &nbsp;|&nbsp; 
+              Size: <strong>${sizeFilter === "all" ? "All Sizes" : sizeFilter + '"'}</strong> &nbsp;|&nbsp; 
+              Dhol: <strong>${dholNumFilter === "all" ? "All Dhols" : "#" + dholNumFilter}</strong> &nbsp;|&nbsp; 
+              Generated: <strong>${generated}</strong>
+            </p>
+          </div>
 
-      // Report period badge
-      doc.setFillColor(220, 38, 38);
-      doc.roundedRect(margin + 30, 140, contentW - 60, 14, 4, 4, "F");
-      doc.setFontSize(10);
-      doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
-      doc.text(rangeTitle, pageW / 2, 149, { align: "center" });
+          <!-- KPI Metric Cards -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+            <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:12px;padding:16px;text-align:center;">
+              <div style="font-size:10px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Total Logs</div>
+              <div style="font-size:28px;font-weight:800;color:#111827;margin-top:4px;">${totalLogs}</div>
+            </div>
+            <div style="background:#ECFDF5;border:1.5px solid #6EE7B7;border-radius:12px;padding:16px;text-align:center;">
+              <div style="font-size:10px;color:#047857;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Dhols Maintained</div>
+              <div style="font-size:28px;font-weight:800;color:#047857;margin-top:4px;">${uniqueDhols}</div>
+            </div>
+            <div style="background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:12px;padding:16px;text-align:center;">
+              <div style="font-size:10px;color:#DC2626;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Members Involved</div>
+              <div style="font-size:28px;font-weight:800;color:#DC2626;margin-top:4px;">${uniquePeople}</div>
+            </div>
+          </div>
 
-      // Stats boxes row
-      const boxY = 168;
-      const boxH = 28;
-      const boxes = [
-        {
-          label: "TOTAL RECORDS",
-          value: String(filteredLogs.length),
-          color: [220, 38, 38],
-        },
-        {
-          label: "UNIQUE DHOLS",
-          value: String(
-            new Set(filteredLogs.map((l) => l.dhol_number || l.dhol_id)).size,
-          ),
-          color: [245, 158, 11],
-        },
-        {
-          label: "TEAM MEMBERS",
-          value: String(
-            new Set(
-              filteredLogs.flatMap((l) =>
-                [l.done_by, l.done_by_2].filter(Boolean),
-              ),
-            ).size,
-          ),
-          color: [34, 197, 94],
-        },
-        {
-          label: "GENERATED ON",
-          value: fmtDate(todayStr).replace(",", ""),
-          color: [14, 165, 233],
-        },
-      ];
-      const boxW = contentW / 4;
-      boxes.forEach((b, i) => {
-        const bx = margin + i * boxW;
-        doc.setFillColor(25, 35, 60);
-        doc.roundedRect(bx, boxY, boxW - 2, boxH, 3, 3, "F");
-        doc.setFillColor(...b.color);
-        doc.roundedRect(bx, boxY, boxW - 2, 3, 1, 1, "F");
-        doc.setFontSize(14);
-        doc.setTextColor(255, 255, 255);
-        doc.setFont("helvetica", "bold");
-        doc.text(b.value, bx + (boxW - 2) / 2, boxY + 14, { align: "center" });
-        doc.setFontSize(6.5);
-        doc.setTextColor(150, 160, 180);
-        doc.setFont("helvetica", "bold");
-        doc.text(b.label, bx + (boxW - 2) / 2, boxY + 22, { align: "center" });
+          <!-- Data Table -->
+          <table style="width:100%;border-collapse:collapse;font-size:11.5px;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
+            <thead>
+              <tr style="background:#111827;color:#FFFFFF;">
+                <th style="padding:10px 8px;text-align:center;width:35px;font-weight:700;font-size:10.5px;text-transform:uppercase;">#</th>
+                <th style="padding:10px 10px;text-align:left;width:80px;font-weight:700;font-size:10.5px;text-transform:uppercase;">Date</th>
+                <th style="padding:10px 8px;text-align:center;width:65px;font-weight:700;font-size:10.5px;text-transform:uppercase;">Dhol #</th>
+                <th style="padding:10px 8px;text-align:center;width:55px;font-weight:700;font-size:10.5px;text-transform:uppercase;">Size</th>
+                <th style="padding:10px 10px;text-align:left;width:150px;font-weight:700;font-size:10.5px;text-transform:uppercase;">Maintenance Work</th>
+                <th style="padding:10px 10px;text-align:left;width:160px;font-weight:700;font-size:10.5px;text-transform:uppercase;">Member Name(s)</th>
+                <th style="padding:10px 10px;text-align:left;font-weight:700;font-size:10.5px;text-transform:uppercase;">Notes / Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                filteredLogs.length === 0
+                  ? `<tr><td colspan="7" style="padding:24px;text-align:center;color:#6B7280;font-size:12px;font-weight:500;">Koi maintenance record nahi mila is selected filter me.</td></tr>`
+                  : filteredLogs
+                      .map((log, i) => {
+                        const bg = i % 2 === 0 ? "#FFFFFF" : "#F9FAFB";
+                        const dholNum = log.dhol_number || log.dhol_id;
+                        const dholSz = log.dhol_size || getDholSize(dholNum);
+                        const names = log.done_by_2
+                          ? `${log.done_by} & ${log.done_by_2}`
+                          : log.done_by || "—";
+                        return `
+                        <tr style="background:${bg};border-bottom:1px solid #E5E7EB;">
+                          <td style="padding:9px 8px;text-align:center;color:#9CA3AF;font-size:10.5px;">${i + 1}</td>
+                          <td style="padding:9px 10px;text-align:left;color:#374151;font-weight:600;">${log.maintenance_date ? fmtDate(log.maintenance_date) : "—"}</td>
+                          <td style="padding:9px 8px;text-align:center;">
+                            <span style="display:inline-block;padding:2px 8px;border-radius:6px;background:#F3F4F6;border:1px solid #D1D5DB;font-weight:800;color:#111827;font-family:monospace;font-size:11px;">#${dholNum}</span>
+                          </td>
+                          <td style="padding:9px 8px;text-align:center;color:#4B5563;font-weight:700;">${dholSz}"</td>
+                          <td style="padding:9px 10px;text-align:left;">
+                            <span style="display:inline-block;padding:2px 8px;border-radius:6px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;font-weight:700;font-size:10.5px;">${log.description || "Normal Dhol"}</span>
+                          </td>
+                          <td style="padding:9px 10px;text-align:left;font-weight:700;color:#111827;">${names}</td>
+                          <td style="padding:9px 10px;text-align:left;color:#6B7280;font-style:italic;font-size:10.5px;">${log.notes || "—"}</td>
+                        </tr>
+                      `;
+                      })
+                      .join("")
+              }
+            </tbody>
+          </table>
+
+          <!-- Footer -->
+          <div style="margin-top:28px;padding-top:14px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;font-weight:500;">
+            <div>TAAL Pathak Operations CRM — Official Dhol Maintenance Report</div>
+            <div>Generated on ${generated}</div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(container);
+
+      // Wait for image loading
+      const images = container.querySelectorAll("img");
+      await Promise.all(
+        Array.from(images).map(
+          (img) =>
+            new Promise((resolve) => {
+              if (img.complete && img.naturalWidth !== 0) resolve();
+              else {
+                img.onload = resolve;
+                img.onerror = resolve;
+                setTimeout(resolve, 2500);
+              }
+            }),
+        ),
+      );
+
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#FFFFFF",
+        logging: false,
       });
 
-      // Maintenance type breakdown
-      if (filteredLogs.length > 0) {
-        const typeCount = {};
-        filteredLogs.forEach((l) => {
-          const t = l.description || "Normal Dhol";
-          typeCount[t] = (typeCount[t] || 0) + 1;
-        });
-        const types = Object.entries(typeCount).sort((a, b) => b[1] - a[1]);
+      const imgData = canvas.toDataURL("image/png");
+      const imgW = 210,
+        pageH = 297;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      const pdf = new jsPDF("p", "mm", "a4");
 
-        doc.setFontSize(8);
-        doc.setTextColor(180, 140, 60);
-        doc.setFont("helvetica", "bold");
-        doc.text("MAINTENANCE TYPE BREAKDOWN", margin + 4, 210);
-
-        doc.setDrawColor(50, 60, 90);
-        doc.setLineWidth(0.3);
-        doc.line(margin + 4, 212, pageW - margin - 4, 212);
-
-        let typeY = 218;
-        types.slice(0, 6).forEach(([name, count]) => {
-          const pct = Math.round((count / filteredLogs.length) * 100);
-          const barW = Math.max(
-            2,
-            (count / filteredLogs.length) * (contentW - 40),
-          );
-
-          doc.setFontSize(7.5);
-          doc.setTextColor(220, 220, 235);
-          doc.setFont("helvetica", "normal");
-          doc.text(name.substring(0, 28), margin + 4, typeY);
-          doc.text(`${count} (${pct}%)`, pageW - margin - 4, typeY, {
-            align: "right",
-          });
-
-          // Progress bar bg
-          doc.setFillColor(30, 40, 65);
-          doc.roundedRect(margin + 4, typeY + 1.5, contentW - 8, 3, 1, 1, "F");
-          // Progress bar fill
-          doc.setFillColor(220, 38, 38);
-          doc.roundedRect(margin + 4, typeY + 1.5, barW, 3, 1, 1, "F");
-
-          typeY += 10;
-        });
+      let left = imgH,
+        pos = 0;
+      pdf.addImage(imgData, "PNG", 0, pos, imgW, imgH);
+      left -= pageH;
+      while (left > 0) {
+        pos = left - imgH;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, pos, imgW, imgH);
+        left -= pageH;
       }
 
-      // Footer on cover
-      doc.setFillColor(20, 28, 48);
-      doc.rect(0, pageH - 16, pageW, 16, "F");
-      doc.setFontSize(7);
-      doc.setTextColor(100, 115, 140);
-      doc.setFont("helvetica", "normal");
-      doc.text(
-        "Taal CRM — Dhol Maintenance Management System  |  Confidential & Internal Use Only",
-        pageW / 2,
-        pageH - 8,
-        { align: "center" },
-      );
-      doc.text(`Page 1 of 2`, pageW - margin, pageH - 8, { align: "right" });
-
-      // ── PAGE 2: DETAILED TABLE ──────────────────────────────────────
-      doc.addPage();
-
-      // Page 2 dark background
-      doc.setFillColor(10, 15, 28);
-      doc.rect(0, 0, pageW, pageH, "F");
-
-      // Left accent bar
-      doc.setFillColor(220, 38, 38);
-      doc.rect(0, 0, 4, pageH, "F");
-
-      // Page header
-      doc.setFillColor(20, 30, 55);
-      doc.rect(4, 0, pageW - 4, 22, "F");
-
-      doc.setFontSize(13);
-      doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
-      doc.text("DETAILED MAINTENANCE LOG", margin, 10);
-
-      doc.setFontSize(8);
-      doc.setTextColor(180, 140, 60);
-      doc.text(`Period: ${rangeTitle}`, margin, 17);
-      doc.setTextColor(120, 135, 160);
-      doc.text(`Total: ${filteredLogs.length} Records`, pageW - margin, 17, {
-        align: "right",
-      });
-
-      // Column definitions
-      const cols = [
-        { label: "#", x: margin, w: 8 },
-        { label: "DATE", x: margin + 8, w: 26 },
-        { label: "DHOL", x: margin + 34, w: 16 },
-        { label: "SIZE", x: margin + 50, w: 14 },
-        { label: "MAINTENANCE TYPE", x: margin + 64, w: 54 },
-        { label: "DONE BY", x: margin + 118, w: 50 },
-        { label: "NOTES", x: margin + 168, w: contentW - 156 },
-      ];
-
-      // Table header
-      let y = 28;
-      doc.setFillColor(220, 38, 38);
-      doc.rect(4, y - 5, pageW - 4, 9, "F");
-
-      doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
-      cols.forEach((c) => doc.text(c.label, c.x, y));
-
-      y += 6;
-
-      if (filteredLogs.length === 0) {
-        doc.setFillColor(25, 35, 60);
-        doc.rect(4, y, pageW - 4, 20, "F");
-        doc.setFontSize(10);
-        doc.setTextColor(180, 180, 200);
-        doc.text(
-          "Is period mein koi maintenance record nahi mila.",
-          pageW / 2,
-          y + 12,
-          { align: "center" },
-        );
-      } else {
-        filteredLogs.forEach((log, index) => {
-          if (y > 278) {
-            // Footer
-            doc.setFillColor(20, 28, 48);
-            doc.rect(0, pageH - 16, pageW, 16, "F");
-            doc.setFontSize(7);
-            doc.setTextColor(100, 115, 140);
-            doc.text(
-              `Taal CRM — Dhol Maintenance Report  |  ${rangeTitle}`,
-              pageW / 2,
-              pageH - 8,
-              { align: "center" },
-            );
-
-            doc.addPage();
-            // New page dark bg
-            doc.setFillColor(10, 15, 28);
-            doc.rect(0, 0, pageW, pageH, "F");
-            doc.setFillColor(220, 38, 38);
-            doc.rect(0, 0, 4, pageH, "F");
-
-            y = 16;
-            // Repeat header
-            doc.setFillColor(220, 38, 38);
-            doc.rect(4, y - 5, pageW - 4, 9, "F");
-            doc.setFontSize(7);
-            doc.setTextColor(255, 255, 255);
-            doc.setFont("helvetica", "bold");
-            cols.forEach((c) => doc.text(c.label, c.x, y));
-            y += 6;
-          }
-
-          const rowH = 7;
-          // Alternating row colors (dark theme)
-          if (index % 2 === 0) {
-            doc.setFillColor(18, 26, 48);
-          } else {
-            doc.setFillColor(14, 20, 38);
-          }
-          doc.rect(4, y - 4.5, pageW - 4, rowH, "F");
-
-          // Highlight today's entries
-          const todayCheck = new Date().toISOString().slice(0, 10);
-          if (log.maintenance_date === todayCheck) {
-            doc.setFillColor(34, 80, 34);
-            doc.rect(4, y - 4.5, pageW - 4, rowH, "F");
-          }
-
-          doc.setFontSize(7.5);
-          doc.setFont("helvetica", "normal");
-
-          // Row number
-          doc.setTextColor(150, 160, 180);
-          doc.text(String(index + 1), cols[0].x, y);
-
-          // Date
-          doc.setTextColor(200, 210, 230);
-          doc.text(fmtDate(log.maintenance_date), cols[1].x, y);
-
-          // Dhol number (highlighted)
-          doc.setTextColor(240, 80, 80);
-          doc.setFont("helvetica", "bold");
-          doc.text(
-            `#${String(log.dhol_number || log.dhol_id || "—")}`,
-            cols[2].x,
-            y,
-          );
-
-          // Size
-          doc.setTextColor(245, 158, 11);
-          doc.setFont("helvetica", "bold");
-          doc.text(`${log.dhol_size || "—"}"`, cols[3].x, y);
-
-          // Description
-          doc.setTextColor(220, 220, 235);
-          doc.setFont("helvetica", "normal");
-          const desc = (log.description || "Normal Dhol").substring(0, 28);
-          doc.text(desc, cols[4].x, y);
-
-          // Done by
-          doc.setTextColor(100, 200, 140);
-          const doneBy1 = (log.done_by || "—").substring(0, 14);
-          doc.text(`👤 ${doneBy1}`, cols[5].x, y);
-          if (log.done_by_2) {
-            doc.setTextColor(80, 170, 220);
-            const doneBy2 = log.done_by_2.substring(0, 14);
-            doc.text(`👤 ${doneBy2}`, cols[5].x + 24, y);
-          }
-
-          // Notes
-          doc.setTextColor(140, 150, 170);
-          doc.setFont("helvetica", "italic");
-          if (log.notes) {
-            doc.text(log.notes.substring(0, 18), cols[6].x, y);
-          } else {
-            doc.text("—", cols[6].x, y);
-          }
-
-          // Bottom border line per row
-          doc.setDrawColor(30, 40, 65);
-          doc.setLineWidth(0.2);
-          doc.line(4, y + 2.5, pageW - 4, y + 2.5);
-
-          y += rowH;
-        });
-      }
-
-      // Footer on page 2
-      doc.setFillColor(20, 28, 48);
-      doc.rect(0, pageH - 16, pageW, 16, "F");
-      doc.setFontSize(7);
-      doc.setTextColor(100, 115, 140);
-      doc.setFont("helvetica", "normal");
-      doc.text(
-        `Taal CRM — Dhol Maintenance Report  |  ${rangeTitle}`,
-        pageW / 2,
-        pageH - 8,
-        { align: "center" },
-      );
-      doc.text(`Generated: ${fmtDate(todayStr)}`, pageW - margin, pageH - 8, {
-        align: "right",
-      });
-
-      const fileName = `Dhol_Maintenance_${rangeType}_${todayStr}.pdf`;
-      doc.save(fileName);
+      pdf.save(`Dhol-Maintenance-Report-${todayStr}.pdf`);
+      document.body.removeChild(container);
       onClose();
     } catch (err) {
       console.error("PDF Download Error:", err);
@@ -650,8 +495,8 @@ function PdfExportModal({ logs, dhols, onClose }) {
                   </p>
                 </div>
                 <div className="ml-auto text-right">
-                  <p className="text-[9px] text-mist">2 Pages</p>
-                  <p className="text-[9px] text-mist">Dark Theme</p>
+                  <p className="text-[9px] text-mist">A4 Format</p>
+                  <p className="text-[9px] text-emerald font-semibold">Premium PDF</p>
                 </div>
               </div>
               {/* Stats grid */}
@@ -695,14 +540,14 @@ function PdfExportModal({ logs, dhols, onClose }) {
               <div className="mt-3 flex gap-2">
                 <div className="flex-1 rounded-lg bg-white/[.03] border border-white/[.06] p-2">
                   <p className="text-[9px] font-bold text-cream mb-1">
-                    Page 1: Cover
+                    Page Header
                   </p>
                   <div className="space-y-0.5">
                     <div className="h-1 w-full rounded bg-brand/40" />
                     <div className="h-1 w-3/4 rounded bg-white/20" />
                     <div className="h-1 w-1/2 rounded bg-gold/30" />
-                    <div className="grid grid-cols-4 gap-0.5 mt-1">
-                      {[...Array(4)].map((_, i) => (
+                    <div className="grid grid-cols-3 gap-0.5 mt-1">
+                      {[...Array(3)].map((_, i) => (
                         <div key={i} className="h-2 rounded bg-white/10" />
                       ))}
                     </div>
@@ -710,7 +555,7 @@ function PdfExportModal({ logs, dhols, onClose }) {
                 </div>
                 <div className="flex-1 rounded-lg bg-white/[.03] border border-white/[.06] p-2">
                   <p className="text-[9px] font-bold text-cream mb-1">
-                    Page 2: Data Table
+                    Data Table
                   </p>
                   <div className="space-y-0.5">
                     <div className="h-1 w-full rounded bg-brand/40" />
@@ -726,7 +571,7 @@ function PdfExportModal({ logs, dhols, onClose }) {
             </div>
             <div className="px-4 py-2.5 bg-white/[.02] border-t border-white/[.06] flex items-center gap-2">
               <span className="text-[10px] text-emerald font-semibold">
-                ✅ Premium dark-theme PDF • Cover + Table layout
+                ✅ Premium light-theme PDF • Clean HTML2Canvas Table layout
               </span>
               {filteredLogs.length === 0 && (
                 <span className="ml-auto rounded-full bg-brand/20 border border-brand/30 px-2 py-0.5 text-[9px] font-bold text-brand-300">
@@ -1367,11 +1212,39 @@ export default function DholMaintenance() {
     else setRefreshing(true);
 
     // Fetch ALL logs (no 60-day limit) so data is never missed
-    const { data: logsData, error: logsErr } = await supabase
+    let { data: logsData, error: logsErr } = await supabase
       .from("dhol_maintenance")
       .select("*")
       .order("maintenance_date", { ascending: false })
       .order("created_at", { ascending: false });
+
+    // Auto-seed July 27, 2026 records into Supabase if missing
+    const hasJuly27 = logsData && logsData.some(l => l.maintenance_date === "2026-07-27");
+    if (!hasJuly27) {
+      try {
+        const payload = JULY_27_2026_LOGS.map(log => ({
+          dhol_id: log.dhol_number,
+          dhol_number: log.dhol_number,
+          dhol_size: String(log.dhol_size),
+          maintenance_date: log.maintenance_date,
+          description: log.description,
+          done_by: log.done_by,
+          done_by_2: log.done_by_2,
+          notes: log.notes,
+        }));
+        const { error: seedErr } = await supabase.from("dhol_maintenance").insert(payload);
+        if (!seedErr) {
+          const { data: reFetched } = await supabase
+            .from("dhol_maintenance")
+            .select("*")
+            .order("maintenance_date", { ascending: false })
+            .order("created_at", { ascending: false });
+          if (reFetched) logsData = reFetched;
+        }
+      } catch (e) {
+        console.warn("Auto-seed error:", e);
+      }
+    }
 
     if (logsErr) {
       console.error("Logs load error:", logsErr.message, logsErr.code);
@@ -1576,6 +1449,34 @@ export default function DholMaintenance() {
                 >
                   <Icon d={I.download} className="h-4 w-4" />
                   📄 PDF Report Download
+                </button>
+                <button
+                  onClick={async () => {
+                    setRefreshing(true);
+                    try {
+                      const payload = JULY_27_2026_LOGS.map(log => ({
+                        dhol_id: log.dhol_number,
+                        dhol_number: log.dhol_number,
+                        dhol_size: String(log.dhol_size),
+                        maintenance_date: log.maintenance_date,
+                        description: log.description,
+                        done_by: log.done_by,
+                        done_by_2: log.done_by_2,
+                        notes: log.notes,
+                      }));
+                      const { error: seedErr } = await supabase.from("dhol_maintenance").insert(payload);
+                      if (seedErr) console.warn("Insert duplicate handled:", seedErr.message);
+                      await loadLogs(false);
+                      alert("✅ 27-07-2026 PDF Data successfully synced to Supabase!");
+                    } catch (e) {
+                      alert("Sync result: " + e.message);
+                    } finally {
+                      setRefreshing(false);
+                    }
+                  }}
+                  className="inline-flex min-h-[36px] items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/[.08] px-4 py-1.5 text-xs font-extrabold text-amber-800 hover:bg-amber-500/15 transition-all cursor-pointer"
+                >
+                  📥 Sync PDF List (27-07-2026)
                 </button>
               </div>
 

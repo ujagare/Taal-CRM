@@ -66,16 +66,6 @@ const MODULES = [
     border: "border-emerald-200/70",
   },
   {
-    label: "New Member Exam",
-    title: "Member Exams",
-    text: "Registration intake and exam status.",
-    icon: I.users,
-    tone: "text-purple-600",
-    iconBg: "bg-purple-100 ring-purple-200 border-purple-200/60",
-    gradient: "from-purple-500/12 to-pink-500/4",
-    border: "border-purple-200/70",
-  },
-  {
     label: "Expenses",
     title: "Expense Management",
     text: "Track team expenses with bill images and payment details.",
@@ -403,9 +393,6 @@ export default function OperationsDashboard({ onNavigate }) {
       case "Daily Report":
         acc[module.label] = { value: summary.todayReports, label: "today entries" };
         break;
-      case "New Member Exam":
-        acc[module.label] = { value: summary.members, label: `${summary.pending} pending` };
-        break;
       case "Expenses":
       case "Expences":
       case "Expense Tracker":
@@ -566,7 +553,6 @@ export default function OperationsDashboard({ onNavigate }) {
             <div className="space-y-3">
               <WorkItem label="Daily dhol entries today" value={summary.todayReports} tone="text-emerald-600" onClick={() => onNavigate("Daily Report")} />
               <WorkItem label="Dhols needing maintenance" value={riskCount} tone="text-rose-600" onClick={() => onNavigate("Dhol Maintenance")} />
-              <WorkItem label="Member exams pending" value={summary.pending} tone="text-amber-600" onClick={() => onNavigate("New Member Exam")} />
               <WorkItem label="Pane stock to verify" value={summary.paneTotal} tone="text-sky-600" onClick={() => onNavigate("Dhol Pan")} />
             </div>
           </div>

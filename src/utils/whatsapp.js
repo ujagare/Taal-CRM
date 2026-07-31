@@ -81,3 +81,37 @@ export function personalizeMessage(template, member) {
     .replace(/\{instrument\}/gi, (member.instruments_played || 'ताल वाद्य').replace('कोणतेच नाही', 'None'))
     .replace(/\{phone\}/gi, member.whatsapp || '');
 }
+
+/**
+ * Get all configured Admin WhatsApp numbers
+ * @returns {Array<string>} - Array of clean phone strings
+ */
+export function getAdminPhones() {
+  const raw = localStorage.getItem("wa_admin_phone") || "";
+  return raw
+    .split(",")
+    .map(p => p.trim().replace(/\D/g, ""))
+    .filter(p => p.length >= 10);
+}
+
+/**
+ * Save Admin WhatsApp numbers string
+ * @param {string} phoneString - Comma separated numbers
+ */
+export function saveAdminPhones(phoneString) {
+  localStorage.setItem("wa_admin_phone", phoneString);
+}
+
+/**
+ * Send auto-alert to all configured Admin WhatsApp numbers
+ * @param {string} message - Alert message text
+ * @returns {Promise<number>} - Count of successfully sent alerts
+ */
+export function sendAdminAlerts(message) {
+  const phones = getAdminPhones();
+  if (phones.length === 0) return Promise.resolve(0);
+  
+  return Promise.all(phones.map(phone => sendWhatsApp(phone, message)))
+    .then(results => results.filter(Boolean).length);
+}
+

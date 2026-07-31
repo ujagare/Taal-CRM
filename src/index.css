@@ -118,6 +118,62 @@
   }
 }
 
+/* ─── WhatsApp Center Premium Animations ─── */
+@keyframes wa-fade-in {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wa-card-enter {
+  0% { opacity: 0; transform: translateY(8px) scale(.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes wa-icon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes wa-progress-shine {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes wa-btn-glow-pulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(16,185,129,.20); }
+  50% { box-shadow: 0 6px 28px rgba(16,185,129,.35); }
+}
+
+@keyframes wa-status-enter {
+  0% { opacity: 0; transform: scale(.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.wa-fade-in {
+  animation: wa-fade-in .45s cubic-bezier(.22,1,.36,1) both;
+}
+
+.wa-card-enter {
+  animation: wa-card-enter .4s cubic-bezier(.22,1,.36,1) both;
+}
+
+.wa-icon-float {
+  animation: wa-icon-float 3s ease-in-out infinite;
+}
+
+.wa-progress-shine {
+  background-size: 200% 100%;
+  animation: wa-progress-shine 1.5s ease-in-out infinite;
+}
+
+.wa-btn-glow:not(:disabled):hover {
+  animation: wa-btn-glow-pulse 2s ease-in-out infinite;
+}
+
+.wa-status-enter {
+  animation: wa-status-enter .35s cubic-bezier(.22,1,.36,1) both;
+}
+
 .draw {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
@@ -175,6 +231,12 @@
 [class~="text-purple-300"] { color: #7e22ce !important; }
 [class~="text-pink-300"] { color: #be185d !important; }
 
+.force-text-white,
+.text-pure-white,
+[class~="force-text-white"] {
+  color: #ffffff !important;
+}
+
 [class~="bg-brand"][class~="text-white"],
 [class~="bg-brand-300"][class~="text-white"],
 [class~="bg-red-500"][class~="text-white"],
@@ -187,6 +249,7 @@
 [class~="from-brand"][class~="text-white"],
 [class~="from-red-600"][class~="text-white"],
 [class~="from-rose-600"][class~="text-white"],
+[class*="from-emerald"][class~="text-white"],
 [class~="from-emerald-500"][class~="text-white"],
 [class~="from-emerald-600"][class~="text-white"] {
   color: #ffffff !important;

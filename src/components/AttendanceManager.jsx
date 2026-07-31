@@ -337,9 +337,10 @@ export default function AttendanceManager() {
         supabase.from("students").select("*").order("roll_number"),
       ]);
 
-      if (Array.isArray(dbAttRes.data) && dbAttRes.data.length > 0) setAttendance(dbAttRes.data);
-      if (Array.isArray(dbBatchesRes.data) && dbBatchesRes.data.length > 0) setBatches(dbBatchesRes.data);
-      if (Array.isArray(dbStudentsRes.data) && dbStudentsRes.data.length > 0) setStudents(dbStudentsRes.data);
+      // Only use DB data — agar empty hai toh empty rahe, mock/localStorage overwrite nahi karega
+      if (Array.isArray(dbAttRes.data)) setAttendance(dbAttRes.data);
+      if (Array.isArray(dbBatchesRes.data)) setBatches(dbBatchesRes.data);
+      if (Array.isArray(dbStudentsRes.data)) setStudents(dbStudentsRes.data);
 
     } catch {
       /* Fallback */
@@ -413,8 +414,7 @@ export default function AttendanceManager() {
     e.preventDefault();
     if (!newStdName.trim() || !newStdRoll.trim()) return;
 
-    const newS = {
-      id: Date.now().toString(),
+    const payload = {
       roll_number: newStdRoll.trim(),
       name: newStdName.trim(),
       phone: newStdPhone.trim() || "—",
@@ -423,18 +423,25 @@ export default function AttendanceManager() {
       status: "Active",
     };
 
-    setStudents(prev => [...prev, newS]);
-
     try {
-      const { data, error } = await supabase.from("students").insert({
-        roll_number: newS.roll_number,
-        name: newS.name,
-        phone: newS.phone,
-        batch_name: newS.batch_name,
-        course: newS.course,
-        status: "Active",
-      });
-    } catch { /* ignore */ }
+      const { data, error } = await supabase.from("students").insert(payload).select();
+
+      if (error) {
+        alert("❌ Student add nahi hua: " + error.message);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setStudents(prev => [...prev, data[0]]);
+        alert("✅ " + data[0].name + " successfully add ho gaya!");
+      } else {
+        const temp = { id: Date.now().toString(), ...payload };
+        setStudents(prev => [...prev, temp]);
+      }
+    } catch (err) {
+      alert("❌ Database error: " + (err?.message || "Unknown error"));
+      return;
+    }
 
     setNewStdName("");
     setNewStdRoll("");

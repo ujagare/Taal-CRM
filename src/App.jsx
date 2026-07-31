@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { supabase } from "./lib/supabase";
+import { sendWhatsApp, sendAdminAlerts } from "./utils/whatsapp";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import LoginPage from "./components/LoginPage";
-import PublicRegistration from "./components/PublicRegistration";
 
 // ── Lazy-loaded page components (load only when tab is visited) ──
 const Shifting1         = lazy(() => import("./components/Shifting1"));
 const DholPan           = lazy(() => import("./components/DholPan"));
 const DholMaintenance   = lazy(() => import("./components/DholMaintenance"));
-const NewMemberExam     = lazy(() => import("./components/NewMemberExam"));
 const DailyReport       = lazy(() => import("./components/DailyReport"));
 const OperationsDashboard = lazy(() => import("./components/OperationsDashboard"));
 const ExpenseTracker    = lazy(() => import("./components/ExpenseTracker"));
@@ -28,7 +27,6 @@ const PAGE_TO_HASH = {
   "Expenses":         "#expenses",
   "Expences":         "#expenses",
   "Expense Tracker":  "#expenses",
-  "New Member Exam":  "#new-member-exam",
   "WhatsApp":         "#whatsapp",
   "Admin Panel":      "#admin-panel",
 };
@@ -101,7 +99,6 @@ function AppShell({ session, activePage, onNavigate, mobileMenuOpen, setMobileMe
             : activePage === "Dhol Pan"         ? <DholPan />
             : activePage === "Dhol Maintenance" ? <DholMaintenance />
             : activePage === "Daily Report"     ? <DailyReport />
-            : activePage === "New Member Exam"  ? <NewMemberExam />
             : (activePage === "Expenses" || activePage === "Expences" || activePage === "Expense Tracker") ? <ExpenseTracker />
             : activePage === "WhatsApp"         ? <WhatsAppCenter />
             : activePage === "Admin Panel"      ? <AdminPanel />
@@ -151,10 +148,13 @@ export default function App() {
 
       if (session) {
         const deviceInfo = typeof navigator !== "undefined" ? navigator.userAgent.substring(0, 120) : "Unknown Device";
+        const userName = session.user?.user_metadata?.full_name || session.user?.email?.split("@")[0] || "User";
+        const userPhone = session.user?.user_metadata?.phone || session.user?.phone;
+
         supabase
           .from("auth_activity_logs")
           .insert({
-            user_name: session.user?.user_metadata?.full_name || session.user?.email?.split("@")[0] || "User",
+            user_name: userName,
             user_email: session.user?.email || null,
             event_type: "login",
             device_info: deviceInfo,
@@ -162,6 +162,15 @@ export default function App() {
           .then(({ error }) => {
             if (error) console.warn("Login log failed:", error.message);
           });
+
+        // Auto WhatsApp Login Notification
+        const timeStr = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+        const loginMsg = `🔐 *TAAL CRM Login Alert*\n\nHello *${userName}*,\nAccount login successful!\n📅 Time: ${timeStr}\n💻 Device: ${deviceInfo.substring(0, 35)}...\n\n_Security Notice from TAAL Operations_`;
+
+        if (userPhone) {
+          sendWhatsApp(userPhone, loginMsg).catch(() => {});
+        }
+        sendAdminAlerts(loginMsg).catch(() => {});
       }
     });
 
@@ -230,14 +239,6 @@ export default function App() {
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, [activePage, mobileMenuOpen]);
-
-  // Check for public registration route
-  const currentHash = window.location.hash.toLowerCase();
-  const isPublicRegister = currentHash === "#register" || currentHash === "#join" || currentHash === "#new-member-registration";
-
-  if (isPublicRegister) {
-    return <PublicRegistration />;
-  }
 
   if (authLoading && !isDev) return <LoginSkeleton />;
 

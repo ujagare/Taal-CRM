@@ -32,8 +32,13 @@ app.get('/api/summary', async (_req, res) => {
     let deals
     if (supabase) {
       const { data, error } = await supabase.from('deals').select('stage,value')
-      if (error) throw error
-      deals = data
+      // Fall back to mock when the deals table isn't provisioned (PGRST205 = missing from schema cache)
+      if (error && (error.code === 'PGRST205' || error.code === '42P01')) {
+        deals = MOCK_DEALS
+      } else {
+        if (error) throw error
+        deals = data
+      }
     } else {
       deals = MOCK_DEALS
     }

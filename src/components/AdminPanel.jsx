@@ -1,39 +1,98 @@
 import { useState, useEffect } from "react";
 import { Icon, I } from "./icons";
 import { supabase } from "../lib/supabase";
+import { sendWhatsApp, getAdminPhones, saveAdminPhones } from "../utils/whatsapp";
+
+/* ─── Glass Card Container ─── */
+function GlassCard({ children, className = "", hover = true, noPadding = false }) {
+  return (
+    <div
+      className={`
+        relative overflow-hidden rounded-2xl
+        bg-white/80 backdrop-blur-xl
+        border border-slate-200/60
+        shadow-[0_4px_24px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.04)]
+        ${hover ? "hover:shadow-[0_8px_40px_rgba(15,23,42,0.10),0_2px_4px_rgba(15,23,42,0.06)] hover:border-slate-300/80 transition-all duration-300 ease-out" : ""}
+        ${noPadding ? "" : "p-5"}
+        ${className}
+      `}
+    >
+      {children}
+    </div>
+  );
+}
 
 /* ─── Color maps for Stat Cards ─── */
 const STAT_COLORS = {
-  blue:    { ring: "ring-sky-500/20 shadow-sky-500/5", glow: "bg-sky-500/10", text: "text-sky-300", icon: "text-sky-400 bg-sky-500/10 border-sky-500/20" },
-  emerald: { ring: "ring-emerald-500/20 shadow-emerald-500/5", glow: "bg-emerald-500/10", text: "text-emerald-300", icon: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
-  amber:   { ring: "ring-amber-500/20 shadow-amber-500/5", glow: "bg-amber-500/10", text: "text-amber-300", icon: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
-  rose:    { ring: "ring-rose-500/20 shadow-rose-500/5", glow: "bg-rose-500/10", text: "text-rose-300", icon: "text-rose-400 bg-rose-500/10 border-rose-500/20" },
-  purple:  { ring: "ring-purple-500/20 shadow-purple-500/5", glow: "bg-purple-500/10", text: "text-purple-300", icon: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
-  indigo:  { ring: "ring-indigo-500/20 shadow-indigo-500/5", glow: "bg-indigo-500/10", text: "text-indigo-300", icon: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20" },
+  blue: {
+    bg: "from-blue-50/80 to-sky-50/80",
+    border: "border-blue-200/60",
+    text: "text-blue-700",
+    iconBg: "from-blue-500 to-sky-600",
+    glow: "bg-blue-500/10",
+  },
+  emerald: {
+    bg: "from-emerald-50/80 to-teal-50/80",
+    border: "border-emerald-200/60",
+    text: "text-emerald-700",
+    iconBg: "from-emerald-500 to-teal-600",
+    glow: "bg-emerald-500/10",
+  },
+  amber: {
+    bg: "from-amber-50/80 to-orange-50/80",
+    border: "border-amber-200/60",
+    text: "text-amber-700",
+    iconBg: "from-amber-500 to-orange-600",
+    glow: "bg-amber-500/10",
+  },
+  purple: {
+    bg: "from-purple-50/80 to-violet-50/80",
+    border: "border-purple-200/60",
+    text: "text-purple-700",
+    iconBg: "from-purple-500 to-violet-600",
+    glow: "bg-purple-500/10",
+  },
+  indigo: {
+    bg: "from-indigo-50/80 to-blue-50/80",
+    border: "border-indigo-200/60",
+    text: "text-indigo-700",
+    iconBg: "from-indigo-500 to-blue-600",
+    glow: "bg-indigo-500/10",
+  },
 };
 
 const EVENT_STYLES = {
-  login:  { dot: "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]", label: "Login",  badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300", icon: "🔐" },
-  logout: { dot: "bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.8)]",     label: "Logout", badge: "border-rose-500/30 bg-rose-500/10 text-rose-300",     icon: "🚪" },
+  login: {
+    dot: "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]",
+    badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    icon: "🔐",
+  },
+  logout: {
+    dot: "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]",
+    badge: "bg-rose-50 text-rose-700 border-rose-200",
+    icon: "🚪",
+  },
 };
 
 /* ─── Stat Card Component ─── */
 function StatCard({ label, value, sub, color, icon }) {
   const c = STAT_COLORS[color] || STAT_COLORS.blue;
   return (
-    <div className={`relative overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.035] p-5 backdrop-blur-xl shadow-lg ring-1 ${c.ring} transition-all duration-200 hover:bg-white/[.055] hover:-translate-y-0.5`}>
+    <GlassCard className={`!bg-gradient-to-br ${c.bg} !${c.border}`}>
       <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${c.glow} blur-2xl pointer-events-none`} />
       <div className="relative flex items-start justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mist/70">{label}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
           <p className={`mt-2 text-3xl font-extrabold tracking-tight ${c.text}`}>{value}</p>
-          <p className="mt-1 text-[11px] font-medium text-mist/60">{sub}</p>
+          <p className="mt-1 text-[11px] font-semibold text-slate-400">{sub}</p>
         </div>
-        <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border ${c.icon} shadow-inner`}>
+        <div
+          className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${c.iconBg} shadow-md force-text-white`}
+        >
           <Icon d={icon} className="h-5 w-5" />
         </div>
       </div>
-    </div>
+    </GlassCard>
   );
 }
 
@@ -65,11 +124,11 @@ function ActivityLogTable({ logs, loading, searchTerm, filterType }) {
     return (
       <div className="space-y-3 p-4">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center gap-4 rounded-xl border border-white/[.05] bg-white/[.02] p-3 animate-pulse">
-            <div className="h-3 w-3 rounded-full bg-white/10" />
+          <div key={i} className="flex items-center gap-4 rounded-xl border border-slate-100 bg-slate-50/50 p-3 animate-pulse">
+            <div className="h-3 w-3 rounded-full bg-slate-200" />
             <div className="flex-1 space-y-2">
-              <div className="h-3 w-1/3 rounded bg-white/10" />
-              <div className="h-2.5 w-1/4 rounded bg-white/[.06]" />
+              <div className="h-3 w-1/3 rounded bg-slate-200" />
+              <div className="h-2.5 w-1/4 rounded bg-slate-100" />
             </div>
           </div>
         ))}
@@ -79,39 +138,39 @@ function ActivityLogTable({ logs, loading, searchTerm, filterType }) {
 
   if (filtered.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center text-mist/50">
+      <div className="flex flex-col items-center justify-center py-12 text-center text-slate-400">
         <Icon d={I.calendar} className="h-10 w-10 mb-2 opacity-40" />
-        <p className="text-sm font-semibold">No activity logs found</p>
-        <p className="text-xs mt-1 text-mist/40">Try adjusting your search query or filter settings</p>
+        <p className="text-sm font-semibold text-slate-600">No activity logs found</p>
+        <p className="text-xs mt-1 text-slate-400">Try adjusting your search query or filter settings</p>
       </div>
     );
   }
 
   return (
-    <div className="divide-y divide-white/[.06] overflow-x-auto">
+    <div className="divide-y divide-slate-100 overflow-x-auto">
       {filtered.map((log) => {
         const style = EVENT_STYLES[log.event_type] || EVENT_STYLES.login;
         return (
-          <div key={log.id} className="flex items-center justify-between gap-4 p-3.5 transition-colors hover:bg-white/[.03]">
+          <div key={log.id} className="flex items-center justify-between gap-4 p-3.5 transition-colors hover:bg-slate-50/80">
             <div className="flex items-center gap-3.5 min-w-0">
               <div className="relative shrink-0">
                 <span className={`block h-2.5 w-2.5 rounded-full ${style.dot}`} />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-xs font-semibold text-cream">{log.user_name}</p>
-                  <span className={`rounded-full border px-2 py-0.2 text-[10px] font-bold uppercase tracking-wider ${style.badge}`}>
+                  <p className="truncate text-xs font-bold text-slate-800">{log.user_name}</p>
+                  <span className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${style.badge}`}>
                     {log.event_type}
                   </span>
                 </div>
-                <p className="truncate text-[11px] text-mist/60 mt-0.5">
+                <p className="truncate text-[11px] text-slate-500 mt-0.5 font-medium">
                   {log.user_email ? `${log.user_email} · ` : ""}
                   {log.device_info ? `${log.device_info.substring(0, 45)}...` : "Browser Session"}
                 </p>
               </div>
             </div>
             <div className="shrink-0 text-right">
-              <span className="text-[11px] font-medium text-mist/70">{formatDateTime(log.logged_at)}</span>
+              <span className="text-[11px] font-semibold text-slate-500">{formatDateTime(log.logged_at)}</span>
             </div>
           </div>
         );
@@ -120,17 +179,129 @@ function ActivityLogTable({ logs, loading, searchTerm, filterType }) {
   );
 }
 
+/* ─── Admin WhatsApp Auto-Alerts Config Component ─── */
+function AdminWhatsAppConfig() {
+  const [adminPhone, setAdminPhone] = useState(() => localStorage.getItem("wa_admin_phone") || "");
+  const [saved, setSaved] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
+  const handleSave = () => {
+    saveAdminPhones(adminPhone);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleSendTest = async () => {
+    if (!adminPhone.trim()) return alert("Kripya kam se kam ek WhatsApp number dalein!");
+    setTesting(true);
+    setTestResult(null);
+    const phones = getAdminPhones();
+    if (phones.length === 0) {
+      setTesting(false);
+      return alert("Valid 10-digit phone number daalein!");
+    }
+    const msg = `जय गणेश! 🙏\n\nTAAL CRM Test Notification ✅\n\nAdmin Auto-Alerts Setup Working Successfully! 🥁\nTime: ${new Date().toLocaleTimeString()}`;
+    const results = await Promise.all(phones.map(p => sendWhatsApp(p, msg)));
+    const okCount = results.filter(Boolean).length;
+    setTesting(false);
+    setTestResult({ success: okCount > 0, count: okCount, total: phones.length });
+  };
+
+  return (
+    <GlassCard>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center force-text-white shadow-sm text-xs font-bold">
+            📱
+          </div>
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+              Admin Auto-Alerts WhatsApp Numbers
+            </h2>
+            <p className="text-[10px] text-slate-400 font-medium">Daily Reports & Stock Low Notifications</p>
+          </div>
+        </div>
+        <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+          Auto Alerts Active ✓
+        </span>
+      </div>
+
+      <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+        Daily Reports save hone par aur Dori low stock hone par automatic WhatsApp alerts in numbers par bhej-e jaenge. Multiple numbers ko comma (<b>,</b>) se separate karein.
+      </p>
+
+      <div className="flex flex-col sm:flex-row gap-2">
+        <input
+          type="text"
+          value={adminPhone}
+          onChange={e => {
+            setAdminPhone(e.target.value);
+            saveAdminPhones(e.target.value);
+          }}
+          onKeyDown={e => {
+            if (e.key === "Enter") handleSave();
+          }}
+          placeholder="e.g. 9876543210, 8975805789"
+          className="
+            flex-1 px-4 py-2.5 rounded-xl
+            bg-slate-50/90 border border-slate-300
+            text-xs font-bold text-slate-900 placeholder:text-slate-400
+            focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200
+            transition-all duration-200
+          "
+        />
+        <button
+          onClick={handleSave}
+          className="
+            px-5 py-2.5 rounded-xl
+            text-xs font-bold shadow-md shadow-emerald-600/30
+            active:scale-95 transition-all duration-200 cursor-pointer shrink-0
+          "
+          style={{ backgroundColor: '#059669', color: '#ffffff' }}
+        >
+          {saved ? "Saved! ✅" : "💾 Save Numbers"}
+        </button>
+        <button
+          onClick={handleSendTest}
+          disabled={testing}
+          className="
+            px-4 py-2.5 rounded-xl
+            text-xs font-bold shadow-md shadow-blue-600/30
+            active:scale-95 transition-all duration-200 cursor-pointer shrink-0 disabled:opacity-50
+          "
+          style={{ backgroundColor: '#2563eb', color: '#ffffff' }}
+        >
+          {testing ? "Sending..." : "🧪 Test Notification"}
+        </button>
+      </div>
+
+      {testResult && (
+        <div className={`mt-3 p-3 rounded-xl border text-xs font-semibold ${
+          testResult.success
+            ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+            : "bg-amber-50 border-amber-200 text-amber-700"
+        }`}>
+          {testResult.success
+            ? `✅ Test alert ${testResult.count}/${testResult.total} Admin numbers par WhatsApp par bheja gaya!`
+            : `⚠️ WhatsApp Server disconnect hai ya number galat hai. Terminal me server check karein.`}
+        </div>
+      )}
+    </GlassCard>
+  );
+}
+
 /* ─── Main Admin Panel Component ─── */
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [stats, setStats] = useState({ students: 0, expenses: 0, reports: 0, members: 0, dhols: 0, logsCount: 0 });
+  const [stats, setStats] = useState({ students: 0, expenses: 0, reports: 0, dhols: 0, logsCount: 0 });
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [logSearch, setLogSearch] = useState("");
   const [logFilter, setLogFilter] = useState("all");
-  
+
   // Announcement Modal State
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcement, setAnnouncement] = useState({ title: "", text: "", level: "info" });
@@ -140,11 +311,10 @@ export default function AdminPanel() {
   const loadStats = async () => {
     setStatsLoading(true);
     try {
-      const [studentsRes, expensesRes, reportsRes, membersRes, dholsRes, logsRes] = await Promise.all([
+      const [studentsRes, expensesRes, reportsRes, dholsRes, logsRes] = await Promise.all([
         supabase.from("students").select("id", { count: "exact", head: true }),
         supabase.from("expenses").select("id", { count: "exact", head: true }),
         supabase.from("daily_reports").select("id", { count: "exact", head: true }),
-        supabase.from("new_members").select("id", { count: "exact", head: true }),
         supabase.from("dhols").select("id", { count: "exact", head: true }),
         supabase.from("auth_activity_logs").select("id", { count: "exact", head: true }),
       ]);
@@ -152,7 +322,6 @@ export default function AdminPanel() {
         students: studentsRes.count ?? 0,
         expenses: expensesRes.count ?? 0,
         reports: reportsRes.count ?? 0,
-        members: membersRes.count ?? 0,
         dhols: dholsRes.count ?? 54,
         logsCount: logsRes.count ?? 0,
       });
@@ -203,11 +372,10 @@ export default function AdminPanel() {
   const handleExportAllData = async () => {
     setExporting(true);
     try {
-      const [students, expenses, reports, members, logs, dhols] = await Promise.all([
+      const [students, expenses, reports, logs, dhols] = await Promise.all([
         supabase.from("students").select("*"),
         supabase.from("expenses").select("*"),
         supabase.from("daily_reports").select("*"),
-        supabase.from("new_members").select("*"),
         supabase.from("auth_activity_logs").select("*"),
         supabase.from("dhols").select("*"),
       ]);
@@ -219,7 +387,6 @@ export default function AdminPanel() {
           students: students.data?.length || 0,
           expenses: expenses.data?.length || 0,
           daily_reports: reports.data?.length || 0,
-          new_members: members.data?.length || 0,
           audit_logs: logs.data?.length || 0,
           dhols: dhols.data?.length || 0,
         },
@@ -227,7 +394,6 @@ export default function AdminPanel() {
           students: students.data || [],
           expenses: expenses.data || [],
           daily_reports: reports.data || [],
-          new_members: members.data || [],
           auth_activity_logs: logs.data || [],
           dhols: dhols.data || [],
         },
@@ -277,37 +443,35 @@ export default function AdminPanel() {
   };
 
   const LIVE_STATS = [
-    { label: "Total Students",  value: statsLoading ? "…" : String(stats.students), sub: "Students Database",    color: "blue",    icon: I.users  },
-    { label: "Expenses Tracked",value: statsLoading ? "…" : String(stats.expenses), sub: "Expense Log Entries",  color: "emerald", icon: I.dollar },
-    { label: "Daily Reports",   value: statsLoading ? "…" : String(stats.reports),  sub: "Maintenance & Status", color: "amber",   icon: I.note   },
-    { label: "New Member Exams",value: statsLoading ? "…" : String(stats.members),  sub: "Exam Candidates",     color: "rose",    icon: I.target },
-    { label: "Dhol Assets",     value: statsLoading ? "…" : String(stats.dhols),    sub: "Master Dhol Inventory",color: "purple",  icon: I.briefcase },
-    { label: "Total Security Logs", value: statsLoading ? "…" : String(stats.logsCount), sub: "Login/Logout Events", color: "indigo", icon: I.shield },
+    { label: "Total Students", value: statsLoading ? "…" : String(stats.students), sub: "Students Database", color: "blue", icon: I.users },
+    { label: "Expenses Tracked", value: statsLoading ? "…" : String(stats.expenses), sub: "Expense Log Entries", color: "emerald", icon: I.dollar },
+    { label: "Daily Reports", value: statsLoading ? "…" : String(stats.reports), sub: "Maintenance & Status", color: "amber", icon: I.note },
+    { label: "Dhol Assets", value: statsLoading ? "…" : String(stats.dhols), sub: "Master Dhol Inventory", color: "purple", icon: I.briefcase },
+    { label: "Security Logs", value: statsLoading ? "…" : String(stats.logsCount), sub: "Login/Logout Events", color: "indigo", icon: I.shield },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-5xl mx-auto pb-28 wa-fade-in">
       {/* ── Top Header Banner ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-brand/10 to-transparent p-6 shadow-xl backdrop-blur-xl">
-        <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-amber-500/15 blur-3xl pointer-events-none" />
-        <div className="relative flex flex-wrap items-center justify-between gap-4">
+      <GlassCard className="!p-0 !bg-gradient-to-r from-white/90 via-amber-50/40 to-orange-50/40" hover={false}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5">
           <div className="flex items-center gap-4">
-            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-amber-400/40 bg-amber-500/20 text-amber-300 shadow-[0_0_24px_rgba(245,158,11,0.3)]">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/25 wa-icon-float force-text-white">
               <Icon d={I.shield} className="h-6 w-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-extrabold tracking-tight text-cream">Production Admin Panel</h1>
-                <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
+                <h1 className="text-xl font-extrabold tracking-tight text-slate-900 leading-tight">Admin Panel</h1>
+                <span className="rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest">
                   Live System
                 </span>
               </div>
-              <p className="text-xs text-mist/80 mt-0.5">Control center for TAAL Pathak operations & real-time telemetry</p>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">Control center for TAAL Pathak operations & telemetry</p>
             </div>
           </div>
 
-          {/* Tab Selection */}
-          <div className="flex gap-1 rounded-xl border border-white/10 bg-black/40 p-1 backdrop-blur-md">
+          {/* Tab Selection Navigation */}
+          <div className="flex gap-1 p-1.5 rounded-2xl bg-white/70 backdrop-blur-lg border border-slate-200/60 shadow-sm w-full sm:w-fit overflow-x-auto">
             {[
               { id: "overview", label: "Overview", icon: I.grid },
               { id: "activity", label: "Audit Logs", icon: I.shield },
@@ -316,11 +480,15 @@ export default function AdminPanel() {
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold capitalize transition-all cursor-pointer ${
-                  activeTab === t.id
-                    ? "bg-gradient-to-r from-amber-500/30 to-amber-600/20 text-amber-200 border border-amber-500/40 shadow-md"
-                    : "text-mist hover:text-cream hover:bg-white/5"
-                }`}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold
+                  transition-all duration-250 whitespace-nowrap cursor-pointer
+                  ${
+                    activeTab === t.id
+                      ? "bg-gradient-to-r from-amber-500 to-orange-600 force-text-white shadow-md shadow-amber-500/25"
+                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/60"
+                  }
+                `}
               >
                 <Icon d={t.icon} className="h-3.5 w-3.5" />
                 {t.label}
@@ -328,68 +496,87 @@ export default function AdminPanel() {
             ))}
           </div>
         </div>
-      </div>
+        <div className="h-[2px] bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
+      </GlassCard>
 
       {/* Published Announcement Alert (if active) */}
       {publishedNotice && (
-        <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-cream flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-lg">📢</span>
-            <div>
-              <p className="text-xs font-bold text-amber-300 uppercase tracking-wider">{publishedNotice.title} ({publishedNotice.date})</p>
-              <p className="text-xs text-cream/90 mt-0.5">{publishedNotice.text}</p>
+        <GlassCard className="!p-4 !bg-gradient-to-r !from-amber-50/90 !to-orange-50/90 !border-amber-300/60 wa-fade-in" hover={false}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">📢</span>
+              <div>
+                <p className="text-xs font-bold text-amber-800 uppercase tracking-wider">
+                  {publishedNotice.title} ({publishedNotice.date})
+                </p>
+                <p className="text-xs text-slate-700 mt-0.5 font-medium">{publishedNotice.text}</p>
+              </div>
             </div>
+            <button
+              onClick={() => setPublishedNotice(null)}
+              className="text-xs font-semibold text-amber-800 hover:text-amber-950 px-3 py-1.5 rounded-lg bg-amber-100/80 hover:bg-amber-200/80 transition-colors cursor-pointer"
+            >
+              Dismiss
+            </button>
           </div>
-          <button
-            onClick={() => setPublishedNotice(null)}
-            className="text-xs font-semibold text-mist hover:text-cream px-2 py-1 rounded bg-white/10 hover:bg-white/20"
-          >
-            Dismiss
-          </button>
-        </div>
+        </GlassCard>
       )}
 
       {/* System Health Indicators Bar */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.03] p-3.5">
-          <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase font-bold text-mist/60">Database Engine</p>
-            <p className="truncate text-xs font-semibold text-cream">Supabase PostgreSQL (Active)</p>
+        <GlassCard className="!p-3.5" hover={true}>
+          <div className="flex items-center gap-3">
+            <span className="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase font-bold text-slate-400">Database Engine</p>
+              <p className="truncate text-xs font-bold text-slate-800">Supabase PostgreSQL</p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.03] p-3.5">
-          <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase font-bold text-mist/60">Authentication Server</p>
-            <p className="truncate text-xs font-semibold text-cream">Supabase Auth Service (Online)</p>
+        </GlassCard>
+
+        <GlassCard className="!p-3.5" hover={true}>
+          <div className="flex items-center gap-3">
+            <span className="h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase font-bold text-slate-400">Authentication</p>
+              <p className="truncate text-xs font-bold text-slate-800">Supabase Auth (Online)</p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.03] p-3.5">
-          <span className="h-3 w-3 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase font-bold text-mist/60">Realtime Listener</p>
-            <p className="truncate text-xs font-semibold text-cream">WebSocket Subscriptions (Listening)</p>
+        </GlassCard>
+
+        <GlassCard className="!p-3.5" hover={true}>
+          <div className="flex items-center gap-3">
+            <span className="h-3 w-3 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.6)] animate-pulse shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase font-bold text-slate-400">Realtime Engine</p>
+              <p className="truncate text-xs font-bold text-slate-800">WebSocket Active</p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-xl border border-white/[.07] bg-white/[.03] p-3.5 justify-between">
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase font-bold text-mist/60">Data Sync</p>
-            <p className="truncate text-xs font-semibold text-cream">Auto Telemetry Live</p>
+        </GlassCard>
+
+        <GlassCard className="!p-3.5" hover={true}>
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase font-bold text-slate-400">Data Sync</p>
+              <p className="truncate text-xs font-bold text-slate-800">Live Telemetry</p>
+            </div>
+            <button
+              onClick={() => {
+                loadStats();
+                loadLogs();
+              }}
+              className="rounded-lg border border-slate-200/80 bg-slate-100/80 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-200/80 active:scale-95 transition-all cursor-pointer"
+              title="Refresh system stats"
+            >
+              <Icon d={I.sliders} className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            onClick={() => { loadStats(); loadLogs(); }}
-            className="rounded-lg border border-white/10 bg-white/5 p-2 text-mist hover:text-cream hover:bg-white/10 active:scale-95 transition-all"
-            title="Refresh system stats"
-          >
-            <Icon d={I.sliders} className="h-4 w-4" />
-          </button>
-        </div>
+        </GlassCard>
       </div>
 
       {/* ── OVERVIEW TAB ── */}
       {activeTab === "overview" && (
-        <>
+        <div className="space-y-5 wa-fade-in">
           {/* Live KPI Stats Grid */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {LIVE_STATS.map((s) => (
@@ -397,74 +584,100 @@ export default function AdminPanel() {
             ))}
           </div>
 
-          {/* Production System Quick Controls */}
-          <div className="rounded-2xl border border-white/[.08] bg-white/[.035] p-5 backdrop-blur-xl">
-            <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-mist/70 flex items-center gap-2">
-              <Icon d={I.sliders} className="h-4 w-4 text-amber-400" />
-              Administrative Quick Controls
-            </h2>
+          {/* Admin WhatsApp Auto-Alerts Recipient Management */}
+          <AdminWhatsAppConfig />
+
+          {/* Quick Controls Section */}
+          <GlassCard>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center force-text-white shadow-sm">
+                  <Icon d={I.sliders} className="h-3.5 w-3.5" />
+                </div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">Administrative Actions</h2>
+              </div>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-3">
               <button
                 disabled={exporting}
                 onClick={handleExportAllData}
-                className="flex items-center justify-center gap-2.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-xs font-semibold text-sky-300 transition-all hover:bg-sky-500/20 hover:border-sky-500/50 active:scale-95 cursor-pointer disabled:opacity-50"
+                className="
+                  flex items-center justify-center gap-2.5 rounded-xl
+                  bg-gradient-to-r from-sky-500 to-blue-600 force-text-white
+                  px-4 py-3 text-xs font-bold shadow-sm shadow-sky-500/20
+                  hover:from-sky-400 hover:to-blue-500 transition-all duration-200
+                  active:scale-95 cursor-pointer disabled:opacity-50
+                "
               >
                 <Icon d={I.note} className="h-4 w-4" />
-                <span>{exporting ? "Generating Backup..." : "Export Full System Backup (JSON)"}</span>
+                <span>{exporting ? "Exporting..." : "Full System Backup (JSON)"}</span>
               </button>
 
               <button
                 onClick={() => setShowAnnouncementModal(true)}
-                className="flex items-center justify-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs font-semibold text-amber-300 transition-all hover:bg-amber-500/20 hover:border-amber-500/50 active:scale-95 cursor-pointer"
+                className="
+                  flex items-center justify-center gap-2.5 rounded-xl
+                  bg-gradient-to-r from-amber-500 to-orange-600 force-text-white
+                  px-4 py-3 text-xs font-bold shadow-sm shadow-amber-500/20
+                  hover:from-amber-400 hover:to-orange-500 transition-all duration-200
+                  active:scale-95 cursor-pointer
+                "
               >
                 <Icon d={I.mail} className="h-4 w-4" />
-                <span>Broadcast System Announcement</span>
+                <span>Broadcast Announcement</span>
               </button>
 
               <button
                 onClick={handleExportLogsCSV}
-                className="flex items-center justify-center gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs font-semibold text-emerald-300 transition-all hover:bg-emerald-500/20 hover:border-emerald-500/50 active:scale-95 cursor-pointer"
+                className="
+                  flex items-center justify-center gap-2.5 rounded-xl
+                  bg-gradient-to-r from-emerald-500 to-teal-600 force-text-white
+                  px-4 py-3 text-xs font-bold shadow-sm shadow-emerald-500/20
+                  hover:from-emerald-400 hover:to-teal-500 transition-all duration-200
+                  active:scale-95 cursor-pointer
+                "
               >
                 <Icon d={I.shield} className="h-4 w-4" />
                 <span>Export Audit Logs (CSV)</span>
               </button>
             </div>
-          </div>
+          </GlassCard>
 
           {/* Recent Security Activity Stream */}
-          <div className="rounded-2xl border border-white/[.08] bg-white/[.035] p-5 backdrop-blur-xl">
+          <GlassCard>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-xs font-bold uppercase tracking-wider text-mist/70 flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
                   Recent Authentication Stream
                 </h2>
-                <p className="text-[11px] text-mist/50 mt-0.5">Live user login & logout events recorded in Supabase</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">Live user login & logout events recorded in Supabase</p>
               </div>
               <button
                 onClick={() => setActiveTab("activity")}
-                className="text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors"
+                className="text-xs font-bold text-amber-700 hover:text-amber-800 transition-colors cursor-pointer"
               >
                 View Full Audit Logs →
               </button>
             </div>
             <ActivityLogTable logs={logs.slice(0, 7)} loading={loading} searchTerm="" filterType="all" />
-          </div>
-        </>
+          </GlassCard>
+        </div>
       )}
 
       {/* ── AUDIT LOGS TAB ── */}
       {activeTab === "activity" && (
-        <div className="rounded-2xl border border-white/[.08] bg-white/[.035] p-5 backdrop-blur-xl space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <GlassCard className="wa-fade-in">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
-              <h2 className="text-sm font-bold text-cream flex items-center gap-2">
+              <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 System Security Audit Logs
-                <span className="rounded-full bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                <span className="rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 text-[10px] font-bold">
                   {logs.length} Recorded Events
                 </span>
               </h2>
-              <p className="text-xs text-mist/60 mt-0.5">Complete history of authentications and access events</p>
+              <p className="text-xs text-slate-500 mt-0.5">Complete history of authentications and access events</p>
             </div>
 
             {/* Controls: Search & Filter */}
@@ -474,12 +687,24 @@ export default function AdminPanel() {
                 placeholder="Search user name or email..."
                 value={logSearch}
                 onChange={(e) => setLogSearch(e.target.value)}
-                className="rounded-xl border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-cream placeholder:text-mist/40 outline-none focus:border-amber-500/50"
+                className="
+                  px-3.5 py-2 rounded-xl
+                  bg-slate-50/80 border border-slate-200/80
+                  text-xs text-slate-800 placeholder:text-slate-400
+                  focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100
+                  transition-all duration-200
+                "
               />
               <select
                 value={logFilter}
                 onChange={(e) => setLogFilter(e.target.value)}
-                className="rounded-xl border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-cream outline-none focus:border-amber-500/50"
+                className="
+                  px-3.5 py-2 rounded-xl
+                  bg-slate-50/80 border border-slate-200/80
+                  text-xs text-slate-800
+                  focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100
+                  transition-all duration-200
+                "
               >
                 <option value="all">All Events</option>
                 <option value="login">Login Events</option>
@@ -487,7 +712,13 @@ export default function AdminPanel() {
               </select>
               <button
                 onClick={handleExportLogsCSV}
-                className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20"
+                className="
+                  px-4 py-2 rounded-xl
+                  bg-gradient-to-r from-emerald-500 to-teal-600 force-text-white
+                  text-xs font-bold shadow-sm shadow-emerald-500/20
+                  hover:from-emerald-400 hover:to-teal-500 transition-all duration-200
+                  active:scale-95 cursor-pointer
+                "
               >
                 Export CSV
               </button>
@@ -495,41 +726,47 @@ export default function AdminPanel() {
           </div>
 
           <ActivityLogTable logs={logs} loading={loading} searchTerm={logSearch} filterType={logFilter} />
-        </div>
+        </GlassCard>
       )}
 
       {/* ── DB TOOLS TAB ── */}
       {activeTab === "tools" && (
-        <div className="rounded-2xl border border-white/[.08] bg-white/[.035] p-5 backdrop-blur-xl space-y-5">
+        <GlassCard className="space-y-5 wa-fade-in">
           <div>
-            <h2 className="text-sm font-bold text-cream">Database & System Maintenance Tools</h2>
-            <p className="text-xs text-mist/60 mt-0.5">High-privilege system operations and database telemetry</p>
+            <h2 className="text-sm font-bold text-slate-900">Database & System Maintenance Tools</h2>
+            <p className="text-xs text-slate-500 mt-0.5">High-privilege system operations and database telemetry</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-white/[.02] p-4 space-y-3">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Icon d={I.note} className="h-4 w-4 text-sky-400" />
-                <h3 className="text-xs font-bold text-cream">System Backup & Migration</h3>
+                <Icon d={I.note} className="h-4 w-4 text-sky-600" />
+                <h3 className="text-xs font-bold text-slate-800">System Backup & Migration</h3>
               </div>
-              <p className="text-xs text-mist/70 leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed">
                 Download a clean JSON archive containing all database tables (students, expenses, daily reports, candidate exams, and logs).
               </p>
               <button
                 disabled={exporting}
                 onClick={handleExportAllData}
-                className="w-full py-2 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-300 text-xs font-semibold hover:bg-sky-500/25 transition-colors cursor-pointer"
+                className="
+                  w-full py-2.5 rounded-xl
+                  bg-gradient-to-r from-sky-500 to-blue-600 force-text-white
+                  text-xs font-bold shadow-sm shadow-sky-500/20
+                  hover:from-sky-400 hover:to-blue-500 transition-all duration-200
+                  active:scale-95 cursor-pointer disabled:opacity-50
+                "
               >
                 {exporting ? "Generating Package..." : "Download Full Database JSON"}
               </button>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-white/[.02] p-4 space-y-3">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Icon d={I.shield} className="h-4 w-4 text-emerald-400" />
-                <h3 className="text-xs font-bold text-cream">Database Health Diagnostics</h3>
+                <Icon d={I.shield} className="h-4 w-4 text-emerald-600" />
+                <h3 className="text-xs font-bold text-slate-800">Database Health Diagnostics</h3>
               </div>
-              <p className="text-xs text-mist/70 leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed">
                 Run immediate ping query against Supabase PostgreSQL endpoints to check table accessibility.
               </p>
               <button
@@ -539,26 +776,32 @@ export default function AdminPanel() {
                   const duration = Math.round(performance.now() - start);
                   alert(`✅ Database Health Check Passed!\nResponse Time: ${duration} ms\nStatus: All endpoints responsive.`);
                 }}
-                className="w-full py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/25 transition-colors cursor-pointer"
+                className="
+                  w-full py-2.5 rounded-xl
+                  bg-gradient-to-r from-emerald-500 to-teal-600 force-text-white
+                  text-xs font-bold shadow-sm shadow-emerald-500/20
+                  hover:from-emerald-400 hover:to-teal-500 transition-all duration-200
+                  active:scale-95 cursor-pointer
+                "
               >
                 Run Health & Ping Check
               </button>
             </div>
           </div>
-        </div>
+        </GlassCard>
       )}
 
       {/* ── BROADCAST ANNOUNCEMENT MODAL ── */}
       {showAnnouncementModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-ink-950 p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 wa-fade-in">
+          <GlassCard className="w-full max-w-md !p-6 shadow-2xl space-y-4" hover={false}>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-cream flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 📢 Broadcast System Announcement
               </h3>
               <button
                 onClick={() => setShowAnnouncementModal(false)}
-                className="rounded-lg p-1 text-mist hover:text-cream"
+                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <Icon d={I.x} className="h-4 w-4" />
               </button>
@@ -566,26 +809,38 @@ export default function AdminPanel() {
 
             <form onSubmit={handlePublishAnnouncement} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-mist mb-1">Announcement Title</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Announcement Title</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g., Practice Session Update"
                   value={announcement.title}
                   onChange={(e) => setAnnouncement({ ...announcement, title: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-black/50 p-2.5 text-xs text-cream outline-none focus:border-amber-500"
+                  className="
+                    w-full px-4 py-2.5 rounded-xl
+                    bg-slate-50/80 border border-slate-200/80
+                    text-xs text-slate-800 placeholder:text-slate-400
+                    focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100
+                    transition-all duration-200
+                  "
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-mist mb-1">Message Text</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Message Text</label>
                 <textarea
                   required
                   rows={3}
                   placeholder="Write message details for the team..."
                   value={announcement.text}
                   onChange={(e) => setAnnouncement({ ...announcement, text: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-black/50 p-2.5 text-xs text-cream outline-none focus:border-amber-500 resize-none"
+                  className="
+                    w-full px-4 py-2.5 rounded-xl
+                    bg-slate-50/80 border border-slate-200/80
+                    text-xs text-slate-800 placeholder:text-slate-400
+                    focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100
+                    transition-all duration-200 resize-none
+                  "
                 />
               </div>
 
@@ -593,19 +848,25 @@ export default function AdminPanel() {
                 <button
                   type="button"
                   onClick={() => setShowAnnouncementModal(false)}
-                  className="px-4 py-2 rounded-xl border border-white/10 text-xs font-semibold text-mist hover:text-cream"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-amber-500 text-ink-950 text-xs font-bold hover:bg-amber-400"
+                  className="
+                    px-5 py-2.5 rounded-xl
+                    bg-gradient-to-r from-amber-500 to-orange-600 force-text-white
+                    text-xs font-bold shadow-sm shadow-amber-500/20
+                    hover:from-amber-400 hover:to-orange-500 transition-all duration-200
+                    active:scale-95 cursor-pointer
+                  "
                 >
                   Publish Notice
                 </button>
               </div>
             </form>
-          </div>
+          </GlassCard>
         </div>
       )}
     </div>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Icon, I } from "./icons";
 import { supabase } from "../lib/supabase";
-import { sendWhatsApp } from "../utils/whatsapp";
+import { sendWhatsApp, sendAdminAlerts } from "../utils/whatsapp";
 
 /* ═══════════════════════════════════════════════
    CONSTANTS & CONFIG
@@ -752,16 +752,13 @@ export default function DailyReport() {
   // Auto-send WhatsApp alert when low stock detected
   useEffect(() => {
     if (lowStockAlerts.length === 0) return;
-    const adminPhone = localStorage.getItem("wa_admin_phone");
-    if (!adminPhone) return;
-
     lowStockAlerts.forEach(alert => {
       const alertKey = `${alert.item}-${alert.size}-${alert.count}`;
       if (alertSentRef.current.has(alertKey)) return;
       alertSentRef.current.add(alertKey);
 
       const msg = `🚨 *LOW STOCK ALERT — TAAL PATHAK*\n\n⚠️ ${alert.item} ${alert.size} stock is LOW!\nCurrent Count: *${alert.count}*\nThreshold: *${LOW_STOCK_THRESHOLD}*\n\nPlease restock immediately!\n\n_Auto-Alert from TAAL CRM_`;
-      sendWhatsApp(adminPhone, msg).catch(() => {});
+      sendAdminAlerts(msg).catch(() => {});
     });
   }, [lowStockAlerts]);
 
@@ -789,11 +786,8 @@ export default function DailyReport() {
 
       // WhatsApp notification
       try {
-        const adminPhone = localStorage.getItem("wa_admin_phone");
-        if (adminPhone) {
-          const msg = `📊 *TAAL Daily Report*\n\n🚨 Dhol Fodne Log:\n🥁 Dhol #${brokenForm.dholNumber} (${brokenForm.dholSize}")\n🔨 Kaam: ${brokenForm.workType}\n👤 Fodla: ${brokenForm.brokenBy}\n📅 Date: ${selectedDate}\n\nStatus: Pending`;
-          sendWhatsApp(adminPhone, msg).catch(() => {});
-        }
+        const msg = `📊 *TAAL Daily Report*\n\n🚨 Dhol Fodne Log:\n🥁 Dhol #${brokenForm.dholNumber} (${brokenForm.dholSize}")\n🔨 Kaam: ${brokenForm.workType}\n👤 Fodla: ${brokenForm.brokenBy}\n📅 Date: ${selectedDate}\n\nStatus: Pending`;
+        sendAdminAlerts(msg).catch(() => {});
       } catch { /* ignore */ }
     } catch (err) {
       showToast("❌ Error saving: " + (err.message || "Unknown"));
@@ -863,11 +857,8 @@ export default function DailyReport() {
 
       // WhatsApp notification
       try {
-        const adminPhone = localStorage.getItem("wa_admin_phone");
-        if (adminPhone) {
-          const msg = `📊 *TAAL Daily Report*\n\n✅ Dhol Banane Log:\n🥁 Dhol #${madeForm.dholNumber} (${madeForm.dholSize}")\n🔧 Kaam: ${madeForm.workType}\n👤 Banaya: ${madeForm.madeBy}\n📅 Date: ${selectedDate}\n\n${deducted.length > 0 ? `Inventory: ${deducted.join(", ")}` : ""}`;
-          sendWhatsApp(adminPhone, msg).catch(() => {});
-        }
+        const msg = `📊 *TAAL Daily Report*\n\n✅ Dhol Banane Log:\n🥁 Dhol #${madeForm.dholNumber} (${madeForm.dholSize}")\n🔧 Kaam: ${madeForm.workType}\n👤 Banaya: ${madeForm.madeBy}\n📅 Date: ${selectedDate}\n\n${deducted.length > 0 ? `Inventory: ${deducted.join(", ")}` : ""}`;
+        sendAdminAlerts(msg).catch(() => {});
       } catch { /* ignore */ }
     } catch (err) {
       showToast("❌ Error saving: " + (err.message || "Unknown"));
@@ -1050,16 +1041,16 @@ export default function DailyReport() {
   };
 
   const handleSendWhatsApp = async () => {
-    const adminPhone = localStorage.getItem("wa_admin_phone");
-    if (!adminPhone) {
-      showToast("⚠️ Admin phone not set! Go to WhatsApp Center to set it.");
+    const phones = getAdminPhones();
+    if (phones.length === 0) {
+      showToast("⚠️ Admin phone not set! Go to Admin Panel or WhatsApp Center to set it.");
       return;
     }
     setSendingWA(true);
     const msg = buildWhatsAppReportText(stats, panData, doriData, mainData, attendanceStats, dateReports, selectedDate);
-    const success = await sendWhatsApp(adminPhone, msg);
-    if (success) {
-      showToast("✅ WhatsApp report sent!");
+    const sentCount = await sendAdminAlerts(msg);
+    if (sentCount > 0) {
+      showToast(`✅ WhatsApp report sent to ${sentCount} Admin numbers!`);
       try {
         await supabase.from("daily_summary_reports").update({ whatsapp_sent: true }).eq("report_date", selectedDate);
       } catch { /* ignore */ }
