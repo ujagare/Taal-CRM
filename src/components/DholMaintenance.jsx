@@ -7,8 +7,16 @@ import { Icon, I } from "./icons";
 /* ─────────────────────────────────────────────
    CONSTANTS & CONFIG
 ───────────────────────────────────────────── */
-const TOTAL_DHOLS = 60;
+const TOTAL_DHOLS = 54;
 const HISTORY_DAYS = 60;
+
+// Size Rule: #1-#10 = 30", #11-#52 = 28", #53-#54 = 26"
+export function getDholSize(num) {
+  const n = Number(num);
+  if (n >= 1 && n <= 10) return 30;
+  if (n >= 53) return 26;
+  return 28;
+}
 
 /* ── PDF List Data (27-07-2026) ── */
 const JULY_27_2026_LOGS = [
@@ -21,12 +29,12 @@ const JULY_27_2026_LOGS = [
   { dhol_number: 14, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Siddhant Gore", done_by_2: "Ashish", notes: "Two names" },
   { dhol_number: 15, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Rohan Bramankar", done_by_2: "Tejas M", notes: "Handwritten note" },
   { dhol_number: 16, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Anand Pawar", done_by_2: "Vivet G", notes: "Two names" },
-  { dhol_number: 17, dhol_size: "30", maintenance_date: "2026-07-27", description: "Dori Work", done_by: "Aryan", done_by_2: null, notes: "30 ki Dori" },
+  { dhol_number: 17, dhol_size: "28", maintenance_date: "2026-07-27", description: "Dori Work", done_by: "Aryan", done_by_2: null, notes: "30 ki Dori" },
   { dhol_number: 18, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Girish Jhelane", done_by_2: null, notes: null },
   { dhol_number: 19, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Ajinkya U", done_by_2: null, notes: null },
   { dhol_number: 20, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Vikrant Chinchwade", done_by_2: null, notes: null },
   { dhol_number: 21, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Ajinkya Shewale", done_by_2: null, notes: null },
-  { dhol_number: 22, dhol_size: "30", maintenance_date: "2026-07-27", description: "Dori Work", done_by: "Suyash Gaikwad", done_by_2: null, notes: "30 chi Dori" },
+  { dhol_number: 22, dhol_size: "28", maintenance_date: "2026-07-27", description: "Dori Work", done_by: "Suyash Gaikwad", done_by_2: null, notes: "30 chi Dori" },
   { dhol_number: 23, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Nikhil Khaladkar", done_by_2: null, notes: null },
   { dhol_number: 24, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Shreya Kendale", done_by_2: "Krishna", notes: "Two names" },
   { dhol_number: 25, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Satil Khandale", done_by_2: "Atul", notes: "Two names" },
@@ -53,16 +61,9 @@ const JULY_27_2026_LOGS = [
   { dhol_number: 47, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Sunny", done_by_2: null, notes: null },
   { dhol_number: 48, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Shubham Gadekar", done_by_2: null, notes: null },
   { dhol_number: 50, dhol_size: "28", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Abhishek Shitole", done_by_2: "Anand Pawar", notes: "Two names" },
-  { dhol_number: 55, dhol_size: "26", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Dnyanesh Gabaal", done_by_2: null, notes: null },
-  { dhol_number: 60, dhol_size: "26", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Yash Dalvi", done_by_2: null, notes: null },
+  { dhol_number: 53, dhol_size: "26", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Dnyanesh Gabaal", done_by_2: null, notes: null },
+  { dhol_number: 54, dhol_size: "26", maintenance_date: "2026-07-27", description: "Normal Dhol", done_by: "Yash Dalvi", done_by_2: null, notes: null },
 ];
-
-// Size Rule: #1-#10 = 30", #11-#52 = 28", #53-#54 = 26"
-function getDholSize(num) {
-  if (num <= 10) return 30;
-  if (num >= 53) return 26;
-  return 28;
-}
 
 // Maintenance options requested by user
 const MAINTENANCE_OPTIONS = [
@@ -158,8 +159,11 @@ function PdfExportModal({ logs, dhols, onClose }) {
       }
 
       // Size check
-      if (sizeFilter !== "all" && String(log.dhol_size) !== sizeFilter) {
-        return false;
+      if (sizeFilter !== "all") {
+        const dNum = log.dhol_number || log.dhol_id;
+        if (String(getDholSize(dNum)) !== sizeFilter) {
+          return false;
+        }
       }
 
       // Dhol Number check
@@ -266,7 +270,7 @@ function PdfExportModal({ logs, dhols, onClose }) {
                       .map((log, i) => {
                         const bg = i % 2 === 0 ? "#FFFFFF" : "#F9FAFB";
                         const dholNum = log.dhol_number || log.dhol_id;
-                        const dholSz = log.dhol_size || getDholSize(dholNum);
+                        const dholSz = getDholSize(dholNum);
                         const names = log.done_by_2
                           ? `${log.done_by} & ${log.done_by_2}`
                           : log.done_by || "—";
@@ -452,8 +456,8 @@ function PdfExportModal({ logs, dhols, onClose }) {
                 className="w-full rounded-xl border border-white/15 bg-ink-950 px-3 py-2 text-xs text-cream font-semibold focus:border-brand focus:outline-none"
               >
                 <option value="all">Sab Sizes (All)</option>
-                <option value="30">30&quot; Size (#1-#25)</option>
-                <option value="28">28&quot; Size (#26-#52)</option>
+                <option value="30">30&quot; Size (#1-#10)</option>
+                <option value="28">28&quot; Size (#11-#52)</option>
                 <option value="26">26&quot; Size (#53-#54)</option>
               </select>
             </div>
@@ -1484,7 +1488,7 @@ export default function DholMaintenance() {
                 Dhol <span className="bg-gradient-to-r from-brand via-brand-300 to-gold bg-clip-text text-transparent">Maintenance</span> Tracker
               </h1>
               <p className="mt-2 max-w-2xl text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Kul {TOTAL_DHOLS} Dhol: #1-#25 (30"), #26-#52 (28"), #53-#54
+                Kul {TOTAL_DHOLS} Dhol: #1-#10 (30"), #11-#52 (28"), #53-#54
                 (26"). Card par hover ya tap karke last maintenance ki complete
                 jankari dekhein.
               </p>
