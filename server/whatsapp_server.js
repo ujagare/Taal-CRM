@@ -11,6 +11,7 @@ app.use(express.json());
 let waSock = null;
 let isConnected = false;
 let qrCodeData = null;
+let reconnectTimer = null;
 
 async function connectToWhatsApp() {
   try {
@@ -20,6 +21,8 @@ async function connectToWhatsApp() {
       auth: state,
       printQRInTerminal: false,
       browser: ['TAAL Pathak CRM', 'Chrome', '1.0.0'],
+      connectTimeoutMs: 60000,
+      keepAliveIntervalMs: 25000,
     });
 
     waSock.ev.on('creds.update', saveCreds);
@@ -33,27 +36,42 @@ async function connectToWhatsApp() {
         console.log('📱 SCAN THIS QR CODE IN YOUR WHATSAPP -> LINKED DEVICES:');
         console.log('======================================================\n');
         qrcode.generate(qr, { small: true });
+        console.log('\n🌐 OR open in browser: http://localhost:5001/qr\n');
       }
 
       if (connection === 'close') {
         isConnected = false;
-        const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-        console.log('⚠️ Connection closed due to ', lastDisconnect?.error, ', reconnecting: ', shouldReconnect);
+        const statusCode = (lastDisconnect?.error)?.output?.statusCode;
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        console.log(`⚠️  Connection closed (code: ${statusCode}), reconnecting: ${shouldReconnect}`);
+        
         if (shouldReconnect) {
-          connectToWhatsApp();
+          // Reconnect with delay to avoid hammering WhatsApp servers
+          if (reconnectTimer) clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(() => {
+            console.log('🔄 Attempting reconnect...');
+            connectToWhatsApp();
+          }, 5000);
+        } else {
+          console.log('🔴 Logged out from WhatsApp. Please scan QR again at http://localhost:5001/qr');
         }
       } else if (connection === 'open') {
         isConnected = true;
         qrCodeData = null;
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
         console.log('\n======================================================');
         console.log('✅ WHATSAPP CONNECTED SUCCESSFULLY TO TAAL PATHAK CRM!');
         console.log('======================================================\n');
       }
     });
   } catch (err) {
-    console.error('WhatsApp Connection Error:', err);
+    console.error('WhatsApp Connection Error:', err.message);
+    // Retry after 10 seconds if initial connection fails
+    console.log('⏳ Retrying connection in 10 seconds...');
+    setTimeout(connectToWhatsApp, 10000);
   }
 }
+
 
 // ─── API ENDPOINTS ─── //
 
