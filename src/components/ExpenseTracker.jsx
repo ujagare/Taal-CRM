@@ -278,7 +278,7 @@ export default function ExpenseTracker() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState("month");
+  const [dateFilter, setDateFilter] = useState("all");
   const [viewImage, setViewImage] = useState(null);
   const [toast, setToast] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -305,8 +305,8 @@ export default function ExpenseTracker() {
         .select("*")
         .order("bill_date", { ascending: false });
 
-      // Only trust remote if it actually returned rows — never overwrite local cache with empty
-      if (!error && Array.isArray(data) && data.length > 0) {
+      // Trust remote data as long as there is no error — even if 0 rows (table was cleared)
+      if (!error && Array.isArray(data)) {
         loadedData = data;
         fromRemote = true;
       }
@@ -471,12 +471,12 @@ export default function ExpenseTracker() {
     });
 
     if (remoteSaved) {
-      showToast(editingId ? "Expense updated!" : "Expense added successfully!");
+      showToast(editingId ? "✅ Expense updated!" : "✅ Expense saved to Supabase!");
     } else {
       showToast(
         editingId
-          ? "Expense updated locally!"
-          : "Expense added locally! (Run schema.sql in Supabase to sync online)",
+          ? "⚠️ Expense updated locally only (check internet/Supabase)"
+          : "⚠️ Expense saved locally! (Supabase connect nahi hua — check internet)",
         "info",
       );
     }
