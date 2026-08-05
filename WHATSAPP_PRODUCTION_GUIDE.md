@@ -1,6 +1,6 @@
-# 📱 WhatsApp Server — Production Setup Guide
+# 📱 TAAL Pathak CRM — Production Deploy Guide
 
-## ✅ Current Status (Local Machine)
+## ✅ Services & Ports
 
 | Service | Status | Port |
 |---------|--------|------|
@@ -11,93 +11,153 @@
 
 ## 🚀 Production Deploy Karne Ka Tarika
 
-### 1. Server Par Code Upload Karo
+### ▶️ Option 1: Deploy Script (Recommended)
+
+**Linux / macOS server par:**
+```bash
+bash deploy.sh
+```
+
+**Windows server / PC par:**
+```powershell
+# PowerShell mein:
+.\deploy.ps1
+
+# Ya CMD mein:
+deploy.bat
+```
+
+---
+
+### ▶️ Option 2: Manual Commands (Step by Step)
 
 ```bash
+# ── Step 1: Latest code pull karo ───────────────────────
 git pull origin main
+
+# ── Step 2: Dependencies install karo ───────────────────
 npm install
-```
 
-### 2. PM2 Install Karo (ek baar)
-
-```bash
+# ── Step 3: PM2 install karo (ek baar only) ─────────────
 npm install -g pm2
+
+# ── Step 4: Services start karo ─────────────────────────
+pm2 start ecosystem.config.cjs
+
+# ── Step 5: Config save karo (reboot ke baad bhi chale) ─
+pm2 save
+
+# ── Step 6: Startup hook (system boot par auto-start) ───
+pm2 startup
+# ⚠️  Ye command ek aur command output karega — use copy karke run karo
+
+# ── Step 7: WhatsApp QR scan karo ───────────────────────
+# Browser mein kholo: http://localhost:5001/qr
+# WhatsApp → Settings → Linked Devices → Link a Device
 ```
 
-### 3. Services Start Karo
+---
+
+## 🔍 Status Check Commands
 
 ```bash
-pm2 start ecosystem.config.cjs
-pm2 save
-pm2 startup
+pm2 list                              # Sab processes dekho
+pm2 logs taal-whatsapp --lines 50     # WhatsApp live logs
+pm2 logs taal-auto-reports --lines 50 # Auto-reports live logs
+pm2 monit                             # CPU/Memory live monitor
 ```
 
-> ⚠️ `pm2 startup` command ek aur command output karega — use **copy karke run karo**
-
-### 4. WhatsApp QR Scan Karo (pehli baar)
-
-Browser mein kholo:
+**API se bhi check kar sakte ho:**
+```bash
+curl http://localhost:5001/api/whatsapp/status
+# Response: {"connected":true,"hasQr":false}
 ```
-http://localhost:5001/qr
-```
-
-QR code scan karo WhatsApp se:
-- WhatsApp → Settings → Linked Devices → Link a Device
 
 ---
 
 ## 🔧 Common Problems & Solutions
 
-### Problem: WhatsApp disconnect ho gaya
+### ❌ Problem: WhatsApp disconnect ho gaya
 ```bash
 pm2 restart taal-whatsapp
 # Phir browser mein /qr kholo aur scan karo
 ```
 
-### Problem: Auth session expire ho gaya
+### ❌ Problem: Auth session expire / QR scan nahi hua
 ```bash
-# Pehle auth folder delete karo
-rm -rf baileys_auth_info
+# Auth folder delete karo (fresh start)
+rm -rf baileys_auth_info          # Linux/Mac
+rd /s /q baileys_auth_info        # Windows CMD
+Remove-Item -Recurse baileys_auth_info  # Windows PowerShell
+
 pm2 restart taal-whatsapp
-# Phir /qr se fresh scan karo
+# Browser mein kholo: http://localhost:5001/qr
 ```
 
-### Problem: Port 5001 already in use
+### ❌ Problem: Port 5001 already in use
 ```bash
-# Check karo kaun use kar raha hai
+# Linux - check karo
+lsof -i :5001
+
+# Windows - check karo
 netstat -ano | findstr 5001
+
 # PM2 restart karo
 pm2 restart taal-whatsapp
 ```
 
+### ❌ Problem: PM2 startup ke baad service nahi chali
+```bash
+pm2 resurrect      # PM2 saved processes wapas start karo
+pm2 save           # Current state save karo
+```
+
 ---
 
-## 📊 Monitoring Commands
+## 📊 Monitoring
 
 ```bash
-pm2 list                              # Sab processes dekho
-pm2 logs taal-whatsapp --lines 50     # Live logs dekho
-pm2 monit                             # CPU/Memory monitor
+pm2 list                         # Quick status
+pm2 monit                        # Real-time CPU/Memory
+pm2 logs taal-whatsapp           # Live streaming logs
+pm2 logs taal-whatsapp --lines 100 --nostream  # Last 100 lines
 ```
 
 ---
 
-## 🌐 React App Ko WhatsApp Se Connect Karna
+## 📁 Important File Locations
 
-`src/lib/supabase.js` ya jahan bhi API URL define hain, wahan:
+| File | Purpose |
+|------|---------|
+| `ecosystem.config.cjs` | PM2 configuration |
+| `server/whatsapp_server.js` | WhatsApp server |
+| `server/auto_daily_reports.js` | Auto daily reports |
+| `baileys_auth_info/` | WhatsApp session (BACKUP KARO!) |
+| `deploy.sh` | Linux deploy script |
+| `deploy.bat` | Windows CMD deploy script |
+| `deploy.ps1` | Windows PowerShell deploy script |
 
-```
-VITE_WA_SERVER=http://your-server-ip:5001
-```
-
-Default locally: `http://localhost:5001`
+> ⚠️ **`baileys_auth_info/` folder backup rakho!**  
+> Agar delete ho gaya toh phir se QR scan karna padega.
 
 ---
 
-## 📋 Current PM2 Auth Session Location
+## 🌐 React App Ko WhatsApp Server Se Connect Karna
+
+Frontend mein WhatsApp API URL:
+- **Local:** `http://localhost:5001`
+- **Production:** `http://YOUR_SERVER_IP:5001`
+
+---
+
+## 📋 Quick Reference Card
 
 ```
-C:\Users\ujaga\OneDrive\Desktop\Dashboard\meridian-crm\baileys_auth_info\
+START:    pm2 start ecosystem.config.cjs
+STOP:     pm2 stop all
+RESTART:  pm2 restart taal-whatsapp
+STATUS:   pm2 list
+LOGS:     pm2 logs taal-whatsapp
+QR PAGE:  http://localhost:5001/qr
+API:      http://localhost:5001/api/whatsapp/status
 ```
-
-> ⚠️ **Is folder ko backup rakho!** Agar delete ho gaya toh phir se QR scan karna padega.
