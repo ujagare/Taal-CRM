@@ -1,4 +1,76 @@
-import { getWaServerUrl, saveWaServerUrl } from "../utils/whatsapp";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { supabase } from "../lib/supabase";
+import {
+  getWaServerUrl,
+  saveWaServerUrl,
+  sendWhatsApp,
+  sendBulkWhatsApp,
+  checkWhatsAppStatus,
+  saveAdminPhones,
+} from "../utils/whatsapp";
+
+/* ─── CONSTANTS ─── */
+const TEMPLATES = {
+  all: "नमस्कार {name}, ताल पथक परिवार में आपका स्वागत है!",
+  passed: "अभिनंदन {name}! तुम्ही ताल पथक परीक्षेत उत्तीर्ण झाला आहात. हार्दिक शुभेच्छा! 🎉",
+  failed: "नमस्कार {name}, ताल पथक परीक्षा सराव सत्रासाठी लवकरच नवीन तारीख जाहीर केली जाईल.",
+  pending: "नमस्कार {name}, तुमची ताल पथक परीक्षा अद्याप प्रलंबित आहे. कृपया लवकरात लवकर संपर्क साधा.",
+};
+
+const GROUP_OPTIONS = [
+  { id: "passed", label: "Passed", icon: "🏆", color: "emerald" },
+  { id: "failed", label: "Failed", icon: "❌", color: "red" },
+  { id: "pending", label: "Pending", icon: "⏳", color: "amber" },
+  { id: "all", label: "All Members", icon: "👥", color: "blue" },
+];
+
+/* ─── HELPER FUNCTIONS ─── */
+function personalizeMessage(tpl, member) {
+  if (!tpl) return "";
+  let msg = tpl;
+  msg = msg.replace(/{name}/g, member?.full_name || "सदस्य");
+  msg = msg.replace(/{phone}/g, member?.whatsapp || "");
+  msg = msg.replace(/{status}/g, member?.exam_status || "pending");
+  return msg;
+}
+
+/* ─── HELPER COMPONENTS ─── */
+function GlassCard({ children, className = "", style = {}, hover = true }) {
+  return (
+    <div
+      className={`
+        p-5 rounded-2xl bg-white/70 backdrop-blur-xl
+        border border-slate-200/60 shadow-sm
+        ${hover ? "hover:shadow-md hover:border-slate-300/80 transition-all duration-300" : ""}
+        ${className}
+      `}
+      style={style}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionLabel({ step, label, count, icon }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2">
+        {step && (
+          <span className="w-5 h-5 rounded-full bg-emerald-500 text-white font-bold text-[11px] flex items-center justify-center">
+            {step}
+          </span>
+        )}
+        {icon && <span className="text-sm">{icon}</span>}
+        <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">{label}</span>
+      </div>
+      {count !== undefined && (
+        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+          {count} Recipient{count === 1 ? "" : "s"}
+        </span>
+      )}
+    </div>
+  );
+}
 
 /* ─── Server Status Banner ─── */
 function StatusBanner({ statusObj, onOpenSettings }) {

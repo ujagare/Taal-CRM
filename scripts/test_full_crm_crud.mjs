@@ -37,7 +37,7 @@ const tests = [
   {
     name: "4. Main Inventory",
     table: "main_inventory",
-    insertPayload: { size: 'Total', current_count: 10, last_updated_by: "Test Audit" },
+    insertPayload: { size: "Audit_Test_Size", current_count: 10, last_updated_by: "Test Audit" },
     updatePayload: { current_count: 15 }
   },
   {
